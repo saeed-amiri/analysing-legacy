@@ -1,4 +1,12 @@
-"""making logging for all the scripts, the script is started by chat.openai"""
+"""making logging for all the scripts, the script is started by
+chat.openai
+example:
+        logger.debug("This is a debug message")
+        logger.info("This is an info message")
+        logger.warning("This is a warning message")
+        logger.error("This is a error message")
+        logger.critical("This is a critical message")
+"""
 
 import os
 import re
