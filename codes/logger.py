@@ -4,7 +4,7 @@ import os
 import re
 import logging
 import datetime
-
+from colors_text import TextColor as bcolors
 
 def check_log_file(log_name: str  # name of the asked logfile
                    ) -> str:
@@ -20,6 +20,8 @@ def check_log_file(log_name: str  # name of the asked logfile
 
     # Create the new log file name
     new_log_file = fr'{log_name}.{ count}'
+    print(f'{bcolors.OKBLUE}{__name__}: The log file '
+          f'`{new_log_file}` is prepared{bcolors.ENDC}')
     return new_log_file
 
 
