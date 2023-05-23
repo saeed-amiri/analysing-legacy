@@ -1,8 +1,9 @@
 """making logging for all the scripts, the script is started by chat.openai"""
 
-import logging
 import os
 import re
+import logging
+import datetime
 
 
 # check if the log file is exist rename the new file
@@ -15,6 +16,12 @@ if len(log_files) > 0:
     COUNT = max(int(re.search(r'log.(\d+)', file).group(1)) for
                 file in log_files) + 1 if log_files else 1
 log_file = f"log.{COUNT}"
+
+with open(log_file, 'w', encoding='utf-8') as f_w:
+    current_datetime = datetime.datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    f_w.write(f'{current_datetime}\n')
+    f_w.write('\n')
 
 
 def setup_logger():
@@ -34,7 +41,7 @@ def setup_logger():
 
     # Define the log message format
     formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(filename)s:%(module)s - %(message)s')
+        '%(module)s: (%(filename)s)\n\t - %(message)s\n')
     file_handler.setFormatter(formatter)
 
     # Add the file handler to the logger
