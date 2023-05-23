@@ -1,6 +1,7 @@
 """making logging for all the scripts, the script is started by chat.openai"""
 
 import logging
+import os
 
 
 def setup_logger():
@@ -19,7 +20,8 @@ def setup_logger():
     file_handler.setLevel(logging.DEBUG)
 
     # Define the log message format
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(filename)s:%(module)s - %(message)s')
     file_handler.setFormatter(formatter)
 
     # Add the file handler to the logger
