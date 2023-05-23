@@ -6,25 +6,35 @@ import logging
 import datetime
 
 
-# check if the log file is exist rename the new file
-log_files = [file for file in os.listdir('.') if
-             os.path.isfile(file) and file.startswith('log') and
-             re.match(r'log.\d+', file)]
+def check_log_file(log_name: str  # name of the asked logfile
+                   ) -> str:
+    """check if the log file is exist rename the new file"""
+    # Get a list of log files in the directory
+    log_files = [file for file in os.listdir('.') if
+                 re.match(fr'{log_name}.\d+', file)]
 
-COUNT = 1
-if len(log_files) > 0:
-    COUNT = max(int(re.search(r'log.(\d+)', file).group(1)) for
+    # Find the maximum count of the log files and increment it by 1
+    pattern = fr'{log_name}\.(\d+)'
+    count = max(int(re.search(pattern, file).group(1)) for
                 file in log_files) + 1 if log_files else 1
-log_file = f"log.{COUNT}"
 
-with open(log_file, 'w', encoding='utf-8') as f_w:
-    current_datetime = datetime.datetime.now()
-    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
-    f_w.write(f'{current_datetime}\n')
-    f_w.write('\n')
+    # Create the new log file name
+    new_log_file = fr'{log_name}.{ count}'
+    return new_log_file
 
 
-def setup_logger():
+def write_header(log_file: str  # name of the asked logfile
+                 ) -> None:
+    """write the header of the file"""
+    with open(log_file, 'w', encoding='utf-8') as f_w:
+        current_datetime = datetime.datetime.now()
+        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        f_w.write(f'{formatted_datetime}\n')
+        f_w.write(f'{os.getcwd()}\n')
+        f_w.write('\n')
+
+
+def setup_logger(log_name):
     """
     Set up and configure the logger.
 
@@ -34,6 +44,12 @@ def setup_logger():
     # Create a logger instance with the module name
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
+
+    # check if the log file is exist rename the new file
+    log_file: str = check_log_file(log_name)
+
+    # Write the header of the log file
+    write_header(log_file)
 
     # Create a file handler to write log messages to a file
     file_handler = logging.FileHandler(log_file)
