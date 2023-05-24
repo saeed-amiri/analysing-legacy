@@ -4,6 +4,7 @@ frames, and atoms. """
 
 import os
 import sys
+import typing
 import logger
 import MDAnalysis as mda
 from colors_text import TextColor as bcolors
@@ -20,13 +21,24 @@ class GetInfo:
         self.trr: str = fname
         self.gro: str = self.__get_gro(log)  # Toopology file
         self.u_traj: mda.Universe = self.read_traj(log)
-        self.__get_info(log)
+        self.residues_indx: dict[str, list[int]]  # info from the traj and gro
+        self.num_dict: dict[str, typing.Any]  # info from the traj and gro
+        self.residue_indx, self.num_dict = self.__get_info()
 
-    def __get_info(self,
-                   log: logger.logging.Logger
-                   ) -> mda.Universe:
+    def __get_info(self) -> tuple[dict[str, int], dict[str, typing.Any]]:
         """get all the info from the input files"""
-        self.__get_residues()
+        residues_indx: dict[str, list[int]] = self.__get_residues()
+        num_dict: dict[str, typing.Any] = self.__get_nums()
+        return residues_indx, num_dict
+
+    def __get_nums(self) -> dict[str, int]:
+        """return the dict of numbers of things"""
+        num_dict: dict[str, int] = {}
+        num_dict['n_atoms'] = self.u_traj.atoms.n_atoms
+        num_dict['total_mass'] = self.u_traj.atoms.total_mass
+        num_dict['n_frames'] = self.u_traj.trajectory.n_frames
+        num_dict['totaltime'] = self.u_traj.trajectory.totaltime
+        return num_dict
 
     def __get_residues(self) -> dict:
         """get the all the residues in the dictionary"""
