@@ -5,6 +5,7 @@ frames, and atoms. """
 import os
 import sys
 import logger
+import MDAnalysis as mda
 from colors_text import TextColor as bcolors
 
 
@@ -18,6 +19,15 @@ class GetInfo:
             sys.exit('No such file')
         self.trr: str = fname
         self.gro: str = self.__get_gro(log)  # Toopology file
+        self.u_traj: mda.Universe = self.read_traj(log)
+
+    def read_traj(self,
+                  log: logger.logging.Logger
+                  ) -> mda.Universe:
+        """read traj and topology file"""
+        log.info(f'Trajectory file `{self.trr}` and topology file'
+                 f' `{self.gro}` are read.')
+        return mda.Universe(self.gro, self.trr)
 
     def __get_gro(self,
                   log: logger.logging.Logger  # Name of the log file
