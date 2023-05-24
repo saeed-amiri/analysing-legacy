@@ -17,7 +17,7 @@ class GetInfo:
         if not self.path_esist(fname):
             sys.exit('No such file')
         self.trr: str = fname
-        self.__get_gro(log)
+        self.gro: str = self.__get_gro(log)  # Toopology file
 
     def __get_gro(self,
                   log: logger.logging.Logger  # Name of the log file
@@ -26,7 +26,7 @@ class GetInfo:
         tmp: str = self.trr.split('.')[0]
         gro_file: str = f'{tmp}.gro'
         if not self.path_esist(gro_file):
-            log.error(f'Error! `{gro_file}` dose not exist')
+            log.error(f'Error! `{gro_file}` dose not exist.')
             sys.exit(f'{bcolors.FAIL}{self.__class__.__name__}: '
                      f'({self.__module__})\n Error! `{gro_file}` dose not '
                      f'exist \n{bcolors.ENDC}')
