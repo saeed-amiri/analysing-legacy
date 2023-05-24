@@ -20,6 +20,31 @@ class GetInfo:
         self.trr: str = fname
         self.gro: str = self.__get_gro(log)  # Toopology file
         self.u_traj: mda.Universe = self.read_traj(log)
+        self.__get_info(log)
+
+    def __get_info(self,
+                   log: logger.logging.Logger
+                   ) -> mda.Universe:
+        """get all the info from the input files"""
+        self.__get_residues()
+
+    def __get_residues(self) -> dict:
+        """get the all the residues in the dictionary"""
+        # Create a dictionary to store the residue indices
+        residue_indices: dict[str, list[int]] = {}
+
+        # Iterate over the residues
+        for residue in self.u_traj.residues:
+            residue_name = residue.resname
+
+            # Get the index of the current residue
+            residue_index = residue.resindex
+
+            # Add the index to the dictionary
+            if residue_name not in residue_indices:
+                residue_indices[residue_name] = []
+            residue_indices[residue_name].append(residue_index)
+        return residue_indices
 
     def read_traj(self,
                   log: logger.logging.Logger
