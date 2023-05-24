@@ -17,7 +17,8 @@ class GetInfo:
                  log: logger.logging.Logger  # Name of the log file
                  ) -> None:
         if not self.path_esist(fname):
-            sys.exit('No such file')
+            log.error(f'No such file with name: {fname}')
+            sys.exit(f'No such file with name: {fname}')
         self.trr: str = fname
         self.gro: str = self.__get_gro(log)  # Toopology file
         self.u_traj: mda.Universe = self.read_traj(log)
