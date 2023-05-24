@@ -24,7 +24,7 @@ class GetInfo:
         self.u_traj: mda.Universe = self.read_traj(log)
         self.residues_indx: dict[str, list[int]]  # info from the traj and gro
         self.num_dict: dict[str, typing.Any]  # info from the traj and gro
-        self.residue_indx, self.num_dict = self.__get_info()
+        self.residues_indx, self.num_dict = self.__get_info()
 
     def __get_info(self) -> tuple[dict[str, int], dict[str, typing.Any]]:
         """get all the info from the input files"""
