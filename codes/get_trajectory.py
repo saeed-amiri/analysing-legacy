@@ -73,14 +73,14 @@ class GetInfo:
         """return the name of the gro file and check if it exist"""
         tmp: str = self.trr.split('.')[0]
         gro_file: str = f'{tmp}.gro'
-        if not self.path_esist(gro_file):
+        if not self.path_exist(gro_file):
             log.error(f'Error! `{gro_file}` dose not exist.')
             sys.exit(f'{bcolors.FAIL}{self.__class__.__name__}: '
                      f'({self.__module__})\n Error! `{gro_file}` dose not '
                      f'exist \n{bcolors.ENDC}')
         return gro_file
 
-    def path_esist(self,
+    def path_exist(self,
                    fname: str  # Name of the file to check
                    ) -> bool:
         """check if the file exist"""
@@ -88,4 +88,4 @@ class GetInfo:
 
 
 if __name__ == '__main__':
-    trr = GetInfo(sys.argv[1], log=logger.setup_logger('test_log'))
+    trr = GetInfo(sys.argv[1], log=logger.setup_logger('get_traj_log'))
