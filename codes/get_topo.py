@@ -4,8 +4,8 @@ necessary to refer to the topology file. Remember that since I moved
 one directory, the "itp" files will be located one back."""
 
 import os
-import typing
 import json
+import typing
 import logger
 import my_tools
 from colors_text import TextColor as bcolors
@@ -25,7 +25,8 @@ class ReadTop:
         self.wrt_log(log)
 
     def get_top(self) -> tuple[dict[str, str], dict[str, int]]:
-        """read the top file"""
+        """read the top file and return numbers of each residue and
+        paths"""
         line: typing.Any  # Line from the file
         restraints: bool = False  # To pass the restrains parts
         molecule: bool = False  # To get the number of each residues

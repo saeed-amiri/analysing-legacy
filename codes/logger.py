@@ -67,7 +67,7 @@ def setup_logger(log_name):
 
     # Define the log message format
     formatter = logging.Formatter(
-        '[%(module)s: %(levelname)s] (%(filename)s)\n\t'
+        '%(levelname)s: [%(module)s in %(filename)s]\n\t'
          '- %(message)s\n')
     file_handler.setFormatter(formatter)
 
