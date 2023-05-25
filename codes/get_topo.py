@@ -5,6 +5,7 @@ one directory, the "itp" files will be located one back."""
 
 import os
 import typing
+import json
 import logger
 import my_tools
 from colors_text import TextColor as bcolors
@@ -16,12 +17,14 @@ class ReadTop:
 
     def __init__(self) -> None:
         self.fanme: str = 'topol.top'
-        my_tools.check_file_exist(self.fanme, logger.setup_logger('test_log'))
+        log = logger.setup_logger('test_log')
+        my_tools.check_file_exist(self.fanme, log)
         self.itp_paths: dict[str, str]  # To save the paths of itp files
         self.mols_num: dict[str, int]  # To get all residues number
         self.itp_paths, self.mols_num = self.get_top()
+        self.wrt_log(log)
 
-    def get_top(self) -> None:
+    def get_top(self) -> tuple[dict[str, str], dict[str, int]]:
         """read the top file"""
         line: typing.Any  # Line from the file
         restraints: bool = False  # To pass the restrains parts
@@ -50,7 +53,7 @@ class ReadTop:
                         mols_num[key] = value
                     else:
                         pass
-                else:
+                elif not line:
                     break
         itp_paths = self.__get_itp(paths, list(mols_num.keys()))
         return itp_paths, mols_num
@@ -95,6 +98,19 @@ class ReadTop:
             line = line[2:]  # Remove the first two characters (./)
         path: str = os.path.join('../', line)
         return path
+
+    def wrt_log(self,
+                log: logger.logging.Logger  # Log file
+                ) -> None:
+        """logging system info into log"""
+        # Convert the dictionary to a JSON string
+        data_paths = json.dumps(self.itp_paths, indent=4)
+        data_nums = json.dumps(self.mols_num, indent=4)
+        # Log the dictionary as a formatted string
+        log.info('Paths:\n%s', data_paths)
+        log.info('Number of residues:\n%s', data_nums)
+        print(f'{bcolors.OKBLUE}{self.__class__.__name__}:'
+              f'({self.__module__})\n `{self.fanme}` is read.{bcolors.ENDC}')
 
 
 if __name__ == "__main__":
