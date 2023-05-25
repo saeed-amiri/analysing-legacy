@@ -8,6 +8,7 @@ import json
 import typing
 import logger
 import my_tools
+import static_info as stinfo
 from colors_text import TextColor as bcolors
 
 
@@ -16,8 +17,8 @@ class ReadTop:
     It should named: topol.top"""
 
     def __init__(self) -> None:
-        self.fanme: str = 'topol.top'
-        log = logger.setup_logger('test_log')
+        self.fanme: str = stinfo.topo['fname']
+        log = logger.setup_logger(stinfo.log['test_log'])
         my_tools.check_file_exist(self.fanme, log)
         self.itp_paths: dict[str, str]  # To save the paths of itp files
         self.mols_num: dict[str, int]  # To get all residues number
@@ -108,7 +109,7 @@ class ReadTop:
         data_paths = json.dumps(self.itp_paths, indent=4)
         data_nums = json.dumps(self.mols_num, indent=4)
         # Log the dictionary as a formatted string
-        log.info('Paths:\n%s', data_paths)
+        log.info('ITP paths:\n%s', data_paths)
         log.info('Number of residues:\n%s', data_nums)
         print(f'{bcolors.OKBLUE}{self.__class__.__name__}:'
               f'({self.__module__})\n\t`{self.fanme}` is read.{bcolors.ENDC}')
