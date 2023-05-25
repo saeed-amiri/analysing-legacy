@@ -19,9 +19,21 @@ class ResiduePositions:
                  ):
         self.info: GetInfo = trr_info
         self.top = topo.ReadTop()
+        self.get_center_of_mass()
+
+    def get_center_of_mass(self) -> None:
+        """calculate the center mass of the each residue"""
         # update the residues index to get the NP: APT_COR
         residues_indx: dict[str, list[int]] = self.__get_np_index()
         com_arr: np.ndarray = self.__allocate()
+        self.__get_coms(com_arr)
+
+    def __get_coms(self,
+                   com_arr: np.ndarray  # Zero array to save the coms
+                   ) -> np.ndarray:
+        """set the center of the mass value of each residue with its
+        index in the main data and an integer as an id representing
+        its residue name data. These ids are set in "stinfo.py" """
 
     def __allocate(self) -> np.ndarray:
         """allocate arraies for saving all the info"""
