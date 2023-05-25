@@ -110,7 +110,7 @@ class ReadTop:
         log.info('Paths:\n%s', data_paths)
         log.info('Number of residues:\n%s', data_nums)
         print(f'{bcolors.OKBLUE}{self.__class__.__name__}:'
-              f'({self.__module__})\n `{self.fanme}` is read.{bcolors.ENDC}')
+              f'({self.__module__})\n\t`{self.fanme}` is read.{bcolors.ENDC}')
 
 
 if __name__ == "__main__":
