@@ -16,7 +16,7 @@ class GetInfo:
                  fname: str,  # Name of the trr file
                  log: logger.logging.Logger  # Name of the log file
                  ) -> None:
-        if not self.path_esist(fname):
+        if not self.path_exist(fname):
             log.error(f'No such file with name: {fname}')
             sys.exit(f'No such file with name: {fname}')
         self.trr: str = fname
@@ -26,7 +26,7 @@ class GetInfo:
         self.num_dict: dict[str, typing.Any]  # info from the traj and gro
         self.residues_indx, self.num_dict = self.__get_info()
 
-    def __get_info(self) -> tuple[dict[str, int], dict[str, typing.Any]]:
+    def __get_info(self) -> tuple[dict[str, list[int]], dict[str, typing.Any]]:
         """get all the info from the input files"""
         residues_indx: dict[str, list[int]] = self.__get_residues()
         num_dict: dict[str, typing.Any] = self.__get_nums()
