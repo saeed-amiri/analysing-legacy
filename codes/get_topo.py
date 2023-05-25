@@ -17,14 +17,16 @@ class ReadTop:
     def __init__(self) -> None:
         self.fanme: str = 'topol.top'
         my_tools.check_file_exist(self.fanme, logger.setup_logger('test_log'))
-        self.get_top()
+        self.itp_paths: dict[str, str]  # To save the paths of itp files
+        self.mols_num: dict[str, int]  # To get all residues number
+        self.itp_paths, self.mols_num = self.get_top()
 
     def get_top(self) -> None:
         """read the top file"""
         line: typing.Any  # Line from the file
         restraints: bool = False  # To pass the restrains parts
         molecule: bool = False  # To get the number of each residues
-        itp_dirs: dict[str, str]  # To save the paths of itp files
+        itp_paths: dict[str, str]  # To save the paths of itp files
         paths: list[str] = []  # To save the paths
         mols_num: dict[str, int] = {}  # To get all residues number
         with open(self.fanme, 'r', encoding='utf8') as f_r:
@@ -48,15 +50,26 @@ class ReadTop:
                         mols_num[key] = value
                     else:
                         pass
-                elif not line:
+                else:
                     break
-        self.__get_itp(paths)
+        itp_paths = self.__get_itp(paths, list(mols_num.keys()))
+        return itp_paths, mols_num
 
     def __get_itp(self,
-                  paths: list[str]  # All the paths saved from topol.top
+                  paths: list[str],  # All the paths saved from topol.top
+                  residues: list[str]  # Name of the residues
                   ) -> dict[str, str]:
         """make a dict from name of the mol and thier path"""
-        print(paths)
+        path_dict: dict[str, str] = {}
+        for item in residues:
+            for path in paths:
+                if item in path:
+                    path_dict[item] = path
+                elif item == 'ODN' and 'ODA' in path:
+                    path_dict[item] = path
+                elif item == 'SOL' and 'ITP' in path:
+                    path_dict[item] = path
+        return path_dict
 
     def __get_nums(self,
                    line: str  # The line contains the number of resds
