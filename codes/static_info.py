@@ -5,7 +5,7 @@ import typing
 # logging files
 log: dict[str, typing.Any]
 log = {
-    'test_log': 'test_log'
+    'test_log': 'test_log',
 }
 
 # Constant values for reading topol file
