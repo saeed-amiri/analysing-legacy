@@ -3,7 +3,8 @@ files and determine the number of each residue in the system; it is
 necessary to refer to the topology file. Remember that since I moved
 one directory, the "itp" files will be located one back."""
 
-import sys
+import os
+import typing
 import logger
 import my_tools
 from colors_text import TextColor as bcolors
@@ -20,9 +21,12 @@ class ReadTop:
 
     def get_top(self) -> None:
         """read the top file"""
-        line: str  # Line from the file
-        endif: bool = False  # To pass the restrains parts
-        itp_dict: dict[str, str]  # To save the paths of itp files
+        line: typing.Any  # Line from the file
+        restraints: bool = False  # To pass the restrains parts
+        molecule: bool = False  # To get the number of each residues
+        itp_dirs: dict[str, str]  # To save the paths of itp files
+        paths: list[str] = []  # To save the paths
+        mols_num: dict[str, int] = {}  # To get all residues number
         with open(self.fanme, 'r', encoding='utf8') as f_r:
             while True:
                 line = f_r.readline()
@@ -30,12 +34,54 @@ class ReadTop:
                     line = line.strip()
                     if line.startswith(';'):
                         pass
-                    elif line.startswith('#include') and not endif:
-                        pass
+                    elif line.startswith('#ifdef'):
+                        restraints = True
+                    elif line.startswith('#include'):
+                        if not restraints:
+                            paths.append(self.__get_path(line))
+                    elif line.startswith('#endif'):
+                        restraints = False
+                    elif line.startswith('[ molecules ]'):
+                        molecule = True
+                    elif molecule:
+                        key, value = self.__get_nums(line)
+                        mols_num[key] = value
                     else:
-                        print(line)
+                        pass
                 elif not line:
                     break
+        self.__get_itp(paths)
+
+    def __get_itp(self,
+                  paths: list[str]  # All the paths saved from topol.top
+                  ) -> dict[str, str]:
+        """make a dict from name of the mol and thier path"""
+        print(paths)
+
+    def __get_nums(self,
+                   line: str  # The line contains the number of resds
+                   ) -> tuple[str, int]:
+        """get the number of residues from molecule section"""
+        res: list[str] = [item for item in line.split(' ') if item]
+        return res[0], int(res[1])
+
+    def __get_path(self,
+                   line: str  # Raw line of the file
+                   ) -> str:
+        """breacking the line get the itp path"""
+        line = my_tools.drop_string(line, "#include")
+        line = my_tools.extract_string(line)[0]
+        path: str = self.__mk_path(line)
+        return path
+
+    def __mk_path(self,
+                  line: str  # Make real path
+                  ) -> str:
+        """making paths for the itp files"""
+        if line.startswith("./"):
+            line = line[2:]  # Remove the first two characters (./)
+        path: str = os.path.join('../', line)
+        return path
 
 
 if __name__ == "__main__":
