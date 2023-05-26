@@ -65,7 +65,8 @@ class GetInfo:
         """read traj and topology file"""
         log.info(f'Trajectory file `{self.trr}` and topology file'
                  f' `{self.gro}` are read.')
-        return mda.Universe(self.gro, self.trr)
+        u = mda.Universe(self.gro, self.trr)
+        return u
 
     def __get_gro(self,
                   log: logger.logging.Logger  # Name of the log file
