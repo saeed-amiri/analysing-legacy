@@ -72,7 +72,7 @@ class ReadTop:
                     path_dict[item] = path
                 elif item == 'ODN' and 'ODA' in path:
                     path_dict[item] = path
-                elif item == 'SOL' and 'ITP' in path:
+                elif item == 'SOL' and 'TIP' in path:
                     path_dict[item] = path
         return path_dict
 
