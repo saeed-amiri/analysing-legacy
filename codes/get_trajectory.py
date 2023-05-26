@@ -51,7 +51,7 @@ class GetInfo:
             residue_name = residue.resname
 
             # Get the index of the current residue
-            residue_index = residue.resindex
+            residue_index = residue.resnum
 
             # Add the index to the dictionary
             if residue_name not in residue_indices:
