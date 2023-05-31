@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import typing
 import logger
 from colors_text import TextColor as bcolors
 
@@ -26,7 +27,7 @@ def drop_string(input_string: str,
     return output_string
 
 
-def extract_string(input_string: str) -> str:
+def extract_string(input_string: str) -> list[typing.Any]:
     pattern = r'"(.*?)"'
     matches = re.findall(pattern, input_string)
     return matches
