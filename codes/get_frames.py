@@ -42,7 +42,14 @@ class ResiduePositions:
             all_atoms: np.ndarray = tstep.positions
             print(f'\n{tstep.time}:\n')
             ts_np_com = self.__np_com(all_atoms, np_res_ind)
-            print(ts_np_com)
+            for k, val in self.info.residues_indx.items():
+                for item in val:
+                    i_residue = self.info.u_traj.select_atoms(f'resnum {item}')
+                    atom_indices = i_residue.indices
+                    atom_positions = all_atoms[atom_indices]
+                    atom_masses = i_residue.masses
+                    print(k, item, np.average(atom_positions, weights=atom_masses,
+                         axis=0))
             all_coms.append(ts_np_com)
         np_coms: np.ndarray = np.vstack(all_coms)
         return np_coms
