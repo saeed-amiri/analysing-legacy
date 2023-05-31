@@ -36,36 +36,40 @@ class ResiduePositions:
         index in the main data and an integer as an id representing
         its residue name data. These ids are set in "stinfo.py" """
         np_res_ind: list[int] = []  # All the index in the NP
-        all_coms = []
+        all_coms: list[np.ndarray] = []  # COMs at each timestep
         for item in stinfo.np_info['np_residues']:
             np_res_ind.extend(self.info.residues_indx[item])
 
         for tstep in self.info.u_traj.trajectory:
-            count = 0
-            x_com = []
-            total_mass: float = 0
             all_atoms: np.ndarray = tstep.positions
             print(f'\n{tstep.time}:\n')
-            for i in np_res_ind:
-                com: np.ndarray  # Conter of mass of the residue i
-                tmp_mass: float  # Mass of the residue
-                com, tmp_mass = self.__get_np_com(i, all_atoms)
-                total_mass += tmp_mass
-                x_com.append(com)
-                count += 1
+            ts_np_com = self.__np_com(all_atoms, np_res_ind)
+            print(ts_np_com)
+            all_coms.append(ts_np_com)
+        np_coms: np.ndarray = np.vstack(all_coms)
+        return np_coms
 
-            step_com = np.vstack(x_com)
-            all_coms.append(np.sum(step_com, axis=0)/total_mass)
-        coms = np.vstack(all_coms)
-        print(coms)
-        return coms
+    def __np_com(self,
+                 all_atoms: np.ndarray,  # Atoms positions
+                 np_res_ind: list[int]  # Index of the residues in NP
+                 ) -> np.ndarray:
+        """get the COM for each time step"""
+        i_com: list[np.ndarray] = []  # Arrays contains center of masses
+        total_mass: float = 0  # Total mass of each residue in the NP
+        for i in np_res_ind:
+            com: np.ndarray  # Conter of mass of the residue i
+            tmp_mass: float  # Mass of the residue
+            com, tmp_mass = self.__get_np_com(i, all_atoms)
+            total_mass += tmp_mass
+            i_com.append(com)
+            step_com = np.vstack(i_com)
+        return np.sum(step_com, axis=0) / total_mass
 
     def __get_np_com(self,
                      res_ind: int,  # index of the residue
-                     all_atoms: np.ndarry  # Atoms positions
-                     ) -> np.ndarray:
+                     all_atoms: np.ndarray  # Atoms positions
+                     ) -> tuple[np.ndarray, float]:
         """calculate the center of mass of each time step for NP"""
-        print(type(all_atoms))
         i_residue: mda.core.groups.AtomGroup  # Atoms info in res
         i_residue = self.info.u_traj.select_atoms(f'resnum {res_ind}')
         atom_indices = i_residue.indices
@@ -73,7 +77,7 @@ class ResiduePositions:
         atom_masses = i_residue.masses
         tmp_mass = np.sum(atom_masses)
         com = np.average(atom_positions, weights=atom_masses,
-                                 axis=0) * tmp_mass
+                         axis=0) * tmp_mass
         return com, tmp_mass
 
     def __allocate(self) -> np.ndarray:
