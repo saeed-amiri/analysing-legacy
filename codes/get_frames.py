@@ -25,7 +25,6 @@ class ResiduePositions:
     def get_center_of_mass(self) -> None:
         """calculate the center mass of the each residue"""
         # update the residues index to get the NP: APT_COR
-        residues_indx: dict[str, list[int]] = self.__get_np_index()
         com_arr: np.ndarray = self.__allocate()
         self.__get_coms(com_arr)
 
@@ -98,19 +97,6 @@ class ResiduePositions:
         rows: int = frames + 2  # Number of rows, 2 for name and index of res
         columns: int = sum(v for v in self.top.mols_num.values())
         return np.zeros((rows, columns))
-
-    def __get_np_index(self) -> dict[str, list[int]]:
-        residues_indx: dict[str, list[int]] = {}
-        npi: str = stinfo.np_info['np_residues'][0]
-        npj: str = stinfo.np_info['np_residues'][1]
-        for k in stinfo.reidues_num.keys():
-            if k in stinfo.np_info['solution_residues']:
-                residues_indx[k] = self.info.residues_indx[k].copy()
-        residues_indx[stinfo.np_info['np_name']] = \
-            self.info.residues_indx[npi].copy() + \
-            self.info.residues_indx[npj].copy()
-        return residues_indx
-
 
 if __name__ == '__main__':
     trr = GetInfo(sys.argv[1], log=logger.setup_logger('get_frames_log'))
