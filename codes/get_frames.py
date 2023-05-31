@@ -34,6 +34,33 @@ class ResiduePositions:
         """set the center of the mass value of each residue with its
         index in the main data and an integer as an id representing
         its residue name data. These ids are set in "stinfo.py" """
+        np_res_ind: list[int] = []  # All the index in the NP
+        all_coms = []
+        for item in stinfo.np_info['np_residues']:
+            np_res_ind.extend(self.info.residues_indx[item])
+
+        for tstep in self.info.u_traj.trajectory:
+            count = 0
+            x_com = []
+            total_mass: float = 0
+            all_atoms: np.ndarray = tstep.positions
+            print(f'\n{tstep.time}:\n')
+            for i in np_res_ind:
+                i_residue = self.info.u_traj.select_atoms(f'resnum {i}')
+                atom_indices = i_residue.indices
+                atom_positions = all_atoms[atom_indices]
+                atom_masses = i_residue.masses
+                tmp_mass = np.sum(atom_masses)
+                com = np.average(atom_positions, weights=atom_masses,
+                                 axis=0) * tmp_mass
+                count += 1
+                total_mass += tmp_mass
+                x_com.append(com)
+
+            all_com = np.vstack(x_com)
+            all_coms.append(np.sum(all_com, axis=0)/total_mass)
+        coms = np.vstack(all_coms)
+        return coms
 
     def __allocate(self) -> np.ndarray:
         """allocate arraies for saving all the info"""
