@@ -35,23 +35,30 @@ class ResiduePositions:
         index in the main data and an integer as an id representing
         its residue name data. These ids are set in "stinfo.py" """
         np_res_ind: list[int] = []  # All the index in the NP
-        all_coms: list[np.ndarray] = []  # COMs at each timestep
+        all_t_np_coms: list[np.ndarray] = []  # COMs at each timestep
         np_res_ind = self.__np_rsidues()
         for tstep in self.info.u_traj.trajectory:
             all_atoms: np.ndarray = tstep.positions
-            print(f'\n{tstep.time}:\n')
+            print(f'\n{tstep.time}:')
             ts_np_com = self.__np_com(all_atoms, np_res_ind)
             for k, val in self.info.residues_indx.items():
+                print(k)
                 for item in val:
-                    i_residue = self.info.u_traj.select_atoms(f'resnum {item}')
-                    atom_indices = i_residue.indices
-                    atom_positions = all_atoms[atom_indices]
-                    atom_masses = i_residue.masses
-                    print(k, item, np.average(atom_positions, weights=atom_masses,
-                         axis=0))
-            all_coms.append(ts_np_com)
-        np_coms: np.ndarray = np.vstack(all_coms)
+                    com = self.__get_com_all(all_atoms, item)
+            all_t_np_coms.append(ts_np_com)
+        np_coms: np.ndarray = np.vstack(all_t_np_coms)
         return np_coms
+
+    def __get_com_all(self,
+                      all_atoms: np.ndarray,  # All the atoms position
+                      ind: int  # Index of the residue
+                      ) -> np.ndarray:
+        """return all the residues com"""
+        i_residue = self.info.u_traj.select_atoms(f'resnum {ind}')
+        atom_indices = i_residue.indices
+        atom_positions = all_atoms[atom_indices]
+        atom_masses = i_residue.masses
+        return np.average(atom_positions, weights=atom_masses, axis=0)
 
     def __np_rsidues(self) -> list[int]:
         """return list of the integer of the residues in the NP"""
@@ -97,6 +104,7 @@ class ResiduePositions:
         rows: int = frames + 2  # Number of rows, 2 for name and index of res
         columns: int = sum(v for v in self.top.mols_num.values())
         return np.zeros((rows, columns))
+
 
 if __name__ == '__main__':
     trr = GetInfo(sys.argv[1], log=logger.setup_logger('get_frames_log'))
