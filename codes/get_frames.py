@@ -37,9 +37,7 @@ class ResiduePositions:
         its residue name data. These ids are set in "stinfo.py" """
         np_res_ind: list[int] = []  # All the index in the NP
         all_coms: list[np.ndarray] = []  # COMs at each timestep
-        for item in stinfo.np_info['np_residues']:
-            np_res_ind.extend(self.info.residues_indx[item])
-
+        np_res_ind = self.__np_rsidues()
         for tstep in self.info.u_traj.trajectory:
             all_atoms: np.ndarray = tstep.positions
             print(f'\n{tstep.time}:\n')
@@ -48,6 +46,13 @@ class ResiduePositions:
             all_coms.append(ts_np_com)
         np_coms: np.ndarray = np.vstack(all_coms)
         return np_coms
+
+    def __np_rsidues(self) -> list[int]:
+        """return list of the integer of the residues in the NP"""
+        np_res_ind: list[int] = []  # All the index in the NP
+        for item in stinfo.np_info['np_residues']:
+            np_res_ind.extend(self.info.residues_indx[item])
+        return np_res_ind
 
     def __np_com(self,
                  all_atoms: np.ndarray,  # Atoms positions
