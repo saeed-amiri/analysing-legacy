@@ -38,14 +38,19 @@ class ResiduePositions:
         all_t_np_coms: list[np.ndarray] = []  # COMs at each timestep
         np_res_ind = self.__np_rsidues()
         for tstep in self.info.u_traj.trajectory:
-            all_atoms: np.ndarray = tstep.positions
-            print(f'\n{tstep.time}:')
-            ts_np_com = self.__np_com(all_atoms, np_res_ind)
-            for k, val in self.info.residues_indx.items():
-                print(k)
-                for item in val:
-                    com = self.__get_com_all(all_atoms, item)
-            all_t_np_coms.append(ts_np_com)
+            if tstep.time < 20.0:
+                i_step = int(tstep.time)  # Current time step
+                all_atoms: np.ndarray = tstep.positions
+                print(f'\n{tstep.time}:')
+                ts_np_com = self.__np_com(all_atoms, np_res_ind)
+                com_arr[i_step][0:3] = ts_np_com
+                for k, val in self.info.residues_indx.items():
+                    for item in val:
+                        com = self.__get_com_all(all_atoms, item) - ts_np_com
+                        element = int((item+1)*3)
+                        com_arr[i_step][element:element+3] = com
+                    com_arr[i_step][-1] = stinfo.reidues_id[k]
+                all_t_np_coms.append(ts_np_com)
         np_coms: np.ndarray = np.vstack(all_t_np_coms)
         return np_coms
 
@@ -102,7 +107,10 @@ class ResiduePositions:
         """allocate arraies for saving all the info"""
         frames: int = self.info.num_dict['n_frames']
         rows: int = frames + 2  # Number of rows, 2 for name and index of res
-        columns: int = sum(v for v in self.top.mols_num.values())
+        # Columns are as follow:
+        # each atom has xyz, the center of mass also has xyx, and one
+        # for labeling the name of the residues, for example SOL will be 1
+        columns: int = 3 * (sum(v for v in self.top.mols_num.values()) + 1) + 1
         return np.zeros((rows, columns))
 
 
