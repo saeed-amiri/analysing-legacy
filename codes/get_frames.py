@@ -26,7 +26,7 @@ class ResiduePositions:
         """calculate the center mass of the each residue"""
         # update the residues index to get the NP: APT_COR
         com_arr: np.ndarray = self.__allocate()
-        self.__get_coms(com_arr)
+        print(self.__get_coms(com_arr))
 
     def __get_coms(self,
                    com_arr: np.ndarray  # Zero array to save the coms
@@ -51,8 +51,7 @@ class ResiduePositions:
                         com_arr[i_step][element:element+3] = com
                     com_arr[i_step][-1] = stinfo.reidues_id[k]
                 all_t_np_coms.append(ts_np_com)
-        np_coms: np.ndarray = np.vstack(all_t_np_coms)
-        return np_coms
+        return com_arr
 
     def __get_com_all(self,
                       all_atoms: np.ndarray,  # All the atoms position
