@@ -7,6 +7,7 @@ The scripts initiated by chatGpt
 import sys
 import numpy as np
 import logger
+import MDAnalysis as mda
 import static_info as stinfo
 import get_topo as topo
 from get_trajectory import GetInfo
@@ -46,21 +47,34 @@ class ResiduePositions:
             all_atoms: np.ndarray = tstep.positions
             print(f'\n{tstep.time}:\n')
             for i in np_res_ind:
-                i_residue = self.info.u_traj.select_atoms(f'resnum {i}')
-                atom_indices = i_residue.indices
-                atom_positions = all_atoms[atom_indices]
-                atom_masses = i_residue.masses
-                tmp_mass = np.sum(atom_masses)
-                com = np.average(atom_positions, weights=atom_masses,
-                                 axis=0) * tmp_mass
-                count += 1
+                com: np.ndarray  # Conter of mass of the residue i
+                tmp_mass: float  # Mass of the residue
+                com, tmp_mass = self.__get_np_com(i, all_atoms)
                 total_mass += tmp_mass
                 x_com.append(com)
+                count += 1
 
-            all_com = np.vstack(x_com)
-            all_coms.append(np.sum(all_com, axis=0)/total_mass)
+            step_com = np.vstack(x_com)
+            all_coms.append(np.sum(step_com, axis=0)/total_mass)
         coms = np.vstack(all_coms)
+        print(coms)
         return coms
+
+    def __get_np_com(self,
+                     res_ind: int,  # index of the residue
+                     all_atoms: np.ndarry  # Atoms positions
+                     ) -> np.ndarray:
+        """calculate the center of mass of each time step for NP"""
+        print(type(all_atoms))
+        i_residue: mda.core.groups.AtomGroup  # Atoms info in res
+        i_residue = self.info.u_traj.select_atoms(f'resnum {res_ind}')
+        atom_indices = i_residue.indices
+        atom_positions = all_atoms[atom_indices]
+        atom_masses = i_residue.masses
+        tmp_mass = np.sum(atom_masses)
+        com = np.average(atom_positions, weights=atom_masses,
+                                 axis=0) * tmp_mass
+        return com, tmp_mass
 
     def __allocate(self) -> np.ndarray:
         """allocate arraies for saving all the info"""
