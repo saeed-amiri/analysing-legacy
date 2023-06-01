@@ -6,6 +6,7 @@ The scripts initiated by chatGpt
 
 import sys
 import numpy as np
+import pickle
 import logger
 import MDAnalysis as mda
 import static_info as stinfo
@@ -27,7 +28,8 @@ class ResiduePositions:
         # update the residues index to get the NP: APT_COR
         sol_residues: dict[str, list[int]] = self.__solution_residues()
         com_arr: np.ndarray = self.__allocate(sol_residues)
-        print(self.__get_coms(com_arr, sol_residues))
+        with open('com_all', 'wb') as f_arr:
+            pickle.dump(self.__get_coms(com_arr, sol_residues), f_arr)
 
     def __get_coms(self,
                    com_arr: np.ndarray,  # Zero array to save the coms
@@ -40,21 +42,20 @@ class ResiduePositions:
         all_t_np_coms: list[np.ndarray] = []  # COMs at each timestep
         np_res_ind = self.__np_rsidues()
         for tstep in self.info.u_traj.trajectory:
-            if tstep.time < 20.0:
-                i_step = int(tstep.time)  # Current time step
-                all_atoms: np.ndarray = tstep.positions
-                print(f'\n{tstep.time}:')
-                ts_np_com = self.__np_com(all_atoms, np_res_ind)
-                com_arr[i_step][0:3] = ts_np_com
-                for k, val in sol_residues.items():
-                    for item in val:
-                        com = self.__get_com_all(all_atoms, item)
-                        wrap_com = self.__wrap_position(com, tstep.dimensions)
-                        i_com = wrap_com - ts_np_com
-                        element = int(item*3)
-                        com_arr[i_step][element:element+3] = i_com
-                    com_arr[i_step][-1] = stinfo.reidues_id[k]
-                all_t_np_coms.append(ts_np_com)
+            i_step = int(tstep.time/stinfo.times['time_step'])  # time step
+            all_atoms: np.ndarray = tstep.positions
+            print(f'\n{tstep.time}:')
+            ts_np_com = self.__np_com(all_atoms, np_res_ind)
+            com_arr[i_step][0:3] = ts_np_com
+            for k, val in sol_residues.items():
+                for item in val:
+                    com = self.__get_com_all(all_atoms, item)
+                    wrap_com = self.__wrap_position(com, tstep.dimensions)
+                    i_com = wrap_com - ts_np_com
+                    element = int(item*3)
+                    com_arr[i_step][element:element+3] = i_com
+                com_arr[i_step][-1] = stinfo.reidues_id[k]
+            all_t_np_coms.append(ts_np_com)
         return com_arr
 
     def __wrap_position(self,
