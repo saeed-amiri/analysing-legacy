@@ -48,12 +48,23 @@ class ResiduePositions:
                 com_arr[i_step][0:3] = ts_np_com
                 for k, val in sol_residues.items():
                     for item in val:
-                        com = self.__get_com_all(all_atoms, item) - ts_np_com
+                        com = self.__get_com_all(all_atoms, item)
+                        wrap_com = self.__wrap_position(com, tstep.dimensions)
+                        i_com = wrap_com - ts_np_com
                         element = int(item*3)
-                        com_arr[i_step][element:element+3] = com
+                        com_arr[i_step][element:element+3] = i_com
                     com_arr[i_step][-1] = stinfo.reidues_id[k]
                 all_t_np_coms.append(ts_np_com)
         return com_arr
+
+    def __wrap_position(self,
+                        pos: np.ndarray,  # The center of mass
+                        vec: np.ndarray  # Box vectors
+                        ) -> np.ndarray:
+        """wraped the position to the box for unwraped trr"""
+        for i in range(3):
+            pos[i] -= np.floor(pos[i]/vec[i])*vec[i]
+        return pos
 
     def __solution_residues(self) -> dict[str, list[int]]:
         """return the dict of the residues in the solution with
