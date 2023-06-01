@@ -25,11 +25,13 @@ class ResiduePositions:
     def get_center_of_mass(self) -> None:
         """calculate the center mass of the each residue"""
         # update the residues index to get the NP: APT_COR
-        com_arr: np.ndarray = self.__allocate()
-        print(self.__get_coms(com_arr))
+        sol_residues: dict[str, list[int]] = self.__solution_residues()
+        com_arr: np.ndarray = self.__allocate(sol_residues)
+        print(self.__get_coms(com_arr, sol_residues))
 
     def __get_coms(self,
-                   com_arr: np.ndarray  # Zero array to save the coms
+                   com_arr: np.ndarray,  # Zero array to save the coms
+                   sol_residues: dict[str, list[int]]  # Residues in solution
                    ) -> np.ndarray:
         """set the center of the mass value of each residue with its
         index in the main data and an integer as an id representing
@@ -44,14 +46,23 @@ class ResiduePositions:
                 print(f'\n{tstep.time}:')
                 ts_np_com = self.__np_com(all_atoms, np_res_ind)
                 com_arr[i_step][0:3] = ts_np_com
-                for k, val in self.info.residues_indx.items():
+                for k, val in sol_residues.items():
                     for item in val:
                         com = self.__get_com_all(all_atoms, item) - ts_np_com
-                        element = int((item+1)*3)
+                        element = int(item*3)
                         com_arr[i_step][element:element+3] = com
                     com_arr[i_step][-1] = stinfo.reidues_id[k]
                 all_t_np_coms.append(ts_np_com)
         return com_arr
+
+    def __solution_residues(self) -> dict[str, list[int]]:
+        """return the dict of the residues in the solution with
+        dropping the NP residues"""
+        sol_dict: dict[str, list[int]] = {}  # All the residues in solution
+        for k, val in self.info.residues_indx.items():
+            if k in stinfo.np_info['solution_residues']:
+                sol_dict[k] = val
+        return sol_dict
 
     def __get_com_all(self,
                       all_atoms: np.ndarray,  # All the atoms position
@@ -102,14 +113,18 @@ class ResiduePositions:
                          axis=0) * tmp_mass
         return com, tmp_mass
 
-    def __allocate(self) -> np.ndarray:
+    def __allocate(self,
+                   sol_residues: dict[str, list[int]]  # residues in solution
+                   ) -> np.ndarray:
         """allocate arraies for saving all the info"""
         frames: int = self.info.num_dict['n_frames']
         rows: int = frames + 2  # Number of rows, 2 for name and index of res
         # Columns are as follow:
         # each atom has xyz, the center of mass also has xyx, and one
         # for labeling the name of the residues, for example SOL will be 1
-        columns: int = 3 * (sum(v for v in self.top.mols_num.values()) + 1) + 1
+        max_residue = max(item for sublist in sol_residues.values() for
+                          item in sublist)
+        columns: int = 3 * (max_residue + 1) + 1
         return np.zeros((rows, columns))
 
 
