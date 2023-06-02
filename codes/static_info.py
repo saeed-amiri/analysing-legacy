@@ -8,6 +8,12 @@ log = {
     'test_log': 'test_log',
 }
 
+# files to save or test
+files: dict[str, str]
+files = {
+    'com_pickle': 'com_pickle' 
+}
+
 # time step (the frequncy of trr file)
 times: dict[str, float]
 times = {
