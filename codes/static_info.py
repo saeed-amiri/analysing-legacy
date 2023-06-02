@@ -8,6 +8,12 @@ log = {
     'test_log': 'test_log',
 }
 
+# time step (the frequncy of trr file)
+times: dict[str, float]
+times = {
+    'time_step': 20.0
+}
+
 # Constant values for reading topol file
 topo: dict[str, typing.Any]
 topo = {
