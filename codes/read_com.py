@@ -24,14 +24,12 @@ class ReadCom:
     def __init__(self) -> None:
         self.f_name: str = stinfo.files['com_pickle']
         self.com_arr: np.ndarray = self.__get_data()
-        print(self.com_arr[:, 0])
 
     def __get_data(self) -> np.ndarray:
         """reading the file"""
         with open(self.f_name, 'rb') as f_rb:
             com_arr = pickle.load(f_rb)
         return com_arr
-    
 
 
 if __name__ == '__main__':
