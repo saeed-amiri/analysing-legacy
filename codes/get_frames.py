@@ -2,6 +2,17 @@
 residues' positions in the 3d matrix. Then it will; it will get the
 center of mass of each residue at each timestep.
 The scripts initiated by chatGpt
+Currently, the output is a binary file in numpy's pickled format. The
+array contains rows equivalent to the number of time frames, with each
+row representing a time step in the tar file divided by the frequency
+of the saving trajectory (set in static_info.py). I have observed that
+the residues may have missing indexes, causing the array to have fewer
+rows than expected. I have identified the largest number of indexes in
+the residues to address this.
+The array has columns equal to three times the total number of residues
+plus the center of mass of the NP at each time (to save x, y, and z).
+Additionally, the last column saves the index for labeling the residues
+type, set in stinfo.
 """
 
 import sys
