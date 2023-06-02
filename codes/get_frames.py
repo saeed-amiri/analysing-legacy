@@ -28,7 +28,7 @@ class ResiduePositions:
         # update the residues index to get the NP: APT_COR
         sol_residues: dict[str, list[int]] = self.__solution_residues()
         com_arr: np.ndarray = self.__allocate(sol_residues)
-        with open('com_all', 'wb') as f_arr:
+        with open(stinfo.files['com_pickle'], 'wb') as f_arr:
             pickle.dump(self.__get_coms(com_arr, sol_residues), f_arr)
 
     def __get_coms(self,
