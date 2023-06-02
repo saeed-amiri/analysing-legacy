@@ -2,6 +2,8 @@
 residues' positions in the 3d matrix. Then it will; it will get the
 center of mass of each residue at each timestep.
 The scripts initiated by chatGpt
+
+It reads the unwraped trr files
 Currently, the output is a binary file in numpy's pickled format. The
 array contains rows equivalent to the number of time frames, with each
 row representing a time step in the tar file divided by the frequency
@@ -13,6 +15,11 @@ The array has columns equal to three times the total number of residues
 plus the center of mass of the NP at each time (to save x, y, and z).
 Additionally, the last column saves the index for labeling the residues
 type, set in stinfo.
+The center of the mass of all residue is calculated, then it is wrapped
+back into the box, and the center of mass of the NP at that time is
+subtracted from it.
+02.06.2023
+----------
 """
 
 import sys
