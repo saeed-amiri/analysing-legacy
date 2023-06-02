@@ -28,25 +28,40 @@ import numpy as np
 import logger
 import MDAnalysis as mda
 import static_info as stinfo
+import my_tools
 import get_topo as topo
 from get_trajectory import GetInfo
 
 
 class ResiduePositions:
-    """getting posotions of the """
+    """getting posotions of the com the residues"""
     def __init__(self,
-                 trr_info: GetInfo  # All the info from trr and gro files
+                 trr_info: GetInfo,  # All the info from trr and gro files
+                 log: logger.logging.Logger  # Name of the log file
                  ):
         self.info: GetInfo = trr_info
         self.top = topo.ReadTop()
-        self.get_center_of_mass()
+        self.get_center_of_mass(log)
 
-    def get_center_of_mass(self) -> None:
+    def get_center_of_mass(self,
+                           log: logger.logging.Logger  # Name of the log file
+                           ) -> None:
         """calculate the center mass of the each residue"""
         # update the residues index to get the NP: APT_COR
         sol_residues: dict[str, list[int]] = self.__solution_residues()
         com_arr: np.ndarray = self.__allocate(sol_residues)
-        with open(stinfo.files['com_pickle'], 'wb') as f_arr:
+        self.pickle_arr(com_arr, sol_residues, log)
+
+    def pickle_arr(self,
+                   com_arr: np.ndarray,  # Array of the center of mass
+                   sol_residues: dict[str, list[int]],  # Residues in solution
+                   log: logger.logging.Logger  # Name of the log file
+                   ) -> None:
+        """check the if the previus similar file exsitance the pickle
+        data into a file"""
+        fname: str  # Name of the file to pickle to
+        fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
+        with open(fname, 'wb') as f_arr:
             pickle.dump(self.__get_coms(com_arr, sol_residues), f_arr)
 
     def __get_coms(self,
@@ -160,4 +175,5 @@ class ResiduePositions:
 
 if __name__ == '__main__':
     trr = GetInfo(sys.argv[1], log=logger.setup_logger('get_frames_log'))
-    positions = ResiduePositions(trr)
+    positions = ResiduePositions(trr,
+                                 log=logger.setup_logger('get_frames_log'))
