@@ -5,8 +5,8 @@ The scripts initiated by chatGpt
 """
 
 import sys
-import numpy as np
 import pickle
+import numpy as np
 import logger
 import MDAnalysis as mda
 import static_info as stinfo
