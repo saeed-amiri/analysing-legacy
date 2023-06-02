@@ -87,7 +87,9 @@ class ResiduePositions:
                     i_com = wrap_com - ts_np_com
                     element = int(item*3)
                     com_arr[i_step][element:element+3] = i_com
-                    com_arr[-1][item] = stinfo.reidues_id[k]
+                    r_idx = stinfo.reidues_id[k]  # Residue idx
+                    com_arr[-1][element:element+3] = \
+                        np.array([[r_idx, r_idx, r_idx]])
             all_t_np_coms.append(ts_np_com)
         return com_arr
 
