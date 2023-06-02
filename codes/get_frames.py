@@ -163,7 +163,7 @@ class ResiduePositions:
                    ) -> np.ndarray:
         """allocate arraies for saving all the info"""
         frames: int = self.info.num_dict['n_frames']
-        rows: int = frames + 2  # Number of rows, 2 for name and index of res
+        rows: int = frames + 1  # Number of rows, 2 for name and index of res
         # Columns are as follow:
         # each atom has xyz, the center of mass also has xyx, and one
         # for labeling the name of the residues, for example SOL will be 1
