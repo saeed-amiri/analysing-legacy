@@ -11,10 +11,10 @@ of the saving trajectory (set in static_info.py). I have observed that
 the residues may have missing indexes, causing the array to have fewer
 rows than expected. I have identified the largest number of indexes in
 the residues to address this.
+Additionally, the last row saves the index for labeling the residues
+type, set in stinfo.
 The array has columns equal to three times the total number of residues
 plus the center of mass of the NP at each time (to save x, y, and z).
-Additionally, the last column saves the index for labeling the residues
-type, set in stinfo.
 The center of the mass of all residue is calculated, then it is wrapped
 back into the box, and the center of mass of the NP at that time is
 subtracted from it.
@@ -87,7 +87,7 @@ class ResiduePositions:
                     i_com = wrap_com - ts_np_com
                     element = int(item*3)
                     com_arr[i_step][element:element+3] = i_com
-                com_arr[i_step][-1] = stinfo.reidues_id[k]
+                    com_arr[-1][item] = stinfo.reidues_id[k]
             all_t_np_coms.append(ts_np_com)
         return com_arr
 
@@ -169,7 +169,7 @@ class ResiduePositions:
         # for labeling the name of the residues, for example SOL will be 1
         max_residue = max(item for sublist in sol_residues.values() for
                           item in sublist)
-        columns: int = 3 * (max_residue + 1) + 1
+        columns: int = 3 * (max_residue + 1)
         return np.zeros((rows, columns))
 
 
