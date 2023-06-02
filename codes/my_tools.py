@@ -34,8 +34,8 @@ def check_file_reanme(fname: str,  # Name of the file to check
 
         # Rename the existing file
         os.rename(fname, new_fname)
-        print(f'{bcolors.CAUTION}{__name__}Renamed `{fname}` file to: '
-              f'`{new_fname}`{bcolors.ENDC}')
+        print(f'{bcolors.CAUTION}{__name__}:\n\tRenaming an old `{fname}` '
+              f' file to: `{new_fname}`{bcolors.ENDC}')
         log.info(f'renmaing an old `{fname}` to `{new_fname}`')
         return new_fname
     return fname
