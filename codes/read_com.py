@@ -35,19 +35,27 @@ class ReadCom:
 
     def __plot_com(self) -> None:
         """test plotting"""
-        for mol in ['ODN']:
-            column_x_indices = np.where(self.com_arr[-1] ==
-                                        stinfo.reidues_id[mol])
-            oda: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
-            x_indices = range(3, oda.shape[1], 3)  # Indices on the x-axis
-            y_indices = range(4, oda.shape[1], 3)  # Indices on the y-axis
+        for res in ['ODN']:
+            res_data: np.ndarray = self.__get_residue(res)
+            x_indices = range(3, res_data.shape[1], 3)  # Indices on the x-axis
+            y_indices = range(4, res_data.shape[1], 3)  # Indices on the y-axis
             for i in range(12):
-                x_data = oda[i, x_indices]
-                y_data = oda[i, y_indices]
+                x_data = res_data[i, x_indices]
+                y_data = res_data[i, y_indices]
                 plt.scatter(x_data, y_data)
         # Set the aspect ratio to 'equal'
         plt.gca().set_aspect('equal')
         plt.show()
+
+
+    def __get_residue(self,
+                      res: str,  # Name of the residue to get the data,
+                      ) -> np.ndarray:
+        """return the info for the selected residue"""
+        column_x_indices = np.where(self.com_arr[-1] ==
+                                    stinfo.reidues_id[res])
+        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
+        return res_arr
 
 
 if __name__ == '__main__':
