@@ -39,7 +39,8 @@ class ReadCom:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices: range  # Range of the indices
             y_indices: range  # Range of the indices
-            x_indices, y_indices = self.__get_xy_com(res_arr, 'x', 'y')
+            z_indices: range  # Range of the indices
+            x_indices, y_indices, z_indices = self.__get_xy_com(res_arr)
             for i in range(12):
                 x_data = res_arr[i, x_indices]
                 y_data = res_arr[i, y_indices]
@@ -59,15 +60,12 @@ class ReadCom:
 
     @staticmethod
     def __get_xy_com(res_arr: np.ndarray,  # All the times
-                     x_axis: str,  # The data to return as x axis
-                     y_axis: str  # The data to return as y axis
-                     ) -> tuple[np.ndarray, np.ndarray]:
-        """return the x and y data for the residues, which have a
-        conditional z value"""
-        xyz_dict: dict[str, int] = {'x': 3, 'y': 4, 'z': 5}
-        x_indices = range(xyz_dict.get(x_axis), res_arr.shape[1], 3)
-        y_indices = range(xyz_dict.get(y_axis), res_arr.shape[1], 3)
-        return x_indices, y_indices
+                     ) -> tuple[range, range, range]:
+        """return the x, y, and z data for the residues"""
+        x_indices = range(3, res_arr.shape[1], 3)
+        y_indices = range(4, res_arr.shape[1], 3)
+        z_indices = range(5, res_arr.shape[1], 3)
+        return x_indices, y_indices, z_indices
 
 
 if __name__ == '__main__':
