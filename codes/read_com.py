@@ -41,9 +41,14 @@ class ReadCom:
             y_indices: range  # Range of the indices
             z_indices: range  # Range of the indices
             x_indices, y_indices, z_indices = self.__get_xy_com(res_arr)
+
             for i in range(12):
                 x_data = res_arr[i, x_indices]
                 y_data = res_arr[i, y_indices]
+                z_data = res_arr[i, z_indices]
+                if res == 'ODN':
+                    x_data, y_data, z_data = \
+                        self.__get_interface_oda(x_data, y_data, z_data)
                 plt.scatter(x_data, y_data)
         # Set the aspect ratio to 'equal'
         plt.gca().set_aspect('equal')
@@ -66,6 +71,16 @@ class ReadCom:
         y_indices = range(4, res_arr.shape[1], 3)
         z_indices = range(5, res_arr.shape[1], 3)
         return x_indices, y_indices, z_indices
+
+    @staticmethod
+    def __get_interface_oda(x_data: np.ndarray,  # All the x values for the oda
+                            y_data: np.ndarray,  # All the x values for the oda
+                            z_data: np.ndarray,  # All the x values for the oda
+                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """get xyz for all the oda at the interface"""
+        interface_z: float = 10  # should be calculated, interface treshhold
+        inface_indx = np.where(z_data > interface_z)[0]  # At interface
+        return x_data[inface_indx], y_data[inface_indx], z_data[inface_indx]
 
 
 if __name__ == '__main__':
