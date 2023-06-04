@@ -36,17 +36,17 @@ class ReadCom:
     def __plot_com(self) -> None:
         """test plotting"""
         for res in ['ODN']:
-            res_data: np.ndarray = self.__get_residue(res)
-            x_indices = range(3, res_data.shape[1], 3)  # Indices on the x-axis
-            y_indices = range(4, res_data.shape[1], 3)  # Indices on the y-axis
+            res_arr: np.ndarray = self.__get_residue(res)
+            x_indices: range  # Range of the indices
+            y_indices: range  # Range of the indices
+            x_indices, y_indices = self.__get_xy_com(res_arr, 'x', 'y')
             for i in range(12):
-                x_data = res_data[i, x_indices]
-                y_data = res_data[i, y_indices]
+                x_data = res_arr[i, x_indices]
+                y_data = res_arr[i, y_indices]
                 plt.scatter(x_data, y_data)
         # Set the aspect ratio to 'equal'
         plt.gca().set_aspect('equal')
         plt.show()
-
 
     def __get_residue(self,
                       res: str,  # Name of the residue to get the data,
@@ -56,6 +56,18 @@ class ReadCom:
                                     stinfo.reidues_id[res])
         res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
         return res_arr
+
+    @staticmethod
+    def __get_xy_com(res_arr: np.ndarray,  # All the times
+                     x_axis: str,  # The data to return as x axis
+                     y_axis: str  # The data to return as y axis
+                     ) -> tuple[np.ndarray, np.ndarray]:
+        """return the x and y data for the residues, which have a
+        conditional z value"""
+        xyz_dict: dict[str, int] = {'x': 3, 'y': 4, 'z': 5}
+        x_indices = range(xyz_dict.get(x_axis), res_arr.shape[1], 3)
+        y_indices = range(xyz_dict.get(y_axis), res_arr.shape[1], 3)
+        return x_indices, y_indices
 
 
 if __name__ == '__main__':
