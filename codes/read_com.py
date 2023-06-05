@@ -37,23 +37,22 @@ class ReadCom:
     def __plot_com(self) -> None:
         """test plotting"""
         ax_com = plt.gca()
-        for res in ['ODN', 'CLA']:
+        x_indices: range  # Range of the indices
+        y_indices: range  # Range of the indices
+        z_indices: range  # Range of the indices
+        for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
-            x_indices: range  # Range of the indices
-            y_indices: range  # Range of the indices
-            z_indices: range  # Range of the indices
             x_indices, y_indices, z_indices = self.__get_xy_com(res_arr)
             number_frame: int = 11
             for i in range(number_frame):
-                x_data = res_arr[i, x_indices]
-                y_data = res_arr[i, y_indices]
-                z_data = res_arr[i, z_indices]
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, z_data = \
-                        self.__get_interface_oda(x_data, y_data, z_data, res)
+                        self.__get_interface_oda(res_arr[i, x_indices],
+                                                 res_arr[i, y_indices],
+                                                 res_arr[i, z_indices],
+                                                 res)
                     ax_com.scatter(x_data, y_data, s=5, c='black',
                                    alpha=(i+1)/number_frame)
-        # Set the aspect ratio to 'equal'
             self.__plot_odn_com(ax_com, res)
 
     def __get_residue(self,
