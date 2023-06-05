@@ -37,7 +37,7 @@ class ReadCom:
     def __plot_com(self) -> None:
         """test plotting"""
         ax_com = plt.gca()
-        for res in ['ODN']:
+        for res in ['ODN', 'CLA']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices: range  # Range of the indices
             y_indices: range  # Range of the indices
@@ -50,9 +50,9 @@ class ReadCom:
                 z_data = res_arr[i, z_indices]
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, z_data = \
-                        self.__get_interface_oda(x_data, y_data, z_data)
-                ax_com.scatter(x_data, y_data, s=5, c='black',
-                               alpha=(i+1)/number_frame)
+                        self.__get_interface_oda(x_data, y_data, z_data, res)
+                    ax_com.scatter(x_data, y_data, s=5, c='black',
+                                   alpha=(i+1)/number_frame)
         # Set the aspect ratio to 'equal'
             self.__plot_odn_com(ax_com, res)
 
@@ -85,7 +85,7 @@ class ReadCom:
         plt.title(f'center of mass of {res} around NP')
         pname: str  # Name of the output file
         pname = f'{res}_com.png'
-        plt.savefig(pname, bbox_inches='tight', transparent=True)
+        plt.savefig(pname, bbox_inches='tight', transparent=False)
 
     @staticmethod
     def __get_xy_com(res_arr: np.ndarray,  # All the times
@@ -100,10 +100,14 @@ class ReadCom:
     def __get_interface_oda(x_data: np.ndarray,  # All the x values for the oda
                             y_data: np.ndarray,  # All the x values for the oda
                             z_data: np.ndarray,  # All the x values for the oda
+                            res: str  # Name of the residue
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """get xyz for all the oda at the interface"""
         interface_z: float = 10  # should be calculated, interface treshhold
-        inface_indx = np.where(z_data > interface_z)[0]  # At interface
+        if res == 'ODN':
+            inface_indx = np.where(z_data > interface_z)[0]  # At interface
+        elif res == 'CLA':
+            inface_indx = np.where(z_data < interface_z)[0]  # At interface
         return x_data[inface_indx], y_data[inface_indx], z_data[inface_indx]
 
 
