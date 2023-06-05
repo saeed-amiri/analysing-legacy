@@ -42,7 +42,7 @@ class ReadCom:
         z_indices: range  # Range of the indices
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
-            x_indices, y_indices, z_indices = self.__get_xy_com(res_arr)
+            x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
             number_frame: int = 11
             for i in range(number_frame):
                 if res in ['ODN', 'CLA']:
@@ -53,7 +53,39 @@ class ReadCom:
                                                  res)
                     ax_com.scatter(x_data, y_data, s=5, c='black',
                                    alpha=(i+1)/number_frame)
+                if res in ['SOL']:
+                    self.__get_interface(res_arr[i, x_indices],
+                                         res_arr[i, y_indices],
+                                         res_arr[i, z_indices])
             self.__plot_odn_com(ax_com, res)
+
+    def __get_interface(self,
+                        x_data_all: np.ndarray,  # All the x values for sol
+                        y_data_all: np.ndarray,  # All the y values for sol
+                        z_data_all: np.ndarray,  # All the z values for sol
+                        ) -> None:
+        """get the water com at the interface"""
+        x_data, y_data, z_data = \
+            self.__get_in_box(x_data_all, y_data_all, z_data_all)
+
+    @staticmethod
+    def __get_in_box(x_data_all: np.ndarray,  # All the x values for sol
+                        y_data_all: np.ndarray,  # All the y values for sol
+                        z_data_all: np.ndarray,  # All the z values for sol
+                        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """return the index of the residues in the box, and not on the
+        top of the oil pahse.
+        Since the com is moved to zero, and water is under water, below
+        zero, the treshhold is small number.
+        """
+        sol_treshhold: float = 10  # The value above that not needed
+        index_in_box: np.ndarray  # Index of the residues inside, not out
+        index_in_box = np.where(z_data_all < 10)[0]
+        x_data_in_box = x_data_all[index_in_box]
+        y_data_in_box = y_data_all[index_in_box]
+        z_data_in_box = z_data_all[index_in_box]
+        return x_data_in_box, y_data_in_box, z_data_in_box
+
 
     def __get_residue(self,
                       res: str,  # Name of the residue to get the data,
@@ -75,6 +107,7 @@ class ReadCom:
 
         # Get the current axes and add the circle to the plot
         ax_com.add_artist(circle)
+        # Set the aspect ratio to 'equal'
         ax_com.set_aspect('equal')
         ax_com.set_xlim(-109, 109)
         ax_com.set_ylim(-109, 109)
@@ -87,7 +120,7 @@ class ReadCom:
         plt.savefig(pname, bbox_inches='tight', transparent=False)
 
     @staticmethod
-    def __get_xy_com(res_arr: np.ndarray,  # All the times
+    def __get_res_xyz(res_arr: np.ndarray,  # All the times
                      ) -> tuple[range, range, range]:
         """return the x, y, and z data for the residues"""
         x_indices = range(3, res_arr.shape[1], 3)
@@ -101,7 +134,7 @@ class ReadCom:
                             z_data: np.ndarray,  # All the x values for the oda
                             res: str  # Name of the residue
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """get xyz for all the oda at the interface"""
+        """get xyz for all the oda at the interface and or ion in the bolck"""
         interface_z: float = 10  # should be calculated, interface treshhold
         if res == 'ODN':
             inface_indx = np.where(z_data > interface_z)[0]  # At interface
