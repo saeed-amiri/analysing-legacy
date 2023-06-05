@@ -62,7 +62,7 @@ class ReadCom:
                        ) -> None:
         """plot and save the COM of the ODA"""
         # Create a circle with origin at (0, 0) and radius of the nanoparticle
-        r_np = 32.6
+        r_np = stinfo.np_info['radius']
         circle = plt.Circle((0, 0), r_np, color='red', fill='True', alpha=0.25)
 
         # Get the current axes and add the circle to the plot
@@ -76,7 +76,7 @@ class ReadCom:
         plt.title(f'center of mass of {res} around NP')
         ax_com.set_xlabel("x component [A]")
         ax_com.set_ylabel("y component [A]")
-        plt.savefig(pname, bbox_inches='tight')
+        plt.savefig(pname, bbox_inches='tight', transparent=True)
 
     def __get_residue(self,
                       res: str,  # Name of the residue to get the data,
