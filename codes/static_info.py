@@ -50,6 +50,7 @@ reidues_id = {
 # Nano partcle
 np_info: dict[str, typing.Any]
 np_info = {
+    'radius': 32.6,  # It is in Angstrom
     'np_residues': ['APT', 'COR'],
     'np_name': 'APT_COR',
     'solution_residues': ['CLA', 'SOL', 'ODN', 'D10']
