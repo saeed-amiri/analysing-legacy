@@ -17,6 +17,7 @@ import pickle
 import numpy as np
 import static_info as stinfo
 import matplotlib.pylab as plt
+import matplotlib
 
 
 class ReadCom:
@@ -35,7 +36,6 @@ class ReadCom:
 
     def __plot_com(self) -> None:
         """test plotting"""
-        r_np = 32.6
         ax_com = plt.gca()
         for res in ['ODN']:
             res_arr: np.ndarray = self.__get_residue(res)
@@ -51,18 +51,32 @@ class ReadCom:
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, z_data = \
                         self.__get_interface_oda(x_data, y_data, z_data)
-                ax_com.scatter(x_data, y_data, s=1, c='black',
+                ax_com.scatter(x_data, y_data, s=5, c='black',
                                alpha=(i+1)/number_frame)
         # Set the aspect ratio to 'equal'
+            self.__plot_odn_com(ax_com, res)
+
+    @staticmethod
+    def __plot_odn_com(ax_com: matplotlib.axes,  # The center of mass data
+                       res: str  # Name of the residue to save file
+                       ) -> None:
+        """plot and save the COM of the ODA"""
+        # Create a circle with origin at (0, 0) and radius of the nanoparticle
+        r_np = 32.6
         circle = plt.Circle((0, 0), r_np, color='red', fill='True', alpha=0.25)
-        ax_com.add_artist(circle)
-        ax_com.set_aspect('equal')
-        # Create a circle with origin at (0, 0) and radius r
 
         # Get the current axes and add the circle to the plot
-        plt.xlim(-109, 109)
-        plt.ylim(-109, 109)
-        plt.show()
+        ax_com.add_artist(circle)
+        ax_com.set_aspect('equal')
+        ax_com.set_xlim(-109, 109)
+        ax_com.set_ylim(-109, 109)
+
+        pname: str  # Name of the output file
+        pname = f'{res}_com.png'
+        plt.title(f'center of mass of {res} around NP')
+        ax_com.set_xlabel("x component [A]")
+        ax_com.set_ylabel("y component [A]")
+        plt.savefig(pname, bbox_inches='tight')
 
     def __get_residue(self,
                       res: str,  # Name of the residue to get the data,
