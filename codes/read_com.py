@@ -35,23 +35,33 @@ class ReadCom:
 
     def __plot_com(self) -> None:
         """test plotting"""
+        r_np = 32.6
+        ax_com = plt.gca()
         for res in ['ODN']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices: range  # Range of the indices
             y_indices: range  # Range of the indices
             z_indices: range  # Range of the indices
             x_indices, y_indices, z_indices = self.__get_xy_com(res_arr)
-
-            for i in range(12):
+            number_frame: int = 11
+            for i in range(number_frame):
                 x_data = res_arr[i, x_indices]
                 y_data = res_arr[i, y_indices]
                 z_data = res_arr[i, z_indices]
-                if res == 'ODN':
+                if res in ['ODN', 'CLA']:
                     x_data, y_data, z_data = \
                         self.__get_interface_oda(x_data, y_data, z_data)
-                plt.scatter(x_data, y_data)
+                ax_com.scatter(x_data, y_data, s=1, c='black',
+                               alpha=(i+1)/number_frame)
         # Set the aspect ratio to 'equal'
-        plt.gca().set_aspect('equal')
+        circle = plt.Circle((0, 0), r_np, color='red', fill='True', alpha=0.25)
+        ax_com.add_artist(circle)
+        ax_com.set_aspect('equal')
+        # Create a circle with origin at (0, 0) and radius r
+
+        # Get the current axes and add the circle to the plot
+        plt.xlim(-109, 109)
+        plt.ylim(-109, 109)
         plt.show()
 
     def __get_residue(self,
