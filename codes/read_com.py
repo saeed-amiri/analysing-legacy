@@ -56,6 +56,15 @@ class ReadCom:
         # Set the aspect ratio to 'equal'
             self.__plot_odn_com(ax_com, res)
 
+    def __get_residue(self,
+                      res: str,  # Name of the residue to get the data,
+                      ) -> np.ndarray:
+        """return the info for the selected residue"""
+        column_x_indices = np.where(self.com_arr[-1] ==
+                                    stinfo.reidues_id[res])
+        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
+        return res_arr
+
     @staticmethod
     def __plot_odn_com(ax_com: matplotlib.axes,  # The center of mass data
                        res: str  # Name of the residue to save file
@@ -71,21 +80,12 @@ class ReadCom:
         ax_com.set_xlim(-109, 109)
         ax_com.set_ylim(-109, 109)
 
-        pname: str  # Name of the output file
-        pname = f'{res}_com.png'
-        plt.title(f'center of mass of {res} around NP')
         ax_com.set_xlabel("x component [A]")
         ax_com.set_ylabel("y component [A]")
+        plt.title(f'center of mass of {res} around NP')
+        pname: str  # Name of the output file
+        pname = f'{res}_com.png'
         plt.savefig(pname, bbox_inches='tight', transparent=True)
-
-    def __get_residue(self,
-                      res: str,  # Name of the residue to get the data,
-                      ) -> np.ndarray:
-        """return the info for the selected residue"""
-        column_x_indices = np.where(self.com_arr[-1] ==
-                                    stinfo.reidues_id[res])
-        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
-        return res_arr
 
     @staticmethod
     def __get_xy_com(res_arr: np.ndarray,  # All the times
