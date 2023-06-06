@@ -25,16 +25,10 @@ class ReadCom:
     """
     def __init__(self) -> None:
         self.f_name: str = stinfo.files['com_pickle']
-        self.com_arr: np.ndarray = self.__get_data()
-        self.__plot_com()
+        self.com_arr: np.ndarray = self.get_data()
+        self.plot_com()
 
-    def __get_data(self) -> np.ndarray:
-        """reading the file"""
-        with open(self.f_name, 'rb') as f_rb:
-            com_arr = pickle.load(f_rb)
-        return com_arr
-
-    def __plot_com(self) -> None:
+    def plot_com(self) -> None:
         """test plotting"""
         ax_com = plt.gca()
         x_indices: range  # Range of the indices
@@ -59,6 +53,12 @@ class ReadCom:
                                          res_arr[i, z_indices])
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
+
+    def get_data(self) -> np.ndarray:
+        """reading the file"""
+        with open(self.f_name, 'rb') as f_rb:
+            com_arr = pickle.load(f_rb)
+        return com_arr
 
     def __get_interface(self,
                         x_data_all: np.ndarray,  # All the x values for sol
