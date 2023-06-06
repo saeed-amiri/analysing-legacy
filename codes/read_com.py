@@ -57,7 +57,8 @@ class ReadCom:
                     self.__get_interface(res_arr[i, x_indices],
                                          res_arr[i, y_indices],
                                          res_arr[i, z_indices])
-            self.__plot_odn_com(ax_com, res)
+            if res in ['ODN', 'CLA']:
+                self.__plot_odn_com(ax_com, res)
 
     def __get_interface(self,
                         x_data_all: np.ndarray,  # All the x values for sol
@@ -69,23 +70,36 @@ class ReadCom:
             self.__get_in_box(x_data_all, y_data_all, z_data_all)
 
     @staticmethod
+    def __get_grid_xy(x_data, y_data):
+        """return the mesh grid for the xy of sol"""
+        x_min = np.min(x_data)
+        y_min = np.min(y_data)
+        x_max = np.max(x_data)
+        y_max = np.max(y_data)
+        mesh_size = (x_max-x_min)/100.
+        x_mesh, y_mesh = np.meshgrid(
+            np.arange(x_min, x_max + mesh_size, mesh_size),
+            np.arange(y_min, y_max + mesh_size, mesh_size))
+        return x_mesh, y_mesh, mesh_size
+
+    @staticmethod
     def __get_in_box(x_data_all: np.ndarray,  # All the x values for sol
-                        y_data_all: np.ndarray,  # All the y values for sol
-                        z_data_all: np.ndarray,  # All the z values for sol
-                        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+                     y_data_all: np.ndarray,  # All the y values for sol
+                     z_data_all: np.ndarray,  # All the z values for sol
+                     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """return the index of the residues in the box, and not on the
         top of the oil pahse.
         Since the com is moved to zero, and water is under water, below
         zero, the treshhold is small number.
         """
-        sol_treshhold: float = 10  # The value above that not needed
+        sol_treshhold: float  # The value above that not needed
+        sol_treshhold = stinfo.np_info['radius'] * 1.5
         index_in_box: np.ndarray  # Index of the residues inside, not out
-        index_in_box = np.where(z_data_all < 10)[0]
+        index_in_box = np.where(z_data_all < sol_treshhold)[0]
         x_data_in_box = x_data_all[index_in_box]
         y_data_in_box = y_data_all[index_in_box]
         z_data_in_box = z_data_all[index_in_box]
         return x_data_in_box, y_data_in_box, z_data_in_box
-
 
     def __get_residue(self,
                       res: str,  # Name of the residue to get the data,
@@ -121,7 +135,7 @@ class ReadCom:
 
     @staticmethod
     def __get_res_xyz(res_arr: np.ndarray,  # All the times
-                     ) -> tuple[range, range, range]:
+                      ) -> tuple[range, range, range]:
         """return the x, y, and z data for the residues"""
         x_indices = range(3, res_arr.shape[1], 3)
         y_indices = range(4, res_arr.shape[1], 3)
