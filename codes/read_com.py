@@ -26,6 +26,8 @@ class ReadCom:
     def __init__(self) -> None:
         self.f_name: str = stinfo.files['com_pickle']
         self.com_arr: np.ndarray = self.get_data()
+        self.box_dims: dict[str, float]  # Box dimensions, from stinfo
+        self.box_dims = self.__get_box_dims()
         self.plot_com()
 
     def plot_com(self) -> None:
@@ -62,6 +64,26 @@ class ReadCom:
         with open(self.f_name, 'rb') as f_rb:
             com_arr = pickle.load(f_rb)
         return com_arr
+
+    @staticmethod
+    def __get_box_dims() -> dict[str, float]:
+        """return the box lims for plotting."""
+        box_dims: dict[str, float] = {}  # Box dimensions
+        if stinfo.box['centered']:
+            box_dims['x_hi'] = np.ceil(stinfo.box['x']/2)
+            box_dims['x_lo'] = -np.ceil(stinfo.box['x']/2)
+            box_dims['y_hi'] = np.ceil(stinfo.box['y']/2)
+            box_dims['y_lo'] = -np.ceil(stinfo.box['y']/2)
+            box_dims['z_hi'] = np.ceil(stinfo.box['z']/2)
+            box_dims['z_lo'] = -np.ceil(stinfo.box['z']/2)
+        else:
+            box_dims['x_hi'] = np.ceil(stinfo.box['x'])
+            box_dims['x_lo'] = 0.0
+            box_dims['y_hi'] = np.ceil(stinfo.box['y'])
+            box_dims['y_lo'] = 0.0
+            box_dims['z_hi'] = np.ceil(stinfo.box['z'])
+            box_dims['z_lo'] = 0.0
+        return box_dims
 
     def __plot_water_surface(self,
                              x_data_all: np.ndarray,  # All x values for sol
@@ -153,8 +175,8 @@ class ReadCom:
         # Get the current axes and add the circle to the plot
         # Set the aspect ratio to 'equal'
         ax_com.set_aspect('equal')
-        ax_com.set_xlim(-109, 109)
-        ax_com.set_ylim(-109, 109)
+        ax_com.set_xlim(self.box_dims['x_lo'], self.box_dims['x_hi'])
+        ax_com.set_ylim(self.box_dims['y_lo'], self.box_dims['y_hi'])
 
         ax_com.set_xlabel("x component [A]")
         ax_com.set_ylabel("y component [A]")
