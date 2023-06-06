@@ -75,6 +75,35 @@ class ReadCom:
         x_data, y_data, z_data = \
             self.__get_in_box(x_data_all, y_data_all, z_data_all)
         x_mesh, y_mesh, mesh_size = self.__get_grid_xy(x_data, y_data)
+        x_data, y_data, z_data = \
+            self.__get_surface_water(x_mesh, y_mesh,
+                                     x_data, y_data, z_data, mesh_size)
+
+    @staticmethod
+    def __get_surface_water(x_mesh: np.ndarray,  # Mesh grid in x and y
+                            y_mesh: np.ndarray,  # Mesh grid in x and y
+                            x_data: np.ndarray,  # Component of the points
+                            y_data: np.ndarray,  # Component of the points
+                            z_data: np.ndarray,  # Component of the points
+                            mesh_size: np.float64  # Mesh size!
+                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        # Loop through each mesh element
+        max_z_index: list[int] = []  # Index of the max value at each grid
+        for i in range(x_mesh.shape[0]):
+            for j in range(x_mesh.shape[1]):
+                # Define the boundaries of the current mesh element
+                x_min_mesh, x_max_mesh = x_mesh[i, j], x_mesh[i, j] + mesh_size
+                y_min_mesh, y_max_mesh = y_mesh[i, j], y_mesh[i, j] + mesh_size
+
+                # Select atoms within the current mesh element based on X and Y
+                ind_in_mesh = np.where((x_data >= x_min_mesh) &
+                                       (x_data < x_max_mesh) &
+                                       (y_data >= y_min_mesh) &
+                                       (y_data < y_max_mesh))
+                if len(ind_in_mesh[0]) > 0:
+                    max_z = np.argmax(z_data[ind_in_mesh])
+                    max_z_index.append(ind_in_mesh[0][max_z])
+        return x_data[max_z_index], y_data[max_z_index], z_data[max_z_index]
 
     @staticmethod
     def __get_grid_xy(x_data: np.ndarray,  # x component of the coms
@@ -104,7 +133,7 @@ class ReadCom:
         zero, the treshhold is small number.
         """
         sol_treshhold: float  # The value above that not needed
-        sol_treshhold = stinfo.np_info['radius'] * 1.5
+        sol_treshhold = stinfo.np_info['radius'] * 1
         index_in_box: np.ndarray  # Index of the residues inside, not out
         index_in_box = np.where(z_data_all < sol_treshhold)[0]
         x_data_in_box = x_data_all[index_in_box]
