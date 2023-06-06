@@ -149,6 +149,30 @@ class ReadCom:
         res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
         return res_arr
 
+    def __plot_odn_com(self,
+                       ax_com: matplotlib.axes,  # The center of mass data
+                       res: str  # Name of the residue to save file
+                       ) -> None:
+        """plot and save the COM of the ODA"""
+        circle: bool = True  # Add circle to the image
+        if circle:
+            # Create a circle with origin at (0, 0) and radius of np
+            circ: matplotlib.patches.Circle = self.__mk_circle()
+            ax_com.add_artist(circ)
+
+        # Get the current axes and add the circle to the plot
+        # Set the aspect ratio to 'equal'
+        ax_com.set_aspect('equal')
+        ax_com.set_xlim(-109, 109)
+        ax_com.set_ylim(-109, 109)
+
+        ax_com.set_xlabel("x component [A]")
+        ax_com.set_ylabel("y component [A]")
+        plt.title(f'center of mass of {res} around NP')
+        pname: str  # Name of the output file
+        pname = f'{res}_com.png'
+        plt.savefig(pname, bbox_inches='tight', transparent=False)
+
     @staticmethod
     def __get_grid_xy(x_data: np.ndarray,  # x component of the coms
                       y_data: np.ndarray,  # y component of the coms
@@ -184,30 +208,6 @@ class ReadCom:
         y_data_in_box = y_data_all[index_in_box]
         z_data_in_box = z_data_all[index_in_box]
         return x_data_in_box, y_data_in_box, z_data_in_box
-
-    def __plot_odn_com(self,
-                       ax_com: matplotlib.axes,  # The center of mass data
-                       res: str  # Name of the residue to save file
-                       ) -> None:
-        """plot and save the COM of the ODA"""
-        circle: bool = True  # Add circle to the image
-        if circle:
-            # Create a circle with origin at (0, 0) and radius of np
-            circ: matplotlib.patches.Circle = self.__mk_circle()
-            ax_com.add_artist(circ)
-
-        # Get the current axes and add the circle to the plot
-        # Set the aspect ratio to 'equal'
-        ax_com.set_aspect('equal')
-        ax_com.set_xlim(-109, 109)
-        ax_com.set_ylim(-109, 109)
-
-        ax_com.set_xlabel("x component [A]")
-        ax_com.set_ylabel("y component [A]")
-        plt.title(f'center of mass of {res} around NP')
-        pname: str  # Name of the output file
-        pname = f'{res}_com.png'
-        plt.savefig(pname, bbox_inches='tight', transparent=False)
 
     @staticmethod
     def __get_res_xyz(res_arr: np.ndarray,  # All the times
