@@ -55,3 +55,12 @@ np_info = {
     'np_name': 'APT_COR',
     'solution_residues': ['CLA', 'SOL', 'ODN', 'D10']
 }
+
+# Box information
+box: dict[str, typing.Any]
+box = {
+    'x': 220,
+    'y': 220,
+    'z': 220,
+    'centered': True  # If the center of mass moved to zero
+}
