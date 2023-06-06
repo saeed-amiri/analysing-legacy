@@ -66,17 +66,28 @@ class ReadCom:
                         z_data_all: np.ndarray,  # All the z values for sol
                         ) -> None:
         """get the water com at the interface"""
+        mesh_size: np.float64   # Size of the grid
+        x_mesh: np.ndarray  # Mesh grid in x and y
+        y_mesh: np.ndarray  # Mesh grid in x and y
+        x_data: np.ndarray  # Component of the points in real water phase
+        y_data: np.ndarray  # Component of the points in real water phase
+        z_data: np.ndarray  # Component of the points in real water phase
         x_data, y_data, z_data = \
             self.__get_in_box(x_data_all, y_data_all, z_data_all)
+        x_mesh, y_mesh, mesh_size = self.__get_grid_xy(x_data, y_data)
 
     @staticmethod
-    def __get_grid_xy(x_data, y_data):
+    def __get_grid_xy(x_data: np.ndarray,  # x component of the coms
+                      y_data: np.ndarray,  # y component of the coms
+                      ) -> tuple[np.ndarray, np.ndarray, np.float64]:
         """return the mesh grid for the xy of sol"""
-        x_min = np.min(x_data)
-        y_min = np.min(y_data)
-        x_max = np.max(x_data)
-        y_max = np.max(y_data)
-        mesh_size = (x_max-x_min)/100.
+        x_min: np.float64 = np.min(x_data)
+        y_min: np.float64 = np.min(y_data)
+        x_max: np.float64 = np.max(x_data)
+        y_max: np.float64 = np.max(y_data)
+        mesh_size: np.float64 = (x_max-x_min)/100.
+        x_mesh: np.ndarray  # Mesh grid in x and y
+        y_mesh: np.ndarray  # Mesh grid in x and y
         x_mesh, y_mesh = np.meshgrid(
             np.arange(x_min, x_max + mesh_size, mesh_size),
             np.arange(y_min, y_max + mesh_size, mesh_size))
