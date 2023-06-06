@@ -95,16 +95,6 @@ class ReadCom:
         plt.savefig(pname, bbox_inches='tight', transparent=False)
         plt.close(fig)
 
-    @staticmethod
-    def __mk_circle() -> matplotlib.patches.Circle:
-        radius = stinfo.np_info['radius']
-        circle = plt.Circle((0, 0),
-                            radius,
-                            color='red',
-                            linestyle='dashed',
-                            fill=False, alpha=1)
-        return circle
-
     def __get_interface(self,
                         x_data_all: np.ndarray,  # All the x values for sol
                         y_data_all: np.ndarray,  # All the y values for sol
@@ -231,6 +221,16 @@ class ReadCom:
         elif res == 'CLA':
             inface_indx = np.where(z_data < interface_z)[0]  # At interface
         return x_data[inface_indx], y_data[inface_indx], z_data[inface_indx]
+
+    @staticmethod
+    def __mk_circle() -> matplotlib.patches.Circle:
+        radius = stinfo.np_info['radius']
+        circle = plt.Circle((0, 0),
+                            radius,
+                            color='red',
+                            linestyle='dashed',
+                            fill=False, alpha=1)
+        return circle
 
 
 if __name__ == '__main__':
