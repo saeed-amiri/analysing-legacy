@@ -29,7 +29,10 @@ class ReadCom:
         self.plot_com()
 
     def plot_com(self) -> None:
-        """test plotting"""
+        """plot data based on what needed.
+           plot com (center of mass) of the ODA and ION separately.
+           plot topology if water at the interface.
+        """
         ax_com = plt.gca()
         x_indices: range  # Range of the indices
         y_indices: range  # Range of the indices
@@ -40,7 +43,7 @@ class ReadCom:
             number_frame: int = 11
             for i in range(number_frame):
                 if res in ['ODN', 'CLA']:
-                    x_data, y_data, z_data = \
+                    x_data, y_data, _ = \
                         self.__get_interface_oda(res_arr[i, x_indices],
                                                  res_arr[i, y_indices],
                                                  res_arr[i, z_indices],
@@ -65,7 +68,10 @@ class ReadCom:
                         y_data_all: np.ndarray,  # All the y values for sol
                         z_data_all: np.ndarray,  # All the z values for sol
                         ) -> None:
-        """get the water com at the interface"""
+        """find and retrun water residue at the interface.
+        Using the grid meshes in the x and y directions, the water_com
+        in each grid with the highest z value is returned.
+        """
         mesh_size: np.float64   # Size of the grid
         x_mesh: np.ndarray  # Mesh grid in x and y
         y_mesh: np.ndarray  # Mesh grid in x and y
@@ -75,32 +81,6 @@ class ReadCom:
         x_data, y_data, z_data = \
             self.__get_in_box(x_data_all, y_data_all, z_data_all)
         x_mesh, y_mesh, mesh_size = self.__get_grid_xy(x_data, y_data)
-        x_data, y_data, z_data = \
-            self.__get_surface_water(x_mesh, y_mesh,
-                                     x_data, y_data, z_data, mesh_size)
-
-    def __get_residue(self,
-                      res: str,  # Name of the residue to get the data,
-                      ) -> np.ndarray:
-        """return the info for the selected residue"""
-        column_x_indices = np.where(self.com_arr[-1] ==
-                                    stinfo.reidues_id[res])
-        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
-        return res_arr
-
-    @staticmethod
-    def __get_surface_water(x_mesh: np.ndarray,  # Mesh grid in x and y
-                            y_mesh: np.ndarray,  # Mesh grid in x and y
-                            x_data: np.ndarray,  # Component of the points
-                            y_data: np.ndarray,  # Component of the points
-                            z_data: np.ndarray,  # Component of the points
-                            mesh_size: np.float64  # Mesh size!
-                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """find and retrun water residue at the interface.
-        Using the grid meshes in the x and y directions, the water_com
-        in each grid with the highest z value is returned.
-        """
-        # Loop through each mesh element
         max_z_index: list[int] = []  # Index of the max value at each grid
         for i in range(x_mesh.shape[0]):
             for j in range(x_mesh.shape[1]):
@@ -117,6 +97,15 @@ class ReadCom:
                     max_z = np.argmax(z_data[ind_in_mesh])
                     max_z_index.append(ind_in_mesh[0][max_z])
         return x_data[max_z_index], y_data[max_z_index], z_data[max_z_index]
+
+    def __get_residue(self,
+                      res: str,  # Name of the residue to get the data,
+                      ) -> np.ndarray:
+        """return the info for the selected residue"""
+        column_x_indices = np.where(self.com_arr[-1] ==
+                                    stinfo.reidues_id[res])
+        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
+        return res_arr
 
     @staticmethod
     def __get_grid_xy(x_data: np.ndarray,  # x component of the coms
