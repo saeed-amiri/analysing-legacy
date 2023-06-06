@@ -79,6 +79,15 @@ class ReadCom:
             self.__get_surface_water(x_mesh, y_mesh,
                                      x_data, y_data, z_data, mesh_size)
 
+    def __get_residue(self,
+                      res: str,  # Name of the residue to get the data,
+                      ) -> np.ndarray:
+        """return the info for the selected residue"""
+        column_x_indices = np.where(self.com_arr[-1] ==
+                                    stinfo.reidues_id[res])
+        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
+        return res_arr
+
     @staticmethod
     def __get_surface_water(x_mesh: np.ndarray,  # Mesh grid in x and y
                             y_mesh: np.ndarray,  # Mesh grid in x and y
@@ -144,15 +153,6 @@ class ReadCom:
         y_data_in_box = y_data_all[index_in_box]
         z_data_in_box = z_data_all[index_in_box]
         return x_data_in_box, y_data_in_box, z_data_in_box
-
-    def __get_residue(self,
-                      res: str,  # Name of the residue to get the data,
-                      ) -> np.ndarray:
-        """return the info for the selected residue"""
-        column_x_indices = np.where(self.com_arr[-1] ==
-                                    stinfo.reidues_id[res])
-        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
-        return res_arr
 
     @staticmethod
     def __plot_odn_com(ax_com: matplotlib.axes,  # The center of mass data
