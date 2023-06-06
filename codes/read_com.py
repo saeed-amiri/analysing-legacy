@@ -51,9 +51,9 @@ class ReadCom:
                     ax_com.scatter(x_data, y_data, s=5, c='black',
                                    alpha=(i+1)/number_frame)
                 if res in ['SOL']:
-                    self.__get_interface(res_arr[i, x_indices],
-                                         res_arr[i, y_indices],
-                                         res_arr[i, z_indices])
+                    self.__plot_water_surface(res_arr[i, x_indices],
+                                              res_arr[i, y_indices],
+                                              res_arr[i, z_indices], i)
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
 
@@ -63,11 +63,53 @@ class ReadCom:
             com_arr = pickle.load(f_rb)
         return com_arr
 
+    def __plot_water_surface(self,
+                             x_data_all: np.ndarray,  # All x values for sol
+                             y_data_all: np.ndarray,  # All y values for sol
+                             z_data_all: np.ndarray,  # All z values for sol
+                             i_time: int  # Number of the frame
+                             ) -> None:
+        """find the surface water residues com and plot them for each
+        timestep"""
+        x_surf: np.ndarray  # x component of the surface
+        y_surf: np.ndarray  # y component of the surface
+        z_surf: np.ndarray  # z component of the surface
+        x_surf, y_surf, z_surf = \
+            self.__get_interface(x_data_all, y_data_all, z_data_all)
+        fig, ax_surf = plt.subplots()
+        ax_surf.scatter(x_surf, y_surf, c=z_surf)
+        ax_surf.set_aspect('equal')
+        # Create a ScalarMappable object for the color mapping
+        smap = plt.cm.ScalarMappable(cmap='viridis')
+        smap.set_array(z_surf)
+        cbar = fig.colorbar(smap, ax=ax_surf)
+        cbar.set_label('z [A]')
+        ax_surf.set_xlabel('x [A]')
+        ax_surf.set_ylabel('y [A]')
+        circle: bool = True  # If want to add circle
+        if circle:
+            circ: matplotlib.patches.Circle = self.__mk_circle()
+            # Get the current axes and add the circle to the plot
+            ax_surf.add_artist(circ)
+        pname: str = f'water_surface_frame_{i_time}.png'
+        plt.savefig(pname, bbox_inches='tight', transparent=False)
+        plt.close(fig)
+
+    @staticmethod
+    def __mk_circle() -> matplotlib.patches.Circle:
+        radius = stinfo.np_info['radius']
+        circle = plt.Circle((0, 0),
+                            radius,
+                            color='red',
+                            linestyle='dashed',
+                            fill=False, alpha=1)
+        return circle
+
     def __get_interface(self,
                         x_data_all: np.ndarray,  # All the x values for sol
                         y_data_all: np.ndarray,  # All the y values for sol
                         z_data_all: np.ndarray,  # All the z values for sol
-                        ) -> None:
+                        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """find and retrun water residue at the interface.
         Using the grid meshes in the x and y directions, the water_com
         in each grid with the highest z value is returned.
@@ -143,17 +185,18 @@ class ReadCom:
         z_data_in_box = z_data_all[index_in_box]
         return x_data_in_box, y_data_in_box, z_data_in_box
 
-    @staticmethod
-    def __plot_odn_com(ax_com: matplotlib.axes,  # The center of mass data
+    def __plot_odn_com(self,
+                       ax_com: matplotlib.axes,  # The center of mass data
                        res: str  # Name of the residue to save file
                        ) -> None:
         """plot and save the COM of the ODA"""
-        # Create a circle with origin at (0, 0) and radius of the nanoparticle
-        r_np = stinfo.np_info['radius']
-        circle = plt.Circle((0, 0), r_np, color='red', fill='True', alpha=0.25)
+        circle: bool = True  # Add circle to the image
+        if circle:
+            # Create a circle with origin at (0, 0) and radius of np
+            circ: matplotlib.patches.Circle = self.__mk_circle()
+            ax_com.add_artist(circ)
 
         # Get the current axes and add the circle to the plot
-        ax_com.add_artist(circle)
         # Set the aspect ratio to 'equal'
         ax_com.set_aspect('equal')
         ax_com.set_xlim(-109, 109)
