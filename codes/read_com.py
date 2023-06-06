@@ -87,6 +87,10 @@ class ReadCom:
                             z_data: np.ndarray,  # Component of the points
                             mesh_size: np.float64  # Mesh size!
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """find and retrun water residue at the interface.
+        Using the grid meshes in the x and y directions, the water_com
+        in each grid with the highest z value is returned.
+        """
         # Loop through each mesh element
         max_z_index: list[int] = []  # Index of the max value at each grid
         for i in range(x_mesh.shape[0]):
