@@ -93,26 +93,38 @@ class ReadCom:
                              ) -> None:
         """find the surface water residues com and plot them for each
         timestep"""
+        # Getting data for water on surface
         x_surf: np.ndarray  # x component of the surface
         y_surf: np.ndarray  # y component of the surface
         z_surf: np.ndarray  # z component of the surface
         x_surf, y_surf, z_surf = \
             self.__get_interface(x_data_all, y_data_all, z_data_all)
+        # Scatter the data
+        cmap: str = 'viridis'  # Color for the maping
         fig, ax_surf = plt.subplots()
-        ax_surf.scatter(x_surf, y_surf, c=z_surf)
+        ax_surf.scatter(x_surf, y_surf, c=z_surf, cmap=cmap,
+                        label=f"frame: {i_time}")
+        # Get equal axises
         ax_surf.set_aspect('equal')
         # Create a ScalarMappable object for the color mapping
-        smap = plt.cm.ScalarMappable(cmap='viridis')
+        smap = plt.cm.ScalarMappable(cmap=cmap)
         smap.set_array(z_surf)
         cbar = fig.colorbar(smap, ax=ax_surf)
+        # set the axis
+        ax_surf.set_xlim(self.box_dims['x_lo'], self.box_dims['x_hi'])
+        ax_surf.set_ylim(self.box_dims['y_lo'], self.box_dims['y_hi'])
+        # Labels
         cbar.set_label('z [A]')
         ax_surf.set_xlabel('x [A]')
         ax_surf.set_ylabel('y [A]')
+        # I wanna circle around the NP position
         circle: bool = True  # If want to add circle
         if circle:
-            circ: matplotlib.patches.Circle = self.__mk_circle()
             # Get the current axes and add the circle to the plot
-            ax_surf.add_artist(circ)
+            ax_surf.add_artist(self.__mk_circle())
+        # Show legend
+        plt.legend(loc='lower left')
+        # Set the name of the ouput file
         pname: str = f'water_surface_frame_{i_time}.png'
         plt.savefig(pname, bbox_inches='tight', transparent=False)
         plt.close(fig)
