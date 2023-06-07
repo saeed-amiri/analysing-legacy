@@ -17,7 +17,7 @@ files = {
 # time step (the frequncy of trr file)
 times: dict[str, float]
 times = {
-    'time_step': 20.0
+    'time_step': 50.0
 }
 
 # Constant values for reading topol file
@@ -59,8 +59,8 @@ np_info = {
 # Box information
 box: dict[str, typing.Any]
 box = {
-    'x': 220,
-    'y': 220,
-    'z': 220,
+    'x': 230,
+    'y': 230,
+    'z': 230,
     'centered': True  # If the center of mass moved to zero
 }
