@@ -14,20 +14,23 @@ import logging
 import datetime
 from colors_text import TextColor as bcolors
 
+
 def check_log_file(log_name: str  # name of the asked logfile
                    ) -> str:
     """check if the log file is exist rename the new file"""
     # Get a list of log files in the directory
-    log_files = [file for file in os.listdir('.') if
-                 re.match(fr'{log_name}.\d+', file)]
-
-    # Find the maximum count of the log files and increment it by 1
-    pattern = fr'{log_name}\.(\d+)'
-    count = max(int(re.search(pattern, file).group(1)) for
-                file in log_files) + 1 if log_files else 1
+    log_files: list[str] = [file for file in os.listdir('.') if
+                            re.match(fr'{log_name}.\d+', file)]
+    if log_files:
+        # Find the maximum count of the log files and increment it by 1
+        pattern: str = fr'{log_name}\.(\d+)'
+        counts = [int(re.search(pattern, file).group(1)) for file in log_files]
+        count = max(counts) + 1
+    else:
+        count = 1
 
     # Create the new log file name
-    new_log_file = fr'{log_name}.{ count}'
+    new_log_file: str = fr'{log_name}.{ count}'
     print(f'{bcolors.OKBLUE}{__name__}: The log file '
           f'`{new_log_file}` is prepared{bcolors.ENDC}')
     return new_log_file
@@ -44,7 +47,8 @@ def write_header(log_file: str  # name of the asked logfile
         f_w.write('\n')
 
 
-def setup_logger(log_name):
+def setup_logger(log_name: str  # Name of the log file
+                 ) -> logging.Logger:
     """
     Set up and configure the logger.
 
@@ -68,10 +72,9 @@ def setup_logger(log_name):
     # Define the log message format
     formatter = logging.Formatter(
         '%(levelname)s: [%(module)s in %(filename)s]\n\t'
-         '- %(message)s\n')
+        '- %(message)s\n')
     file_handler.setFormatter(formatter)
 
     # Add the file handler to the logger
     logger.addHandler(file_handler)
-
     return logger
