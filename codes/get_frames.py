@@ -45,8 +45,10 @@ class ResiduePositions:
                  trr_info: GetInfo,  # All the info from trr and gro files
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        self.info: GetInfo = trr_info
-        self.top = topo.ReadTop()
+        if RANK == 0:
+            self.info: GetInfo = trr_info
+            self.top = topo.ReadTop()
+        COMM.Barrier()  # Wait for all processes to synchronize
         self.get_center_of_mass(log)
 
     def get_center_of_mass(self,
