@@ -105,8 +105,8 @@ class ResiduePositions:
             all_t_np_coms.append(ts_np_com)
         return com_arr
 
-    def __wrap_position(self,
-                        pos: np.ndarray,  # The center of mass
+    @staticmethod
+    def __wrap_position(pos: np.ndarray,  # The center of mass
                         vec: np.ndarray  # Box vectors
                         ) -> np.ndarray:
         """wraped the position to the box for unwraped trr"""
