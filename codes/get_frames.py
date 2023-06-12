@@ -59,6 +59,9 @@ class ResiduePositions:
         if RANK == 0:
             sol_residues: dict[str, list[int]] = self.__solution_residues()
             com_arr: np.ndarray = self.__allocate(sol_residues)
+        else:
+            sol_residues = None
+            com_arr = None
         COMM.Barrier()  # Wait for all processes to synchronize
         self.pickle_arr(com_arr, sol_residues, log)
 
