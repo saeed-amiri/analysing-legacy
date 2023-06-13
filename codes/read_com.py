@@ -53,9 +53,10 @@ class ReadCom:
                     ax_com.scatter(x_data, y_data, s=5, c='black',
                                    alpha=(i+1)/number_frame)
                 if res in ['SOL']:
-                    self.__plot_water_surface(res_arr[i, x_indices],
-                                              res_arr[i, y_indices],
-                                              res_arr[i, z_indices], i)
+                    x_surf, y_surf, z_surf = \
+                        self.__plot_water_surface(res_arr[i, x_indices],
+                                                  res_arr[i, y_indices],
+                                                  res_arr[i, z_indices], i)
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
 
@@ -112,7 +113,7 @@ class ReadCom:
                              y_data_all: np.ndarray,  # All y values for sol
                              z_data_all: np.ndarray,  # All z values for sol
                              i_time: int  # Number of the frame
-                             ) -> None:
+                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """find the surface water residues com and plot them for each
         timestep"""
         # Getting data for water on surface
@@ -150,6 +151,7 @@ class ReadCom:
         pname: str = f'water_surface_frame_{i_time}.png'
         plt.savefig(pname, bbox_inches='tight', transparent=False)
         plt.close(fig)
+        return x_surf, y_surf, z_surf
 
     def __get_interface(self,
                         x_data_all: np.ndarray,  # All the x values for sol
