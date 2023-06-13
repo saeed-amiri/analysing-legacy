@@ -57,6 +57,9 @@ class ReadCom:
                         self.__plot_water_surface(res_arr[i, x_indices],
                                                   res_arr[i, y_indices],
                                                   res_arr[i, z_indices], i)
+                    interface_locz: float = self.get_interface_loc(x_surf,
+                                                                   y_surf,
+                                                                   z_surf)
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
 
@@ -77,6 +80,9 @@ class ReadCom:
         Although there may be more accurate methods, this is the most
         straightforward and practical."""
         lengths: np.ndarray = self.__calculate_lengths(x_data, y_data)
+        ind_outsid: np.ndarray = np.where(lengths > stinfo.np_info['radius'])
+        z_outsid: np.ndarray = z_data[ind_outsid]
+        return np.mean(z_outsid)
 
     @staticmethod
     def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
