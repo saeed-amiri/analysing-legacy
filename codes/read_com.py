@@ -39,6 +39,7 @@ class ReadCom:
         x_indices: range  # Range of the indices
         y_indices: range  # Range of the indices
         z_indices: range  # Range of the indices
+        interface_locz: list[float] = []  # Z location of the water surface
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
@@ -57,9 +58,9 @@ class ReadCom:
                         self.__plot_water_surface(res_arr[i, x_indices],
                                                   res_arr[i, y_indices],
                                                   res_arr[i, z_indices], i)
-                    interface_locz: float = self.get_interface_loc(x_surf,
-                                                                   y_surf,
-                                                                   z_surf)
+                    interface_locz.append(self.get_interface_loc(x_surf,
+                                                                 y_surf,
+                                                                 z_surf))
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
 
