@@ -42,7 +42,7 @@ class ReadCom:
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
-            number_frame: int = 11
+            number_frame: int = 200
             for i in range(number_frame):
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, _ = \
@@ -138,6 +138,8 @@ class ReadCom:
         Using the grid meshes in the x and y directions, the water_com
         in each grid with the highest z value is returned.
         """
+        z_treshholf: float  # To drop water below some ratio of the NP radius
+        z_treshholf = stinfo.np_info['radius'] * 1.2
         mesh_size: np.float64   # Size of the grid
         x_mesh: np.ndarray  # Mesh grid in x and y
         y_mesh: np.ndarray  # Mesh grid in x and y
@@ -158,7 +160,8 @@ class ReadCom:
                 ind_in_mesh = np.where((x_data >= x_min_mesh) &
                                        (x_data < x_max_mesh) &
                                        (y_data >= y_min_mesh) &
-                                       (y_data < y_max_mesh))
+                                       (y_data < y_max_mesh) &
+                                       (z_data >= -z_treshholf))
                 if len(ind_in_mesh[0]) > 0:
                     max_z = np.argmax(z_data[ind_in_mesh])
                     max_z_index.append(ind_in_mesh[0][max_z])
@@ -249,7 +252,7 @@ class ReadCom:
                             res: str  # Name of the residue
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """get xyz for all the oda at the interface and or ion in the bolck"""
-        interface_z: float = 10  # should be calculated, interface treshhold
+        interface_z: float = 20  # should be calculated, interface treshhold
         if res == 'ODN':
             inface_indx = np.where(z_data > interface_z)[0]  # At interface
         elif res == 'CLA':
