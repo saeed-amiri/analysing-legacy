@@ -28,6 +28,7 @@ class ReadCom:
         self.com_arr: np.ndarray = self.get_data()
         self.box_dims: dict[str, float]  # Box dimensions, from stinfo
         self.box_dims = self.__get_box_dims()
+        self.plot_interface: bool = False  # If plot and save water
         self.plot_com()
 
     def plot_com(self) -> None:
@@ -43,7 +44,7 @@ class ReadCom:
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
-            number_frame: int = 200
+            number_frame: int = 20
             for i in range(number_frame):
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, _ = \
@@ -63,12 +64,22 @@ class ReadCom:
                                                                  z_surf))
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
+        self.__plot_interface_z(interface_locz)
 
     def get_data(self) -> np.ndarray:
         """reading the file"""
         with open(self.f_name, 'rb') as f_rb:
             com_arr = pickle.load(f_rb)
         return com_arr
+
+    @staticmethod
+    def __plot_interface_z(interface_locz: list[float]  # Z of water interface
+                           ) -> None:
+        """save the plot for the water interface"""
+        fig_z, ax_z = plt.subplots()
+        ax_z.plot(interface_locz)
+        plt.savefig('test.png')
+        plt.close(fig_z)
 
     def get_interface_loc(self,
                           x_data: np.ndarray,  # x component of water interface
@@ -129,35 +140,36 @@ class ReadCom:
         z_surf: np.ndarray  # z component of the surface
         x_surf, y_surf, z_surf = \
             self.__get_interface(x_data_all, y_data_all, z_data_all)
-        # Scatter the data
-        cmap: str = 'viridis'  # Color for the maping
-        fig, ax_surf = plt.subplots()
-        ax_surf.scatter(x_surf, y_surf, c=z_surf, cmap=cmap,
-                        label=f"frame: {i_time}")
-        # Get equal axises
-        ax_surf.set_aspect('equal')
-        # Create a ScalarMappable object for the color mapping
-        smap = plt.cm.ScalarMappable(cmap=cmap)
-        smap.set_array(z_surf)
-        cbar = fig.colorbar(smap, ax=ax_surf)
-        # set the axis
-        ax_surf.set_xlim(self.box_dims['x_lo'], self.box_dims['x_hi'])
-        ax_surf.set_ylim(self.box_dims['y_lo'], self.box_dims['y_hi'])
-        # Labels
-        cbar.set_label('z [A]')
-        ax_surf.set_xlabel('x [A]')
-        ax_surf.set_ylabel('y [A]')
-        # I wanna circle around the NP position
-        circle: bool = True  # If want to add circle
-        if circle:
-            # Get the current axes and add the circle to the plot
-            ax_surf.add_artist(self.__mk_circle())
-        # Show legend
-        plt.legend(loc='lower left')
-        # Set the name of the ouput file
-        pname: str = f'water_surface_frame_{i_time}.png'
-        plt.savefig(pname, bbox_inches='tight', transparent=False)
-        plt.close(fig)
+        if self.plot_interface:
+            # Scatter the data
+            cmap: str = 'viridis'  # Color for the maping
+            fig, ax_surf = plt.subplots()
+            ax_surf.scatter(x_surf, y_surf, c=z_surf, cmap=cmap,
+                            label=f"frame: {i_time}")
+            # Get equal axises
+            ax_surf.set_aspect('equal')
+            # Create a ScalarMappable object for the color mapping
+            smap = plt.cm.ScalarMappable(cmap=cmap)
+            smap.set_array(z_surf)
+            cbar = fig.colorbar(smap, ax=ax_surf)
+            # set the axis
+            ax_surf.set_xlim(self.box_dims['x_lo'], self.box_dims['x_hi'])
+            ax_surf.set_ylim(self.box_dims['y_lo'], self.box_dims['y_hi'])
+            # Labels
+            cbar.set_label('z [A]')
+            ax_surf.set_xlabel('x [A]')
+            ax_surf.set_ylabel('y [A]')
+            # I wanna circle around the NP position
+            circle: bool = True  # If want to add circle
+            if circle:
+                # Get the current axes and add the circle to the plot
+                ax_surf.add_artist(self.__mk_circle())
+            # Show legend
+            plt.legend(loc='lower left')
+            # Set the name of the ouput file
+            pname: str = f'water_surface_frame_{i_time}.png'
+            plt.savefig(pname, bbox_inches='tight', transparent=False)
+            plt.close(fig)
         return x_surf, y_surf, z_surf
 
     def __get_interface(self,
