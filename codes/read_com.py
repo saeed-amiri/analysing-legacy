@@ -75,6 +75,7 @@ class ReadCom:
         this is by calculating the average z components of the interface.
         Although there may be more accurate methods, this is the most
         straightforward and practical."""
+        lengths: np.ndarray = self.__calculate_lengths(x_data, y_data)
 
     @staticmethod
     def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
