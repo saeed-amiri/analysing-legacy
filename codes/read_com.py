@@ -65,6 +65,27 @@ class ReadCom:
             com_arr = pickle.load(f_rb)
         return com_arr
 
+    def get_interface_loc(self,
+                          x_data: np.ndarray,  # x component of water interface
+                          y_data: np.ndarray,  # y component of water interface
+                          z_data: np.ndarray,  # z component of water interface
+                          ) -> float:
+        """To locate the surface interface, look for water molecules
+        at the interface and not above or below the NP. One way to do
+        this is by calculating the average z components of the interface.
+        Although there may be more accurate methods, this is the most
+        straightforward and practical."""
+
+    @staticmethod
+    def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
+                            y_data: np.ndarray,  # y array of interface water
+                            ) -> np.ndarray:
+        """return the length of vectors from center to the water
+        molecules"""
+        vectors: np.ndarray = np.column_stack((x_data, y_data))
+        lengths: np.ndarray = np.linalg.norm(vectors, axis=1)
+        return lengths
+
     @staticmethod
     def __get_box_dims() -> dict[str, float]:
         """return the box lims for plotting."""
