@@ -40,7 +40,7 @@ class ReadCom:
         x_indices: range  # Range of the indices
         y_indices: range  # Range of the indices
         z_indices: range  # Range of the indices
-        interface_locz: list[float] = []  # Z location of the water surface
+        interface_locz: list[tuple[float, float]] = []  # Z mean & std of water
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
@@ -59,9 +59,8 @@ class ReadCom:
                         self.__plot_water_surface(res_arr[i, x_indices],
                                                   res_arr[i, y_indices],
                                                   res_arr[i, z_indices], i)
-                    interface_locz.append(self.get_interface_loc(x_surf,
-                                                                 y_surf,
-                                                                 z_surf))
+                    interface_locz.append(
+                        self.get_interface_loc(x_surf, y_surf, z_surf))
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
         self.__plot_interface_z(interface_locz)
@@ -76,8 +75,11 @@ class ReadCom:
     def __plot_interface_z(interface_locz: list[float]  # Z of water interface
                            ) -> None:
         """save the plot for the water interface"""
+        z_average: list[float] = [item[0] for item in interface_locz]
+        z_std: list[float] = [item[1] for item in interface_locz]
         fig_z, ax_z = plt.subplots()
-        ax_z.plot(interface_locz)
+        ax_z.errorbar(range(len(interface_locz)), z_average, yerr=z_std,
+                           fmt='o', capsize=4)
         plt.savefig('test.png')
         plt.close(fig_z)
 
@@ -85,16 +87,25 @@ class ReadCom:
                           x_data: np.ndarray,  # x component of water interface
                           y_data: np.ndarray,  # y component of water interface
                           z_data: np.ndarray,  # z component of water interface
-                          ) -> float:
+                          ) -> tuple[float, float]:
         """To locate the surface interface, look for water molecules
         at the interface and not above or below the NP. One way to do
         this is by calculating the average z components of the interface.
         Although there may be more accurate methods, this is the most
         straightforward and practical."""
+        from scipy.stats import t
         lengths: np.ndarray = self.__calculate_lengths(x_data, y_data)
         ind_outsid: np.ndarray = np.where(lengths > stinfo.np_info['radius'])
         z_outsid: np.ndarray = z_data[ind_outsid]
-        return np.mean(z_outsid)
+        # Calculate the confidence interval
+        confidence = 0.95  # Confidence level (e.g., 95%)
+        n = len(z_outsid)  # Number of data points
+        mean = np.mean(z_outsid)  # Mean of the data
+        std_error = np.std(z_outsid) / np.sqrt(n)  # Standard error of the mean
+        margin = std_error * t.ppf((1 + confidence) / 2, n - 1)  # Margin of error
+        ci_lower = mean - margin  # Lower bound of confidence interval
+        ci_upper = mean + margin  # Upper bound of confidence interval
+        return np.mean(z_outsid), margin
 
     @staticmethod
     def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
