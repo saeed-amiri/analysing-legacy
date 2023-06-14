@@ -25,7 +25,6 @@ subtracted from it.
 import sys
 import pickle
 import numpy as np
-from mpi4py import MPI
 import logger
 import MDAnalysis as mda
 import static_info as stinfo
@@ -34,21 +33,14 @@ import get_topo as topo
 from get_trajectory import GetInfo
 
 
-COMM: MPI.Intracomm = MPI.COMM_WORLD  # MPI communicator object
-RANK: int = COMM.Get_rank()  # Total number of processes in the communicator
-SIZE: int = COMM.Get_size()  # Represents the rank (ID) of the current process
-
-
 class ResiduePositions:
     """getting posotions of the com the residues"""
     def __init__(self,
                  trr_info: GetInfo,  # All the info from trr and gro files
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        if RANK == 0:
-            self.info: GetInfo = trr_info
-            self.top = topo.ReadTop()
-        COMM.Barrier()  # Wait for all processes to synchronize
+        self.info: GetInfo = trr_info
+        self.top = topo.ReadTop()
         self.get_center_of_mass(log)
 
     def get_center_of_mass(self,
@@ -56,13 +48,8 @@ class ResiduePositions:
                            ) -> None:
         """calculate the center mass of the each residue"""
         # update the residues index to get the NP: APT_COR
-        if RANK == 0:
-            sol_residues: dict[str, list[int]] = self.__solution_residues()
-            com_arr: np.ndarray = self.__allocate(sol_residues)
-        else:
-            sol_residues = None
-            com_arr = None
-        COMM.Barrier()  # Wait for all processes to synchronize
+        sol_residues: dict[str, list[int]] = self.__solution_residues()
+        com_arr: np.ndarray = self.__allocate(sol_residues)
         self.pickle_arr(com_arr, sol_residues, log)
 
     def pickle_arr(self,
@@ -72,14 +59,11 @@ class ResiduePositions:
                    ) -> None:
         """check the if the previus similar file exsitance the pickle
         data into a file"""
-        if RANK == 0:
-            fname: str  # Name of the file to pickle to
-            fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
+        fname: str  # Name of the file to pickle to
+        fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
         _com_arr = self.__get_coms(com_arr, sol_residues)
-        COMM.Barrier()  # Wait for all processes to synchronize
-        if RANK == 0:
-            with open(fname, 'wb') as f_arr:
-                pickle.dump(_com_arr, f_arr)
+        with open(fname, 'wb') as f_arr:
+            pickle.dump(_com_arr, f_arr)
 
     def __get_coms(self,
                    com_arr: np.ndarray,  # Zero array to save the coms
