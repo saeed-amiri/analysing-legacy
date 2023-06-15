@@ -64,71 +64,15 @@ class ReadCom:
                         self.get_interface_loc(x_surf, y_surf, z_surf))
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
-        self.__plot_interface_z(interface_locz)
+        # Plot interface based on the z location
+        PlotInterfaceZ(interface_locz)
+        # self.__plot_interface_z(interface_locz)
 
     def get_data(self) -> np.ndarray:
         """reading the file"""
         with open(self.f_name, 'rb') as f_rb:
             com_arr = pickle.load(f_rb)
         return com_arr
-
-    @staticmethod
-    def __plot_interface_z(interface_locz: list[tuple[float, float]]  # Z data
-                           ) -> None:
-        """save the plot for the water interface"""
-        # Get the main data to plot
-        z_average: list[float] = [item[0] for item in interface_locz]
-        z_std_err: list[float] = [item[1] for item in interface_locz]
-        # The main figure
-        fig_z, ax_z = plt.subplots()
-        # The x axis which is the number of frames
-        x_range: range = range(len(interface_locz))
-        # Plot the main data
-        ax_z.plot(x_range, z_average, label='average z')
-        # Calculate the upper and lower bounds
-        upper_bound = [ave + err for ave, err in zip(z_average, z_std_err)]
-        lower_bound = [ave - err for ave, err in zip(z_average, z_std_err)]
-        # Geting the extermum values
-        x_hi: np.int64 = np.max(x_range)  # Bounds of the x_range
-        x_lo: np.int64 = np.min(x_range)  # Bounds of the x_range
-        z_hi: float = stinfo.box['z'] / 2  # For the main plot
-        z_lo: float = -z_hi   # For the main plot
-        # Fill between the bounds
-        ax_z.fill_between(x_range,
-                          upper_bound,
-                          lower_bound,
-                          color='lightblue',
-                          alpha=0.5,
-                          label='Std Err')
-        plt.axhline(y=0, color='red', linestyle='--', label='COM of NP')
-        # Add labels and legend for the main plot
-        ax_z.set_ylim([z_lo, z_hi])
-        ax_z.set_xlim([x_lo, x_hi])
-        ax_z.set_xlabel('time frame [index]')
-        ax_z.set_ylabel('z [A]')
-        ax_z.legend()
-
-        # Create an inset plot
-        # Position and size of the inset plot
-        left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
-        inset_ax = plt.axes([left, bottom, width, height])
-        z_hi = np.floor(np.max(upper_bound)) + 1  # For the inset plot
-        z_lo = np.floor(np.min(lower_bound)) - 1  # For the inset plot
-        # Plot the inset curve
-        inset_ax.plot(x_range, z_average)
-        inset_ax.fill_between(x_range,
-                              upper_bound,
-                              lower_bound,
-                              color='lightblue',
-                              alpha=0.5)
-        # x_lim_inset = np.floor(np.max(x_range))
-        # Set the limits for the inset plot
-        # inset_ax.set_xlim([1, 8])
-        inset_ax.set_xlim([x_lo, x_hi])
-        inset_ax.set_ylim([z_lo, z_hi])
-        # Add labels and legend for the inset plot
-        plt.savefig('test.png')
-        plt.close(fig_z)
 
     def get_interface_loc(self,
                           x_data: np.ndarray,  # x component of water interface
@@ -371,6 +315,67 @@ class PlotInterfaceZ:
     To determine this, we calculate the average z component of all the
     center of mass of the water molecules at the interface.
     """
+    def __init__(self,
+                 locz: list[tuple[float, float]]  # Z and standard diviation
+                 ) -> None:
+        self.locz = locz
+        self.plot_interface_z()
+
+    def plot_interface_z(self) -> None:
+        """save the plot for the water interface"""
+        # Get the main data to plot
+        z_average: list[float] = [item[0] for item in self.locz]
+        z_std_err: list[float] = [item[1] for item in self.locz]
+        # The main figure
+        fig_z, ax_z = plt.subplots()
+        # The x axis which is the number of frames
+        x_range: range = range(len(self.locz))
+        # Plot the main data
+        ax_z.plot(x_range, z_average, label='average z')
+        # Calculate the upper and lower bounds
+        upper_bound = [ave + err for ave, err in zip(z_average, z_std_err)]
+        lower_bound = [ave - err for ave, err in zip(z_average, z_std_err)]
+        # Geting the extermum values
+        x_hi: np.int64 = np.max(x_range)  # Bounds of the x_range
+        x_lo: np.int64 = np.min(x_range)  # Bounds of the x_range
+        z_hi: float = stinfo.box['z'] / 2  # For the main plot
+        z_lo: float = -z_hi   # For the main plot
+        # Fill between the bounds
+        ax_z.fill_between(x_range,
+                          upper_bound,
+                          lower_bound,
+                          color='lightblue',
+                          alpha=0.5,
+                          label='Std Err')
+        plt.axhline(y=0, color='red', linestyle='--', label='COM of NP')
+        # Add labels and legend for the main plot
+        ax_z.set_ylim([z_lo, z_hi])
+        ax_z.set_xlim([x_lo, x_hi])
+        ax_z.set_xlabel('time frame [index]')
+        ax_z.set_ylabel('z [A]')
+        ax_z.legend()
+
+        # Create an inset plot
+        # Position and size of the inset plot
+        left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
+        inset_ax = plt.axes([left, bottom, width, height])
+        z_hi = np.floor(np.max(upper_bound)) + 1  # For the inset plot
+        z_lo = np.floor(np.min(lower_bound)) - 1  # For the inset plot
+        # Plot the inset curve
+        inset_ax.plot(x_range, z_average)
+        inset_ax.fill_between(x_range,
+                              upper_bound,
+                              lower_bound,
+                              color='lightblue',
+                              alpha=0.5)
+        # x_lim_inset = np.floor(np.max(x_range))
+        # Set the limits for the inset plot
+        # inset_ax.set_xlim([1, 8])
+        inset_ax.set_xlim([x_lo, x_hi])
+        inset_ax.set_ylim([z_lo, z_hi])
+        # Add labels and legend for the inset plot
+        plt.savefig('test.png')
+        plt.close(fig_z)
 
 
 if __name__ == '__main__':
