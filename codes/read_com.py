@@ -358,8 +358,6 @@ class PlotInterfaceZ:
         ax_main.set_ylabel('z [A]')
         ax_main.set_xlim(x_lo, x_hi)
         ax_main.set_ylim(z_lo, z_hi)
-        print(type(fig_main))
-        print(type(ax_main))
         return fig_main, ax_main
 
     def __get_bounds(self) -> tuple[np.int64, np.int64, float, float]:
