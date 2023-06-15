@@ -324,12 +324,11 @@ class PlotInterfaceZ:
         self.z_std_err: list[float]  # Error (std or std_err) of the z
         self.x_range: range  # Range of data on the x axis
         self.z_average, self.z_std_err, self.x_range = self.__get_data(locz)
-        self.fig_main, self.ax_main = plt.subplots()
         self.plot_interface_z()
 
-    def __get_data(self,
-                   locz: list[tuple[float, float]]  # Z and standard diviation
-                   ) -> tuple[list[float], list[float], list[float]]:
+    @staticmethod
+    def __get_data(locz: list[tuple[float, float]]  # Z and standard diviation
+                   ) -> tuple[list[float], list[float], range]:
         """get tha data"""
         z_average: list[float] = [item[0] for item in locz]
         z_std_err: list[float] = [item[1] for item in locz]
@@ -338,27 +337,30 @@ class PlotInterfaceZ:
 
     def plot_interface_z(self):
         """call the functions"""
-        self.__mk_canvas()
         self.__mk_main_graph()
 
     def __mk_main_graph(self) -> None:
         """plot the main graph"""
-        self.ax_main.scatter(self.x_range, self.z_average)
-        self.fig_main.savefig('main_graph.png')
+        fig_i, ax_i = self.__mk_canvas()
+        ax_i.scatter(self.x_range, self.z_average)
+        fig_i.savefig('main_graph.png')
+        plt.close(fig_i)
 
-    def __mk_canvas(self) -> None:
+    def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
+        fig_main, ax_main = plt.subplots()
         x_hi: np.int64  # Bounds of the self.x_range
         x_lo: np.int64  # Bounds of the self.x_range
         z_hi: float  # For the main plot
         z_lo: float  # For the main plot
         x_hi, x_lo, z_hi, z_lo = self.__get_bounds()
-        self.ax_main.set_xlabel('frame index')
-        self.ax_main.set_ylabel('z [A]')
-        self.ax_main.set_xlim(x_lo, x_hi)
-        self.ax_main.set_ylim(z_lo, z_hi)
-        # self.ax_main.set_facecolor('lightgray')
-        self.fig_main.savefig('main.png')
+        ax_main.set_xlabel('frame index')
+        ax_main.set_ylabel('z [A]')
+        ax_main.set_xlim(x_lo, x_hi)
+        ax_main.set_ylim(z_lo, z_hi)
+        print(type(fig_main))
+        print(type(ax_main))
+        return fig_main, ax_main
 
     def __get_bounds(self) -> tuple[np.int64, np.int64, float, float]:
         """calculate the limits, and bunds of error bar for surface"""
