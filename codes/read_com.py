@@ -339,6 +339,12 @@ class PlotInterfaceZ:
     def plot_interface_z(self):
         """call the functions"""
         self.__mk_canvas()
+        self.__mk_main_graph()
+
+    def __mk_main_graph(self) -> None:
+        """plot the main graph"""
+        self.ax_main.scatter(self.x_range, self.z_average)
+        self.fig_main.savefig('main_graph.png')
 
     def __mk_canvas(self) -> None:
         """make the pallete for the figure"""
@@ -351,7 +357,7 @@ class PlotInterfaceZ:
         self.ax_main.set_ylabel('z [A]')
         self.ax_main.set_xlim(x_lo, x_hi)
         self.ax_main.set_ylim(z_lo, z_hi)
-        self.ax_main.set_facecolor('lightgray')
+        # self.ax_main.set_facecolor('lightgray')
         self.fig_main.savefig('main.png')
 
     def __get_bounds(self) -> tuple[np.int64, np.int64, float, float]:
