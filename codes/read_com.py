@@ -365,5 +365,13 @@ class ReadCom:
         return circle
 
 
+class PlotInterfaceZ:
+    """plot the water surface at the interface.
+    The protonation of APTES is affected by changes in the water level.
+    To determine this, we calculate the average z component of all the
+    center of mass of the water molecules at the interface.
+    """
+
+
 if __name__ == '__main__':
     data = ReadCom()
