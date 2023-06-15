@@ -319,63 +319,35 @@ class PlotInterfaceZ:
                  locz: list[tuple[float, float]]  # Z and standard diviation
                  ) -> None:
         self.locz = locz
+        self.z_average: list[float]  # Average value of the z component
+        self.z_std_err: list[float]  # Error (std or std_err) of the z
+        self.x_range: range  # Range of data on the x axis
+        self.z_average, self.z_std_err, self.x_range = self.__get_data()
+        self.fig_main, self.ax_main = plt.subplots()
         self.plot_interface_z()
 
-    def plot_interface_z(self) -> None:
-        """save the plot for the water interface"""
-        # Get the main data to plot
+    def __get_data(self) -> tuple[list[float], list[float], list[float]]:
+        """get tha data"""
         z_average: list[float] = [item[0] for item in self.locz]
         z_std_err: list[float] = [item[1] for item in self.locz]
-        # The main figure
-        fig_z, ax_z = plt.subplots()
-        # The x axis which is the number of frames
         x_range: range = range(len(self.locz))
-        # Plot the main data
-        ax_z.plot(x_range, z_average, label='average z')
-        # Calculate the upper and lower bounds
-        upper_bound = [ave + err for ave, err in zip(z_average, z_std_err)]
-        lower_bound = [ave - err for ave, err in zip(z_average, z_std_err)]
-        # Geting the extermum values
-        x_hi: np.int64 = np.max(x_range)  # Bounds of the x_range
-        x_lo: np.int64 = np.min(x_range)  # Bounds of the x_range
-        z_hi: float = stinfo.box['z'] / 2  # For the main plot
-        z_lo: float = -z_hi   # For the main plot
-        # Fill between the bounds
-        ax_z.fill_between(x_range,
-                          upper_bound,
-                          lower_bound,
-                          color='lightblue',
-                          alpha=0.5,
-                          label='Std Err')
-        plt.axhline(y=0, color='red', linestyle='--', label='COM of NP')
-        # Add labels and legend for the main plot
-        ax_z.set_ylim([z_lo, z_hi])
-        ax_z.set_xlim([x_lo, x_hi])
-        ax_z.set_xlabel('time frame [index]')
-        ax_z.set_ylabel('z [A]')
-        ax_z.legend()
+        return z_average, z_std_err, x_range
 
-        # Create an inset plot
-        # Position and size of the inset plot
-        left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
-        inset_ax = plt.axes([left, bottom, width, height])
-        z_hi = np.floor(np.max(upper_bound)) + 1  # For the inset plot
-        z_lo = np.floor(np.min(lower_bound)) - 1  # For the inset plot
-        # Plot the inset curve
-        inset_ax.plot(x_range, z_average)
-        inset_ax.fill_between(x_range,
-                              upper_bound,
-                              lower_bound,
-                              color='lightblue',
-                              alpha=0.5)
-        # x_lim_inset = np.floor(np.max(x_range))
-        # Set the limits for the inset plot
-        # inset_ax.set_xlim([1, 8])
-        inset_ax.set_xlim([x_lo, x_hi])
-        inset_ax.set_ylim([z_lo, z_hi])
-        # Add labels and legend for the inset plot
-        plt.savefig('test.png')
-        plt.close(fig_z)
+    def plot_interface_z(self):
+        """call the functions"""
+        self.__mk_canvas()
+
+    def __mk_canvas(self) -> None:
+        """make the pallete for the figure"""
+        self.ax_main.set_xlabel('X')
+        self.ax_main.set_ylabel('Y')
+        self.ax_main.set_xlim(0, 10)
+        self.ax_main.set_ylim(0, 10)
+        self.ax_main.set_xticks(range(11))
+        self.ax_main.set_yticks(range(11))
+        self.ax_main.set_facecolor('lightgray')
+        self.fig_main.savefig('main.png')
+
 
 
 if __name__ == '__main__':
