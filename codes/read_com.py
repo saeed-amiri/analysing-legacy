@@ -318,19 +318,22 @@ class PlotInterfaceZ:
     def __init__(self,
                  locz: list[tuple[float, float]]  # Z and standard diviation
                  ) -> None:
-        self.locz = locz
+        self.upper_bound: list[float]  # Upper bound of the err bar
+        self.lower_bound: list[float]  # Lower bound of the err bar
         self.z_average: list[float]  # Average value of the z component
         self.z_std_err: list[float]  # Error (std or std_err) of the z
         self.x_range: range  # Range of data on the x axis
-        self.z_average, self.z_std_err, self.x_range = self.__get_data()
+        self.z_average, self.z_std_err, self.x_range = self.__get_data(locz)
         self.fig_main, self.ax_main = plt.subplots()
         self.plot_interface_z()
 
-    def __get_data(self) -> tuple[list[float], list[float], list[float]]:
+    def __get_data(self,
+                   locz: list[tuple[float, float]]  # Z and standard diviation
+                   ) -> tuple[list[float], list[float], list[float]]:
         """get tha data"""
-        z_average: list[float] = [item[0] for item in self.locz]
-        z_std_err: list[float] = [item[1] for item in self.locz]
-        x_range: range = range(len(self.locz))
+        z_average: list[float] = [item[0] for item in locz]
+        z_std_err: list[float] = [item[1] for item in locz]
+        x_range: range = range(len(locz))
         return z_average, z_std_err, x_range
 
     def plot_interface_z(self):
@@ -339,15 +342,30 @@ class PlotInterfaceZ:
 
     def __mk_canvas(self) -> None:
         """make the pallete for the figure"""
-        self.ax_main.set_xlabel('X')
-        self.ax_main.set_ylabel('Y')
-        self.ax_main.set_xlim(0, 10)
-        self.ax_main.set_ylim(0, 10)
-        self.ax_main.set_xticks(range(11))
-        self.ax_main.set_yticks(range(11))
+        x_hi: np.int64  # Bounds of the self.x_range
+        x_lo: np.int64  # Bounds of the self.x_range
+        z_hi: float  # For the main plot
+        z_lo: float  # For the main plot
+        x_hi, x_lo, z_hi, z_lo = self.__get_bounds()
+        self.ax_main.set_xlabel('frame index')
+        self.ax_main.set_ylabel('z [A]')
+        self.ax_main.set_xlim(x_lo, x_hi)
+        self.ax_main.set_ylim(z_lo, z_hi)
         self.ax_main.set_facecolor('lightgray')
         self.fig_main.savefig('main.png')
 
+    def __get_bounds(self) -> tuple[np.int64, np.int64, float, float]:
+        """calculate the limits, and bunds of error bar for surface"""
+        self.upper_bound = [ave + err for ave, err in
+                            zip(self.z_average, self.z_std_err)]
+        self.lower_bound = [ave - err for ave, err in
+                            zip(self.z_average, self.z_std_err)]
+        # Geting the extermum values
+        x_hi: np.int64 = np.max(self.x_range)  # Bounds of the self.x_range
+        x_lo: np.int64 = np.min(self.x_range)  # Bounds of the self.x_range
+        z_hi: float = stinfo.box['z'] / 2  # For the main plot
+        z_lo: float = -z_hi   # For the main plot
+        return x_hi, x_lo, z_hi, z_lo
 
 
 if __name__ == '__main__':
