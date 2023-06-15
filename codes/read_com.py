@@ -44,7 +44,7 @@ class ReadCom:
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
-            number_frame: int = 20
+            number_frame: int = 2
             for i in range(number_frame):
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, _ = \
@@ -58,7 +58,8 @@ class ReadCom:
                     x_surf, y_surf, z_surf = \
                         self.__plot_water_surface(res_arr[i, x_indices],
                                                   res_arr[i, y_indices],
-                                                  res_arr[i, z_indices], i)
+                                                  res_arr[i, z_indices],
+                                                  i)
                     interface_locz.append(
                         self.get_interface_loc(x_surf, y_surf, z_surf))
             if res in ['ODN', 'CLA']:
@@ -72,14 +73,60 @@ class ReadCom:
         return com_arr
 
     @staticmethod
-    def __plot_interface_z(interface_locz: list[float]  # Z of water interface
+    def __plot_interface_z(interface_locz: list[tuple[float, float]]  # Z data
                            ) -> None:
         """save the plot for the water interface"""
+        # Get the main data to plot
         z_average: list[float] = [item[0] for item in interface_locz]
-        z_std: list[float] = [item[1] for item in interface_locz]
+        z_std_err: list[float] = [item[1] for item in interface_locz]
+        # The main figure
         fig_z, ax_z = plt.subplots()
-        ax_z.errorbar(range(len(interface_locz)), z_average, yerr=z_std,
-                           fmt='o', capsize=4)
+        # The x axis which is the number of frames
+        x_range: range = range(len(interface_locz))
+        # Plot the main data
+        ax_z.plot(x_range, z_average, label='average z')
+        # Calculate the upper and lower bounds
+        upper_bound = [ave + err for ave, err in zip(z_average, z_std_err)]
+        lower_bound = [ave - err for ave, err in zip(z_average, z_std_err)]
+        # Geting the extermum values
+        x_hi: np.int64 = np.max(x_range)  # Bounds of the x_range
+        x_lo: np.int64 = np.min(x_range)  # Bounds of the x_range
+        z_hi: float = stinfo.box['z'] / 2  # For the main plot
+        z_lo: float = -z_hi   # For the main plot
+        # Fill between the bounds
+        ax_z.fill_between(x_range,
+                          upper_bound,
+                          lower_bound,
+                          color='lightblue',
+                          alpha=0.5,
+                          label='Std Err')
+        plt.axhline(y=0, color='red', linestyle='--', label='COM of NP')
+        # Add labels and legend for the main plot
+        ax_z.set_ylim([z_lo, z_hi])
+        ax_z.set_xlim([x_lo, x_hi])
+        ax_z.set_xlabel('time frame [index]')
+        ax_z.set_ylabel('z [A]')
+        ax_z.legend()
+
+        # Create an inset plot
+        # Position and size of the inset plot
+        left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
+        inset_ax = plt.axes([left, bottom, width, height])
+        z_hi = np.floor(np.max(upper_bound)) + 1  # For the inset plot
+        z_lo = np.floor(np.min(lower_bound)) - 1  # For the inset plot
+        # Plot the inset curve
+        inset_ax.plot(x_range, z_average)
+        inset_ax.fill_between(x_range,
+                              upper_bound,
+                              lower_bound,
+                              color='lightblue',
+                              alpha=0.5)
+        # x_lim_inset = np.floor(np.max(x_range))
+        # Set the limits for the inset plot
+        # inset_ax.set_xlim([1, 8])
+        inset_ax.set_xlim([x_lo, x_hi])
+        inset_ax.set_ylim([z_lo, z_hi])
+        # Add labels and legend for the inset plot
         plt.savefig('test.png')
         plt.close(fig_z)
 
@@ -93,19 +140,13 @@ class ReadCom:
         this is by calculating the average z components of the interface.
         Although there may be more accurate methods, this is the most
         straightforward and practical."""
-        from scipy.stats import t
         lengths: np.ndarray = self.__calculate_lengths(x_data, y_data)
         ind_outsid: np.ndarray = np.where(lengths > stinfo.np_info['radius'])
         z_outsid: np.ndarray = z_data[ind_outsid]
         # Calculate the confidence interval
-        confidence = 0.95  # Confidence level (e.g., 95%)
-        n = len(z_outsid)  # Number of data points
         mean = np.mean(z_outsid)  # Mean of the data
-        std_error = np.std(z_outsid) / np.sqrt(n)  # Standard error of the mean
-        margin = std_error * t.ppf((1 + confidence) / 2, n - 1)  # Margin of error
-        ci_lower = mean - margin  # Lower bound of confidence interval
-        ci_upper = mean + margin  # Upper bound of confidence interval
-        return np.mean(z_outsid), margin
+        std_error = np.std(z_outsid)
+        return mean, std_error
 
     @staticmethod
     def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
