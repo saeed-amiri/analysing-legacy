@@ -17,6 +17,7 @@ class PlotInterfaceZ:
     transparent: bool = False  # Save fig background
     f_errbar: str = 'errbar.png'  # Name of the errbar figure
     f_inset: str = 'inset.png'  # Name of the inset figure
+    f_shadow: str = 'shadow.png'  # Name of the shadow figure
 
     def __init__(self,
                  locz: list[tuple[float, float]]  # Z and standard diviation
@@ -114,16 +115,18 @@ class PlotInterfaceZ:
         ax_i.fill_between(self.x_range,
                           self.lower_bound,
                           y_min,
-                          color='royalblue',
-                          alpha=0.5,
+                          color='deepskyblue',
+                          alpha=0.3,
                           edgecolor='none')
         ax_i.fill_between(self.x_range,
                           self.upper_bound,
                           y_max,
-                          color='yellow',
+                          color='lightyellow',
                           alpha=0.5,
                           edgecolor='none')
-        self.save_close_fig(fig_i, ax_i, 'test.png')
+        ax_i.set_title('average thickness of interface: '
+                       f'{self.__get_interface_thickness():.2f}', fontsize=12)
+        self.save_close_fig(fig_i, ax_i, self.f_shadow)
 
     def __plot_ave(self,
                    ax_i: plt.axes,  # axes to plot average
@@ -169,6 +172,13 @@ class PlotInterfaceZ:
         z_hi: float = stinfo.box['z'] / 2  # For the main plot
         z_lo: float = -z_hi   # For the main plot
         return x_hi, x_lo, z_hi, z_lo
+
+    def __get_interface_thickness(self) -> np.float64:
+        """calculate and return the average thickness of teh interface"""
+        ave_bound: list[float]  # length of the interface
+        ave_bound = [u_i - l_i for u_i, l_i in
+                     zip(self.upper_bound, self.lower_bound)]
+        return np.mean(ave_bound)
 
     @classmethod
     def __set_ax_font_label(cls,
