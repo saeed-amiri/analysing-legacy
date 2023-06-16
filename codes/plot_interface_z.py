@@ -107,7 +107,6 @@ class PlotInterfaceZ:
         ax_main.set_ylabel('z [A]', fontsize=cls.fontsize)
         ax_main.tick_params(axis='x', labelsize=cls.fontsize)
         ax_main.tick_params(axis='y', labelsize=cls.fontsize)
-        # Set the number of xticks and show the first and last values
         return ax_main
 
     @classmethod
@@ -142,12 +141,12 @@ class PlotInterfaceZ:
         for ax_i in [ax_main, ax2]:
             ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
             ax_i.xaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=4))
+                matplotlib.ticker.AutoMinorLocator(n=5))
             ax_i.tick_params(which='minor', direction='in')
         for ax_i in [ax_main, ax3]:
             ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
             ax_i.yaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=4))
+                matplotlib.ticker.AutoMinorLocator(n=5))
             ax_i.tick_params(which='minor', direction='in')
         return ax_main
 
