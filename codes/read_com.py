@@ -44,7 +44,7 @@ class ReadCom:
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
-            number_frame: int = 2
+            number_frame: int = 200
             for i in range(number_frame):
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, _ = \
@@ -291,7 +291,7 @@ class ReadCom:
                             res: str  # Name of the residue
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """get xyz for all the oda at the interface and or ion in the bolck"""
-        interface_z: float = 20  # should be calculated, interface treshhold
+        interface_z: float = 10  # should be calculated, interface treshhold
         if res == 'ODN':
             inface_indx = np.where(z_data > interface_z)[0]  # At interface
         elif res == 'CLA':
@@ -333,8 +333,20 @@ class PlotInterfaceZ:
 
     def __mk_main_graph(self) -> None:
         """plot the main graph"""
+        fig_i: plt.figure  # Canvas
+        ax_i: plt.axes  # main axis
         fig_i, ax_i = self.__mk_canvas()
-        ax_i.scatter(self.x_range, self.z_average)
+        ax_i.errorbar(self.x_range,
+                      self.z_average,
+                      yerr=self.z_std_err,
+                      fmt='o',
+                      markersize=2,
+                      capsize=4,
+                      label='std')
+        std_max: np.float64 = np.max(np.abs(self.z_std_err))
+        ax_i.set_ylim([np.min(self.z_average)-std_max,
+                       np.max(self.z_average)+std_max])
+        plt.legend(loc='upper right')
         fig_i.savefig('main_graph.png')
         plt.close(fig_i)
 
