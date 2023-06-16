@@ -58,9 +58,39 @@ class PlotInterfaceZ:
         fig_i: plt.figure  # Canvas
         ax_i: plt.axes  # main axis
         fig_i, ax_i = self.__mk_canvas()
+        self.__plot_inset()
         ax_i.plot(self.x_range, self.z_average, label='average z')
+        ax_i.fill_between(self.x_range,
+                          self.upper_bound,
+                          self.lower_bound,
+                          color='lightblue',
+                          label='std',
+                          alpha=0.5)
         self.save_fig(fig_i, ax_i, 'inset_graph.png')
         plt.close(fig_i)
+
+    def __plot_inset(self) -> plt.axes:
+        """Create an inset plot"""
+        # Position and size of the inset plot
+        left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
+        inset_ax = plt.axes([left, bottom, width, height])
+        # Plot the inset curve
+        inset_ax.plot(self.x_range, self.z_average)
+        inset_ax.fill_between(self.x_range,
+                              self.upper_bound,
+                              self.lower_bound,
+                              color='lightblue',
+                              label='std',
+                              alpha=0.5)
+        # Set the limits for the inset plot
+        x_hi = np.floor(np.max(self.x_range))
+        x_lo = np.floor(np.min(self.x_range))
+        z_hi = np.floor(np.max(self.upper_bound)) + 1
+        z_lo = np.floor(np.min(self.lower_bound)) - 1
+        inset_ax.set_xlim([x_lo, x_hi])
+        inset_ax.set_ylim([z_lo, z_hi])
+        inset_ax = self.__set_ax_font_label(inset_ax, fsize=12)
+        return inset_ax
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
@@ -77,7 +107,7 @@ class PlotInterfaceZ:
         xticks = np.linspace(self.x_range[0], self.x_range[-1], num_xticks)
         ax_main.set_xticks(xticks)
         ax_main = self.__set_ticks(ax_main)
-        ax_main = self.__set_main_ax(ax_main)
+        ax_main = self.__set_ax_font_label(ax_main)
         return fig_main, ax_main
 
     def __get_bounds(self) -> None:
@@ -97,16 +127,21 @@ class PlotInterfaceZ:
         return x_hi, x_lo, z_hi, z_lo
 
     @classmethod
-    def __set_main_ax(cls,
-                      ax_main: plt.axes  # Main axis to set parameters
+    def __set_ax_font_label(cls,
+                      ax_main: plt.axes,  # Main axis to set parameters
+                      fsize: int = 0  # font size if called from other places
                       ) -> plt.axes:
         """set parameters on the plot"""
+        if fsize == 0:
+            fontsize = cls.fontsize
+            ax_main.set_xlabel('frame index', fontsize=fontsize)
+            ax_main.set_ylabel('z [A]', fontsize=fontsize)
+        else:
+            fontsize = fsize
         matplotlib.rcParams['font.family'] = 'sans-serif'
-        matplotlib.rcParams['font.size'] = cls.fontsize
-        ax_main.set_xlabel('frame index', fontsize=cls.fontsize)
-        ax_main.set_ylabel('z [A]', fontsize=cls.fontsize)
-        ax_main.tick_params(axis='x', labelsize=cls.fontsize)
-        ax_main.tick_params(axis='y', labelsize=cls.fontsize)
+        matplotlib.rcParams['font.size'] = fontsize
+        ax_main.tick_params(axis='x', labelsize=fontsize)
+        ax_main.tick_params(axis='y', labelsize=fontsize)
         return ax_main
 
     @classmethod
@@ -174,7 +209,7 @@ def generate_float_tuples(list_len: int  # length of the list
     """
     float_tuples: list[tuple[float, float]] = []
     for _ in range(list_len):
-        float_tuples.append((np.random.rand(), np.random.rand()))
+        float_tuples.append((np.random.rand(), 10*np.random.rand()))
     return float_tuples
 
 
