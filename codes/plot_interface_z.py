@@ -103,6 +103,28 @@ class PlotInterfaceZ:
                           alpha=0.5)
         return ax_i
 
+    def __mk_shadow_area(self) -> None:
+        """plot a graph showing the area for water and oil as a shadow"""
+        fig_i: plt.figure  # Canvas
+        ax_i: plt.axes  # main axis
+        fig_i, ax_i = self.__mk_canvas()
+        self.__plt_graphes_inset(ax_i)
+        # Get the limits of the x-axis and y-axis
+        y_min, y_max = ax_i.get_ylim()
+        ax_i.fill_between(self.x_range,
+                          self.lower_bound,
+                          y_min,
+                          color='royalblue',
+                          alpha=0.5,
+                          edgecolor='none')
+        ax_i.fill_between(self.x_range,
+                          self.upper_bound,
+                          y_max,
+                          color='yellow',
+                          alpha=0.5,
+                          edgecolor='none')
+        self.save_fig(fig_i, ax_i, 'test.png')
+
     def __plot_ave(self,
                    ax_i: plt.axes,  # axes to plot average
                    lw: int = 1  # Width of the line
