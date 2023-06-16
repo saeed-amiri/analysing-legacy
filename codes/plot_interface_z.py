@@ -56,6 +56,15 @@ class PlotInterfaceZ:
         """make the pallete for the figure"""
         fig_main, ax_main = plt.subplots()
         # Set font for all elements in the plot
+        matplotlib.rcParams['font.family'] = 'sans-serif'
+        matplotlib.rcParams['font.size'] = self.fontsize
+        ax_main = self.__set_main_ax(ax_main)
+        return fig_main, ax_main
+
+    def __set_main_ax(self,
+                      ax_main: plt.axes  # Main axis to set parameters
+                      ) -> plt.axes:
+        """set parameters on the plot"""
         x_hi: np.int64  # Bounds of the self.x_range
         x_lo: np.int64  # Bounds of the self.x_range
         z_hi: float  # For the main plot
@@ -63,13 +72,11 @@ class PlotInterfaceZ:
         x_hi, x_lo, z_hi, z_lo = self.__get_lims()
         ax_main.set_xlim(x_lo, x_hi)
         ax_main.set_ylim(z_lo, z_hi)
-        matplotlib.rcParams['font.family'] = 'sans-serif'
-        matplotlib.rcParams['font.size'] = self.fontsize
         ax_main.set_xlabel('frame index', fontsize=self.fontsize)
         ax_main.set_ylabel('z [A]', fontsize=self.fontsize)
         ax_main.tick_params(axis='x', labelsize=self.fontsize)
         ax_main.tick_params(axis='y', labelsize=self.fontsize)
-        return fig_main, ax_main
+        return ax_main
 
     def __get_bounds(self) -> None:
         """calculate the bunds of error bar for surface"""
