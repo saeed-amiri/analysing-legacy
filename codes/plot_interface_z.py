@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pylab as plt
 import static_info as stinfo
+import plot_tools as ptools
 
 
 class PlotInterfaceZ:
@@ -14,6 +15,8 @@ class PlotInterfaceZ:
     """
     fontsize: int = 14  # Fontsize for all in plots
     transparent: bool = False  # Save fig background
+    f_errbar: str = 'errbar.png'  # Name of the errbar figure
+    f_inset: str = 'inset.png'  # Name of the inset figure
 
     def __init__(self,
                  locz: list[tuple[float, float]]  # Z and standard diviation
@@ -53,7 +56,7 @@ class PlotInterfaceZ:
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
         ax_i = self.__plot_ave(ax_i)
-        self.save_fig(fig_i, ax_i, 'main_graph.png')
+        self.save_fig(fig_i, ax_i, fname=self.f_errbar)
         plt.close(fig_i)
 
     def __mk_inset(self) -> None:
@@ -63,7 +66,7 @@ class PlotInterfaceZ:
         self.__plot_inset()
         ax_i = self.__plt_graphes_inset(ax_i)
         ax_i = self.__plot_ave(ax_i)
-        self.save_fig(fig_i, ax_i, 'inset_graph.png')
+        self.save_fig(fig_i, ax_i, fname=self.f_inset)
         plt.close(fig_i)
 
     def __plot_inset(self) -> plt.axes:
@@ -109,7 +112,8 @@ class PlotInterfaceZ:
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
-        fig_main, ax_main = plt.subplots()
+        width = stinfo.plot['width']
+        fig_main, ax_main = plt.subplots(1, figsize=ptools.set_sizes(width))
         # Set font for all elements in the plot
         x_hi: np.int64  # Bounds of the self.x_range
         x_lo: np.int64  # Bounds of the self.x_range
