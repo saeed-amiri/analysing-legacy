@@ -117,10 +117,9 @@ class PlotInterfaceZ:
                     dpi=300,
                     format=None,
                     metadata=None,
-                    bbox_inches='tight',
                     pad_inches=0.1,
-                    facecolor='auto',
                     edgecolor='auto',
+                    bbox_inches='tight',
                     transparent=cls.transparent
                     )
 
