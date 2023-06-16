@@ -47,10 +47,12 @@ class PlotInterfaceZ:
                       markerfacecolor='k',
                       capsize=4,
                       linewidth=1,
-                      label='std')
+                      zorder=1,
+                      label='data and std')
         std_max: np.float64 = np.max(np.abs(self.z_std_err))
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
+        ax_i = self.__plot_ave(ax_i)
         self.save_fig(fig_i, ax_i, 'main_graph.png')
         plt.close(fig_i)
 
@@ -60,6 +62,7 @@ class PlotInterfaceZ:
         fig_i, ax_i = self.__mk_canvas()
         self.__plot_inset()
         ax_i = self.__plt_graphes_inset(ax_i)
+        ax_i = self.__plot_ave(ax_i)
         self.save_fig(fig_i, ax_i, 'inset_graph.png')
         plt.close(fig_i)
 
@@ -70,6 +73,7 @@ class PlotInterfaceZ:
         inset_ax = plt.axes([left, bottom, width, height])
         # Plot the inset curve
         inset_ax = self.__plt_graphes_inset(inset_ax)
+        inset_ax = self.__plot_ave(inset_ax)
         # Set the limits for the inset plot
         x_hi = np.floor(np.max(self.x_range))
         x_lo = np.floor(np.min(self.x_range))
@@ -84,13 +88,23 @@ class PlotInterfaceZ:
                             ax_i: plt.axes  # The ax to plot on
                             ) -> plt.axes:
         """plot the graph and fill in std"""
-        ax_i.plot(self.x_range, self.z_average, color='k', label='avergage z')
+        ax_i.plot(self.x_range, self.z_average, color='k', label='average z')
         ax_i.fill_between(self.x_range,
                           self.upper_bound,
                           self.lower_bound,
                           color='k',
                           label='std',
                           alpha=0.5)
+        return ax_i
+
+    def __plot_ave(self,
+                   ax_i: plt.axes,  # axes to plot average
+                   lw: int = 1  # Width of the line
+                   ) -> plt.axes:
+        """plot average of z_average"""
+        z_mean: np.float64 = np.mean(self.z_average)
+        ax_i.axhline(z_mean, color='r', ls='--', lw=lw,
+                     label=f'mean of data: {z_mean:.2f}', zorder=2)
         return ax_i
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
