@@ -14,6 +14,7 @@ class PlotInterfaceZ:
     """
     fontsize: int = 14  # Fontsize for all in plots
     transparent: bool = False  # Save fig background
+
     def __init__(self,
                  locz: list[tuple[float, float]]  # Z and standard diviation
                  ) -> None:
@@ -51,7 +52,7 @@ class PlotInterfaceZ:
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
         plt.legend(loc='upper right')
-        fig_i.savefig('main_graph.png')
+        self.save_fig(fig_i, 'main_graph.png')
         plt.close(fig_i)
 
     def __mk_inset(self) -> None:
@@ -60,22 +61,13 @@ class PlotInterfaceZ:
         fig_i, ax_in = self.__mk_canvas()
         ax_in.plot(self.x_range, self.z_average, label='average z')
         plt.legend(loc='upper right')
-        self.__save_fig(fig_i, 'inset_graph.png')
+        self.save_fig(fig_i, 'inset_graph.png')
         plt.close(fig_i)
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
         fig_main, ax_main = plt.subplots()
         # Set font for all elements in the plot
-        matplotlib.rcParams['font.family'] = 'sans-serif'
-        matplotlib.rcParams['font.size'] = self.fontsize
-        ax_main = self.__set_main_ax(ax_main)
-        return fig_main, ax_main
-
-    def __set_main_ax(self,
-                      ax_main: plt.axes  # Main axis to set parameters
-                      ) -> plt.axes:
-        """set parameters on the plot"""
         x_hi: np.int64  # Bounds of the self.x_range
         x_lo: np.int64  # Bounds of the self.x_range
         z_hi: float  # For the main plot
@@ -83,10 +75,20 @@ class PlotInterfaceZ:
         x_hi, x_lo, z_hi, z_lo = self.__get_lims()
         ax_main.set_xlim(x_lo, x_hi)
         ax_main.set_ylim(z_lo, z_hi)
-        ax_main.set_xlabel('frame index', fontsize=self.fontsize)
-        ax_main.set_ylabel('z [A]', fontsize=self.fontsize)
-        ax_main.tick_params(axis='x', labelsize=self.fontsize)
-        ax_main.tick_params(axis='y', labelsize=self.fontsize)
+        ax_main = self.__set_main_ax(ax_main)
+        return fig_main, ax_main
+
+    @classmethod
+    def __set_main_ax(cls,
+                      ax_main: plt.axes  # Main axis to set parameters
+                      ) -> plt.axes:
+        """set parameters on the plot"""
+        matplotlib.rcParams['font.family'] = 'sans-serif'
+        matplotlib.rcParams['font.size'] = cls.fontsize
+        ax_main.set_xlabel('frame index', fontsize=cls.fontsize)
+        ax_main.set_ylabel('z [A]', fontsize=cls.fontsize)
+        ax_main.tick_params(axis='x', labelsize=cls.fontsize)
+        ax_main.tick_params(axis='y', labelsize=cls.fontsize)
         return ax_main
 
     def __get_bounds(self) -> None:
@@ -106,10 +108,10 @@ class PlotInterfaceZ:
         return x_hi, x_lo, z_hi, z_lo
 
     @classmethod
-    def __save_fig(cls,
-                   fig: plt.figure,  # The figure to save
-                   fname: str  # Name of the output for the fig
-                   ) -> None:
+    def save_fig(cls,
+                 fig: plt.figure,  # The figure to save
+                 fname: str  # Name of the output for the fig
+                 ) -> None:
         """to save all the fige"""
         fig.savefig(fname,
                     dpi=300,
