@@ -84,3 +84,25 @@ class PlotInterfaceZ:
         z_std_err: list[float] = [item[1] for item in locz]
         x_range: range = range(len(locz))
         return z_average, z_std_err, x_range
+
+
+def generate_float_tuples(list_len: int  # length of the list
+                          ) -> list[tuple[float, float]]:
+    """
+    Generate a list of tuples with float values.
+    for running the scripts alone.
+
+    Args:
+        n (int): The number of tuples to generate.
+
+    Returns:
+        list[tuple[float, float]]: The list of tuples containing float values.
+    """
+    float_tuples: list[tuple[float, float]] = []
+    for _ in range(list_len):
+        float_tuples.append((np.random.rand(), np.random.rand()))
+    return float_tuples
+
+
+if __name__ == '__main__':
+    PlotInterfaceZ(generate_float_tuples(50))
