@@ -52,16 +52,15 @@ class PlotInterfaceZ:
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
         plt.legend(loc='upper right')
-        self.save_fig(fig_i, 'main_graph.png')
+        self.save_fig(fig_i, ax_i, 'main_graph.png')
         plt.close(fig_i)
 
     def __mk_inset(self) -> None:
         fig_i: plt.figure  # Canvas
-        ax_in: plt.axes  # main axis
-        fig_i, ax_in = self.__mk_canvas()
-        ax_in.plot(self.x_range, self.z_average, label='average z')
-        plt.legend(loc='upper right')
-        self.save_fig(fig_i, 'inset_graph.png')
+        ax_i: plt.axes  # main axis
+        fig_i, ax_i = self.__mk_canvas()
+        ax_i.plot(self.x_range, self.z_average, label='average z')
+        self.save_fig(fig_i, ax_i, 'inset_graph.png')
         plt.close(fig_i)
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
@@ -75,8 +74,35 @@ class PlotInterfaceZ:
         x_hi, x_lo, z_hi, z_lo = self.__get_lims()
         ax_main.set_xlim(x_lo, x_hi)
         ax_main.set_ylim(z_lo, z_hi)
+        num_xticks = 5
+        xticks = np.linspace(self.x_range[0], self.x_range[-1], num_xticks)
+        ax_main.set_xticks(xticks)
+        ax_main = self.__set_ticks(ax_main)
         ax_main = self.__set_main_ax(ax_main)
         return fig_main, ax_main
+
+    @staticmethod
+    def __set_ticks(ax_main: plt.axes  # The axes to wrok with
+                    ) -> plt.axes:
+        """set tickes"""
+        ax2 = ax_main.twiny()
+        ax3 = ax_main.twinx()
+        ax_main.tick_params(axis='both', direction='in')
+        ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
+        ax2.tick_params(axis='x', direction='in')
+        ax3.set_yticklabels([])  # Remove the tick labels on the top x-axis
+        ax3.tick_params(axis='y', direction='in')
+        for ax_i in [ax_main, ax2]:
+            ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.xaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=4))
+            ax_i.tick_params(which='minor', direction='in')
+        for ax_i in [ax_main, ax3]:
+            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.yaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=4))
+            ax_i.tick_params(which='minor', direction='in')
+        return ax_main
 
     def __get_bounds(self) -> None:
         """calculate the bunds of error bar for surface"""
@@ -105,14 +131,18 @@ class PlotInterfaceZ:
         ax_main.set_ylabel('z [A]', fontsize=cls.fontsize)
         ax_main.tick_params(axis='x', labelsize=cls.fontsize)
         ax_main.tick_params(axis='y', labelsize=cls.fontsize)
+        # Set the number of xticks and show the first and last values
         return ax_main
 
     @classmethod
     def save_fig(cls,
-                 fig: plt.figure,  # The figure to save
+                 fig: plt.figure,  # The figure to save,
+                 axs: plt.axes,  # Axes to plot
                  fname: str  # Name of the output for the fig
                  ) -> None:
         """to save all the fige"""
+        legend = axs.legend(loc='upper right', bbox_to_anchor=(1.0, 1.0))
+        legend.set_bbox_to_anchor((1.0, 1.0))
         fig.savefig(fname,
                     dpi=300,
                     pad_inches=0.1,
@@ -150,4 +180,4 @@ def generate_float_tuples(list_len: int  # length of the list
 
 
 if __name__ == '__main__':
-    PlotInterfaceZ(generate_float_tuples(50))
+    PlotInterfaceZ(generate_float_tuples(51))
