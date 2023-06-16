@@ -31,8 +31,11 @@ class PlotInterfaceZ:
 
     def plot_interface_z(self):
         """call the functions"""
+        # Get the bonds for the plotting
         self.__get_bounds()
+        # Plot the graph with errobar
         self.__mk_errorbar()
+        # Plot the graph with inset
         self.__mk_inset()
 
     def __mk_errorbar(self) -> None:
