@@ -68,7 +68,7 @@ class PlotInterfaceZ:
         ax_i: plt.axes  # main axis
         fig_i, ax_i = self.__mk_canvas()
         self.__plot_inset()
-        ax_i = self.__plt_graphes_inset(ax_i)
+        ax_i = self.__plt_data_and_fill(ax_i)
         ax_i = self.__plot_ave(ax_i)
         self.save_fig(fig_i, ax_i, fname=self.f_inset)
 
@@ -78,7 +78,7 @@ class PlotInterfaceZ:
         left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
         inset_ax = plt.axes([left, bottom, width, height])
         # Plot the inset curve
-        inset_ax = self.__plt_graphes_inset(inset_ax)
+        inset_ax = self.__plt_data_and_fill(inset_ax)
         inset_ax = self.__plot_ave(inset_ax)
         # Set the limits for the inset plot
         x_hi = np.floor(np.max(self.x_range))
@@ -90,7 +90,7 @@ class PlotInterfaceZ:
         inset_ax = self.__set_ax_font_label(inset_ax, fsize=11)
         return inset_ax
 
-    def __plt_graphes_inset(self,
+    def __plt_data_and_fill(self,
                             ax_i: plt.axes  # The ax to plot on
                             ) -> plt.axes:
         """plot the graph and fill in std"""
@@ -108,7 +108,7 @@ class PlotInterfaceZ:
         fig_i: plt.figure  # Canvas
         ax_i: plt.axes  # main axis
         fig_i, ax_i = self.__mk_canvas()
-        self.__plt_graphes_inset(ax_i)
+        self.__plt_data_and_fill(ax_i)
         # Get the limits of the x-axis and y-axis
         y_min, y_max = ax_i.get_ylim()
         ax_i.fill_between(self.x_range,
