@@ -61,7 +61,7 @@ class PlotInterfaceZ:
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
         ax_i = self.__plot_ave(ax_i)
-        self.save_fig(fig_i, ax_i, fname=self.f_errbar)
+        self.save_close_fig(fig_i, ax_i, fname=self.f_errbar)
 
     def __mk_inset(self) -> None:
         fig_i: plt.figure  # Canvas
@@ -70,7 +70,7 @@ class PlotInterfaceZ:
         self.__plot_inset()
         ax_i = self.__plt_data_and_fill(ax_i)
         ax_i = self.__plot_ave(ax_i)
-        self.save_fig(fig_i, ax_i, fname=self.f_inset)
+        self.save_close_fig(fig_i, ax_i, fname=self.f_inset)
 
     def __plot_inset(self) -> plt.axes:
         """Create an inset plot"""
@@ -123,7 +123,7 @@ class PlotInterfaceZ:
                           color='yellow',
                           alpha=0.5,
                           edgecolor='none')
-        self.save_fig(fig_i, ax_i, 'test.png')
+        self.save_close_fig(fig_i, ax_i, 'test.png')
 
     def __plot_ave(self,
                    ax_i: plt.axes,  # axes to plot average
@@ -189,12 +189,12 @@ class PlotInterfaceZ:
         return ax_main
 
     @classmethod
-    def save_fig(cls,
-                 fig: plt.figure,  # The figure to save,
-                 axs: plt.axes,  # Axes to plot
-                 fname: str,  # Name of the output for the fig
-                 loc: str = 'upper right'  # Location of the legend
-                 ) -> None:
+    def save_close_fig(cls,
+                       fig: plt.figure,  # The figure to save,
+                       axs: plt.axes,  # Axes to plot
+                       fname: str,  # Name of the output for the fig
+                       loc: str = 'upper right'  # Location of the legend
+                       ) -> None:
         """to save all the fige"""
         legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
         legend.set_bbox_to_anchor((1.0, 1.0))
