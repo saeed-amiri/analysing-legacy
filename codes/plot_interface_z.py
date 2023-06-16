@@ -51,7 +51,6 @@ class PlotInterfaceZ:
         std_max: np.float64 = np.max(np.abs(self.z_std_err))
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
-        plt.legend(loc='upper right')
         self.save_fig(fig_i, ax_i, 'main_graph.png')
         plt.close(fig_i)
 
@@ -115,10 +114,11 @@ class PlotInterfaceZ:
     def save_fig(cls,
                  fig: plt.figure,  # The figure to save,
                  axs: plt.axes,  # Axes to plot
-                 fname: str  # Name of the output for the fig
+                 fname: str,  # Name of the output for the fig
+                 loc: str = 'upper right'  # Location of the legend
                  ) -> None:
         """to save all the fige"""
-        legend = axs.legend(loc='upper right', bbox_to_anchor=(1.0, 1.0))
+        legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
         legend.set_bbox_to_anchor((1.0, 1.0))
         fig.savefig(fname,
                     dpi=300,
