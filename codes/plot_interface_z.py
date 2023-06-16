@@ -115,8 +115,6 @@ class PlotInterfaceZ:
         """to save all the fige"""
         fig.savefig(fname,
                     dpi=300,
-                    format=None,
-                    metadata=None,
                     pad_inches=0.1,
                     edgecolor='auto',
                     bbox_inches='tight',
