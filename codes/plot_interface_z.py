@@ -29,10 +29,10 @@ class PlotInterfaceZ:
     def plot_interface_z(self):
         """call the functions"""
         self.__get_bounds()
-        self.__mk_main_graph()
+        self.__mk_errorbar()
         self.__mk_inset()
 
-    def __mk_main_graph(self) -> None:
+    def __mk_errorbar(self) -> None:
         """plot the main graph"""
         fig_i: plt.figure  # Canvas
         ax_i: plt.axes  # main axis
