@@ -81,29 +81,6 @@ class PlotInterfaceZ:
         ax_main = self.__set_main_ax(ax_main)
         return fig_main, ax_main
 
-    @staticmethod
-    def __set_ticks(ax_main: plt.axes  # The axes to wrok with
-                    ) -> plt.axes:
-        """set tickes"""
-        ax2 = ax_main.twiny()
-        ax3 = ax_main.twinx()
-        ax_main.tick_params(axis='both', direction='in')
-        ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
-        ax2.tick_params(axis='x', direction='in')
-        ax3.set_yticklabels([])  # Remove the tick labels on the top x-axis
-        ax3.tick_params(axis='y', direction='in')
-        for ax_i in [ax_main, ax2]:
-            ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
-            ax_i.xaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=4))
-            ax_i.tick_params(which='minor', direction='in')
-        for ax_i in [ax_main, ax3]:
-            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
-            ax_i.yaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=4))
-            ax_i.tick_params(which='minor', direction='in')
-        return ax_main
-
     def __get_bounds(self) -> None:
         """calculate the bunds of error bar for surface"""
         self.upper_bound = [ave + err for ave, err in
@@ -150,6 +127,29 @@ class PlotInterfaceZ:
                     bbox_inches='tight',
                     transparent=cls.transparent
                     )
+
+    @staticmethod
+    def __set_ticks(ax_main: plt.axes  # The axes to wrok with
+                    ) -> plt.axes:
+        """set tickes"""
+        ax2 = ax_main.twiny()
+        ax3 = ax_main.twinx()
+        ax_main.tick_params(axis='both', direction='in')
+        ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
+        ax2.tick_params(axis='x', direction='in')
+        ax3.set_yticklabels([])  # Remove the tick labels on the top x-axis
+        ax3.tick_params(axis='y', direction='in')
+        for ax_i in [ax_main, ax2]:
+            ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.xaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=4))
+            ax_i.tick_params(which='minor', direction='in')
+        for ax_i in [ax_main, ax3]:
+            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.yaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=4))
+            ax_i.tick_params(which='minor', direction='in')
+        return ax_main
 
     @staticmethod
     def __get_data(locz: list[tuple[float, float]]  # Z and standard diviation
