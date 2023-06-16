@@ -337,6 +337,7 @@ class PlotInterfaceZ:
 
     def plot_interface_z(self):
         """call the functions"""
+        self.__get_bounds()
         self.__mk_main_graph()
 
     def __mk_main_graph(self) -> None:
@@ -353,19 +354,22 @@ class PlotInterfaceZ:
         x_lo: np.int64  # Bounds of the self.x_range
         z_hi: float  # For the main plot
         z_lo: float  # For the main plot
-        x_hi, x_lo, z_hi, z_lo = self.__get_bounds()
+        x_hi, x_lo, z_hi, z_lo = self.__get_lims()
         ax_main.set_xlabel('frame index')
         ax_main.set_ylabel('z [A]')
         ax_main.set_xlim(x_lo, x_hi)
         ax_main.set_ylim(z_lo, z_hi)
         return fig_main, ax_main
 
-    def __get_bounds(self) -> tuple[np.int64, np.int64, float, float]:
-        """calculate the limits, and bunds of error bar for surface"""
+    def __get_bounds(self) -> None:
+        """calculate the bunds of error bar for surface"""
         self.upper_bound = [ave + err for ave, err in
                             zip(self.z_average, self.z_std_err)]
         self.lower_bound = [ave - err for ave, err in
                             zip(self.z_average, self.z_std_err)]
+
+    def __get_lims(self) -> tuple[np.int64, np.int64, float, float]:
+        """get the limits for the axis"""
         # Geting the extermum values
         x_hi: np.int64 = np.max(self.x_range)  # Bounds of the self.x_range
         x_lo: np.int64 = np.min(self.x_range)  # Bounds of the self.x_range
