@@ -40,8 +40,8 @@ class PlotInterfaceZ:
                       capsize=4,
                       label='std')
         std_max: np.float64 = np.max(np.abs(self.z_std_err))
-        ax_i.set_ylim([np.min(self.z_average)-std_max,
-                       np.max(self.z_average)+std_max])
+        ax_i.set_ylim([np.min(self.z_average)-2*std_max,
+                       np.max(self.z_average)+2*std_max])
         plt.legend(loc='upper right')
         fig_i.savefig('main_graph.png')
         plt.close(fig_i)
