@@ -59,13 +59,7 @@ class PlotInterfaceZ:
         ax_i: plt.axes  # main axis
         fig_i, ax_i = self.__mk_canvas()
         self.__plot_inset()
-        ax_i.plot(self.x_range, self.z_average, label='average z')
-        ax_i.fill_between(self.x_range,
-                          self.upper_bound,
-                          self.lower_bound,
-                          color='lightblue',
-                          label='std',
-                          alpha=0.5)
+        ax_i = self.__plt_graphes_inset(ax_i)
         self.save_fig(fig_i, ax_i, 'inset_graph.png')
         plt.close(fig_i)
 
@@ -75,13 +69,7 @@ class PlotInterfaceZ:
         left, bottom, width, height = [0.2, 0.2, 0.66, 0.27]
         inset_ax = plt.axes([left, bottom, width, height])
         # Plot the inset curve
-        inset_ax.plot(self.x_range, self.z_average)
-        inset_ax.fill_between(self.x_range,
-                              self.upper_bound,
-                              self.lower_bound,
-                              color='lightblue',
-                              label='std',
-                              alpha=0.5)
+        inset_ax = self.__plt_graphes_inset(inset_ax)
         # Set the limits for the inset plot
         x_hi = np.floor(np.max(self.x_range))
         x_lo = np.floor(np.min(self.x_range))
@@ -89,8 +77,21 @@ class PlotInterfaceZ:
         z_lo = np.floor(np.min(self.lower_bound)) - 1
         inset_ax.set_xlim([x_lo, x_hi])
         inset_ax.set_ylim([z_lo, z_hi])
-        inset_ax = self.__set_ax_font_label(inset_ax, fsize=12)
+        inset_ax = self.__set_ax_font_label(inset_ax, fsize=11)
         return inset_ax
+
+    def __plt_graphes_inset(self,
+                            ax_i: plt.axes  # The ax to plot on
+                            ) -> plt.axes:
+        """plot the graph and fill in std"""
+        ax_i.plot(self.x_range, self.z_average, color='k', label='avergage z')
+        ax_i.fill_between(self.x_range,
+                          self.upper_bound,
+                          self.lower_bound,
+                          color='k',
+                          label='std',
+                          alpha=0.5)
+        return ax_i
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
@@ -128,9 +129,9 @@ class PlotInterfaceZ:
 
     @classmethod
     def __set_ax_font_label(cls,
-                      ax_main: plt.axes,  # Main axis to set parameters
-                      fsize: int = 0  # font size if called from other places
-                      ) -> plt.axes:
+                            ax_main: plt.axes,  # Main axis to set parameters
+                            fsize: int = 0  # font size if called with font
+                            ) -> plt.axes:
         """set parameters on the plot"""
         if fsize == 0:
             fontsize = cls.fontsize
