@@ -78,19 +78,6 @@ class PlotInterfaceZ:
         ax_main = self.__set_main_ax(ax_main)
         return fig_main, ax_main
 
-    @classmethod
-    def __set_main_ax(cls,
-                      ax_main: plt.axes  # Main axis to set parameters
-                      ) -> plt.axes:
-        """set parameters on the plot"""
-        matplotlib.rcParams['font.family'] = 'sans-serif'
-        matplotlib.rcParams['font.size'] = cls.fontsize
-        ax_main.set_xlabel('frame index', fontsize=cls.fontsize)
-        ax_main.set_ylabel('z [A]', fontsize=cls.fontsize)
-        ax_main.tick_params(axis='x', labelsize=cls.fontsize)
-        ax_main.tick_params(axis='y', labelsize=cls.fontsize)
-        return ax_main
-
     def __get_bounds(self) -> None:
         """calculate the bunds of error bar for surface"""
         self.upper_bound = [ave + err for ave, err in
@@ -106,6 +93,19 @@ class PlotInterfaceZ:
         z_hi: float = stinfo.box['z'] / 2  # For the main plot
         z_lo: float = -z_hi   # For the main plot
         return x_hi, x_lo, z_hi, z_lo
+
+    @classmethod
+    def __set_main_ax(cls,
+                      ax_main: plt.axes  # Main axis to set parameters
+                      ) -> plt.axes:
+        """set parameters on the plot"""
+        matplotlib.rcParams['font.family'] = 'sans-serif'
+        matplotlib.rcParams['font.size'] = cls.fontsize
+        ax_main.set_xlabel('frame index', fontsize=cls.fontsize)
+        ax_main.set_ylabel('z [A]', fontsize=cls.fontsize)
+        ax_main.tick_params(axis='x', labelsize=cls.fontsize)
+        ax_main.tick_params(axis='y', labelsize=cls.fontsize)
+        return ax_main
 
     @classmethod
     def save_fig(cls,
