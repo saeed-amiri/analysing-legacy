@@ -326,15 +326,6 @@ class PlotInterfaceZ:
         self.z_average, self.z_std_err, self.x_range = self.__get_data(locz)
         self.plot_interface_z()
 
-    @staticmethod
-    def __get_data(locz: list[tuple[float, float]]  # Z and standard diviation
-                   ) -> tuple[list[float], list[float], range]:
-        """get tha data"""
-        z_average: list[float] = [item[0] for item in locz]
-        z_std_err: list[float] = [item[1] for item in locz]
-        x_range: range = range(len(locz))
-        return z_average, z_std_err, x_range
-
     def plot_interface_z(self):
         """call the functions"""
         self.__get_bounds()
@@ -376,6 +367,15 @@ class PlotInterfaceZ:
         z_hi: float = stinfo.box['z'] / 2  # For the main plot
         z_lo: float = -z_hi   # For the main plot
         return x_hi, x_lo, z_hi, z_lo
+
+    @staticmethod
+    def __get_data(locz: list[tuple[float, float]]  # Z and standard diviation
+                   ) -> tuple[list[float], list[float], range]:
+        """get tha data"""
+        z_average: list[float] = [item[0] for item in locz]
+        z_std_err: list[float] = [item[1] for item in locz]
+        x_range: range = range(len(locz))
+        return z_average, z_std_err, x_range
 
 
 if __name__ == '__main__':
