@@ -15,8 +15,8 @@ Number of columns is 3(N+1) + 1
 
 import pickle
 import numpy as np
-import matplotlib.pylab as plt
 import matplotlib
+import matplotlib.pylab as plt
 import static_info as stinfo
 import plot_interface_z as pltz
 
@@ -67,7 +67,6 @@ class ReadCom:
                 self.__plot_odn_com(ax_com, res)
         # Plot interface based on the z location
         pltz.PlotInterfaceZ(interface_locz)
-        # self.__plot_interface_z(interface_locz)
 
     def get_data(self) -> np.ndarray:
         """reading the file"""
