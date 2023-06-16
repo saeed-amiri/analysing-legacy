@@ -13,6 +13,7 @@ class PlotInterfaceZ:
     center of mass of the water molecules at the interface.
     """
     fontsize: int = 14  # Fontsize for all in plots
+    transparent: bool = False  # Save fig background
     def __init__(self,
                  locz: list[tuple[float, float]]  # Z and standard diviation
                  ) -> None:
@@ -28,6 +29,7 @@ class PlotInterfaceZ:
         """call the functions"""
         self.__get_bounds()
         self.__mk_main_graph()
+        self.__mk_inset()
 
     def __mk_main_graph(self) -> None:
         """plot the main graph"""
@@ -50,6 +52,15 @@ class PlotInterfaceZ:
                        np.max(self.z_average)+2*std_max])
         plt.legend(loc='upper right')
         fig_i.savefig('main_graph.png')
+        plt.close(fig_i)
+
+    def __mk_inset(self) -> None:
+        fig_i: plt.figure  # Canvas
+        ax_in: plt.axes  # main axis
+        fig_i, ax_in = self.__mk_canvas()
+        ax_in.plot(self.x_range, self.z_average, label='average z')
+        plt.legend(loc='upper right')
+        self.__save_fig(fig_i, 'inset_graph.png')
         plt.close(fig_i)
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
@@ -93,6 +104,23 @@ class PlotInterfaceZ:
         z_hi: float = stinfo.box['z'] / 2  # For the main plot
         z_lo: float = -z_hi   # For the main plot
         return x_hi, x_lo, z_hi, z_lo
+
+    @classmethod
+    def __save_fig(cls,
+                   fig: plt.figure,  # The figure to save
+                   fname: str  # Name of the output for the fig
+                   ) -> None:
+        """to save all the fige"""
+        fig.savefig(fname,
+                    dpi=300,
+                    format=None,
+                    metadata=None,
+                    bbox_inches='tight',
+                    pad_inches=0.1,
+                    facecolor='auto',
+                    edgecolor='auto',
+                    transparent=cls.transparent
+                    )
 
     @staticmethod
     def __get_data(locz: list[tuple[float, float]]  # Z and standard diviation
