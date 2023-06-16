@@ -1,6 +1,7 @@
 """plot water surface at inerface"""
 
 import numpy as np
+import matplotlib
 import matplotlib.pylab as plt
 import static_info as stinfo
 
@@ -11,6 +12,7 @@ class PlotInterfaceZ:
     To determine this, we calculate the average z component of all the
     center of mass of the water molecules at the interface.
     """
+    fontsize: int = 14  # Fontsize for all in plots
     def __init__(self,
                  locz: list[tuple[float, float]]  # Z and standard diviation
                  ) -> None:
@@ -35,9 +37,13 @@ class PlotInterfaceZ:
         ax_i.errorbar(self.x_range,
                       self.z_average,
                       yerr=self.z_std_err,
+                      color='k',
                       fmt='o',
-                      markersize=2,
+                      markersize=4,
+                      markeredgecolor='k',
+                      markerfacecolor='k',
                       capsize=4,
+                      linewidth=1,
                       label='std')
         std_max: np.float64 = np.max(np.abs(self.z_std_err))
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
@@ -49,15 +55,20 @@ class PlotInterfaceZ:
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
         fig_main, ax_main = plt.subplots()
+        # Set font for all elements in the plot
         x_hi: np.int64  # Bounds of the self.x_range
         x_lo: np.int64  # Bounds of the self.x_range
         z_hi: float  # For the main plot
         z_lo: float  # For the main plot
         x_hi, x_lo, z_hi, z_lo = self.__get_lims()
-        ax_main.set_xlabel('frame index')
-        ax_main.set_ylabel('z [A]')
         ax_main.set_xlim(x_lo, x_hi)
         ax_main.set_ylim(z_lo, z_hi)
+        matplotlib.rcParams['font.family'] = 'sans-serif'
+        matplotlib.rcParams['font.size'] = self.fontsize
+        ax_main.set_xlabel('frame index', fontsize=self.fontsize)
+        ax_main.set_ylabel('z [A]', fontsize=self.fontsize)
+        ax_main.tick_params(axis='x', labelsize=self.fontsize)
+        ax_main.tick_params(axis='y', labelsize=self.fontsize)
         return fig_main, ax_main
 
     def __get_bounds(self) -> None:
