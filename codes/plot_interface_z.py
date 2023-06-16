@@ -37,6 +37,8 @@ class PlotInterfaceZ:
         self.__mk_errorbar()
         # Plot the graph with inset
         self.__mk_inset()
+        # Plot the graph with shadow area
+        self.__mk_shadow_area()
 
     def __mk_errorbar(self) -> None:
         """plot the main graph"""
@@ -60,7 +62,6 @@ class PlotInterfaceZ:
                        np.max(self.z_average)+2*std_max])
         ax_i = self.__plot_ave(ax_i)
         self.save_fig(fig_i, ax_i, fname=self.f_errbar)
-        plt.close(fig_i)
 
     def __mk_inset(self) -> None:
         fig_i: plt.figure  # Canvas
@@ -70,7 +71,6 @@ class PlotInterfaceZ:
         ax_i = self.__plt_graphes_inset(ax_i)
         ax_i = self.__plot_ave(ax_i)
         self.save_fig(fig_i, ax_i, fname=self.f_inset)
-        plt.close(fig_i)
 
     def __plot_inset(self) -> plt.axes:
         """Create an inset plot"""
@@ -183,6 +183,7 @@ class PlotInterfaceZ:
                     bbox_inches='tight',
                     transparent=cls.transparent
                     )
+        plt.close(fig)
 
     @staticmethod
     def __set_ticks(ax_main: plt.axes  # The axes to wrok with
