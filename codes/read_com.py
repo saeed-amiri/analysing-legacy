@@ -18,13 +18,13 @@ import numpy as np
 import matplotlib
 import matplotlib.pylab as plt
 import static_info as stinfo
-import plot_interface_z as pltz
+import plot_interface_z as plt_z
 
 
 class ReadCom:
     """reading the center of mass file, the name is set static_info.py
     """
-    number_frame: int = 10  # Number of frames in the traj
+    number_frame: int = 200  # Number of frames in the traj
     def __init__(self) -> None:
         self.f_name: str = stinfo.files['com_pickle']
         self.com_arr: np.ndarray = self.get_data()
@@ -66,7 +66,7 @@ class ReadCom:
             if res in ['ODN', 'CLA']:
                 self.__plot_odn_com(ax_com, res)
         # Plot interface based on the z location
-        pltz.PlotInterfaceZ(interface_locz)
+        plt_z.PlotInterfaceZ(interface_locz)
 
     def get_data(self) -> np.ndarray:
         """reading the file"""
