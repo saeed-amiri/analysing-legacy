@@ -221,30 +221,32 @@ class PlotInterfaceZ:
     def __set_ticks(ax_main: plt.axes  # The axes to wrok with
                     ) -> plt.axes:
         """set tickes"""
-        ax2 = ax_main.twiny()
-        ax3 = ax_main.twinx()
         ax_main.tick_params(axis='both', direction='in')
+        # Set twiny
+        ax2 = ax_main.twiny()
+        ax2.set_xlim(ax_main.get_xlim())
+        # Synchronize x-axis limits and tick positions
+        ax2.xaxis.set_major_locator(ax_main.xaxis.get_major_locator())
+        ax2.xaxis.set_minor_locator(ax_main.xaxis.get_minor_locator())
         ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
         ax2.tick_params(axis='x', direction='in')
-        ax3.set_yticklabels([])  # Remove the tick labels on the top x-axis
-        ax3.tick_params(axis='y', direction='in')
-        # Synchronize y-axis limits and tick positions
-        ax2.set_xlim(ax_main.get_xlim())
-        ax2.yaxis.set_major_locator(ax_main.xaxis.get_major_locator())
-        ax2.yaxis.set_minor_locator(ax_main.xaxis.get_minor_locator())
+        ax3 = ax_main.twinx()
         ax3.set_ylim(ax_main.get_ylim())
+        ## Synchronize y-axis limits and tick positions
         ax3.yaxis.set_major_locator(ax_main.yaxis.get_major_locator())
         ax3.yaxis.set_minor_locator(ax_main.yaxis.get_minor_locator())
+        ax3.set_yticklabels([])  # Remove the tick labels on the right y-axis
+        ax3.tick_params(axis='y', direction='in')
         for ax_i in [ax_main, ax2]:
             ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
             ax_i.xaxis.set_minor_locator(
                 matplotlib.ticker.AutoMinorLocator(n=5))
             ax_i.tick_params(which='minor', direction='in')
         for ax_i in [ax_main, ax3]:
-            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
-            ax_i.yaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=5))
-            ax_i.tick_params(which='minor', direction='in')
+           ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+           ax_i.yaxis.set_minor_locator(
+               matplotlib.ticker.AutoMinorLocator(n=5))
+           ax_i.tick_params(which='minor', direction='in')
         return ax_main
 
     @staticmethod
