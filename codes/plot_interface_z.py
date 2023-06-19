@@ -130,11 +130,11 @@ class PlotInterfaceZ:
 
     def __plot_ave(self,
                    ax_i: plt.axes,  # axes to plot average
-                   lw: int = 1  # Width of the line
+                   linewidth: int = 1  # Width of the line
                    ) -> plt.axes:
         """plot average of z_average"""
         z_mean: np.float64 = np.mean(self.z_average)
-        ax_i.axhline(z_mean, color='r', ls='--', lw=lw,
+        ax_i.axhline(z_mean, color='r', ls='--', lw=linewidth,
                      label=f'mean of data: {z_mean:.2f}', zorder=2)
         return ax_i
 
@@ -220,7 +220,7 @@ class PlotInterfaceZ:
 
     @staticmethod
     def __set_x2ticks(ax_main: plt.axes  # The axes to wrok with
-                    ) -> plt.axes:
+                      ) -> plt.axes:
         """set tickes"""
         ax_main.tick_params(axis='both', direction='in')
         # Set twiny
@@ -240,21 +240,21 @@ class PlotInterfaceZ:
 
     @staticmethod
     def __set_y2ticks(ax_main: plt.axes  # The axes to wrok with
-                    ) -> plt.axes:
+                      ) -> plt.axes:
         """set tickes"""
         # Reset the y-axis ticks and locators
         ax3 = ax_main.twinx()
         ax3.set_ylim(ax_main.get_ylim())
-        ## Synchronize y-axis limits and tick positions
+        # Synchronize y-axis limits and tick positions
         ax3.yaxis.set_major_locator(ax_main.yaxis.get_major_locator())
         ax3.yaxis.set_minor_locator(ax_main.yaxis.get_minor_locator())
         ax3.set_yticklabels([])  # Remove the tick labels on the right y-axis
         ax3.tick_params(axis='y', direction='in')
         for ax_i in [ax_main, ax3]:
-           ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
-           ax_i.yaxis.set_minor_locator(
-               matplotlib.ticker.AutoMinorLocator(n=5))
-           ax_i.tick_params(which='minor', direction='in')
+            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.yaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=5))
+            ax_i.tick_params(which='minor', direction='in')
         return ax_main
 
     @staticmethod
