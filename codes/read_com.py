@@ -92,36 +92,6 @@ class ReadCom:
         std_error = np.std(z_outsid)
         return mean, std_error
 
-    @staticmethod
-    def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
-                            y_data: np.ndarray,  # y array of interface water
-                            ) -> np.ndarray:
-        """return the length of vectors from center to the water
-        molecules"""
-        vectors: np.ndarray = np.column_stack((x_data, y_data))
-        lengths: np.ndarray = np.linalg.norm(vectors, axis=1)
-        return lengths
-
-    @staticmethod
-    def __get_box_dims() -> dict[str, float]:
-        """return the box lims for plotting."""
-        box_dims: dict[str, float] = {}  # Box dimensions
-        if stinfo.box['centered']:
-            box_dims['x_hi'] = np.ceil(stinfo.box['x']/2)
-            box_dims['x_lo'] = -np.ceil(stinfo.box['x']/2)
-            box_dims['y_hi'] = np.ceil(stinfo.box['y']/2)
-            box_dims['y_lo'] = -np.ceil(stinfo.box['y']/2)
-            box_dims['z_hi'] = np.ceil(stinfo.box['z']/2)
-            box_dims['z_lo'] = -np.ceil(stinfo.box['z']/2)
-        else:
-            box_dims['x_hi'] = np.ceil(stinfo.box['x'])
-            box_dims['x_lo'] = 0.0
-            box_dims['y_hi'] = np.ceil(stinfo.box['y'])
-            box_dims['y_lo'] = 0.0
-            box_dims['z_hi'] = np.ceil(stinfo.box['z'])
-            box_dims['z_lo'] = 0.0
-        return box_dims
-
     def __plot_water_surface(self,
                              x_data_all: np.ndarray,  # All x values for sol
                              y_data_all: np.ndarray,  # All y values for sol
@@ -238,6 +208,36 @@ class ReadCom:
         pname: str  # Name of the output file
         pname = f'{res}_com.png'
         plt.savefig(pname, bbox_inches='tight', transparent=False)
+
+    @staticmethod
+    def __calculate_lengths(x_data: np.ndarray,  # x array of interface water
+                            y_data: np.ndarray,  # y array of interface water
+                            ) -> np.ndarray:
+        """return the length of vectors from center to the water
+        molecules"""
+        vectors: np.ndarray = np.column_stack((x_data, y_data))
+        lengths: np.ndarray = np.linalg.norm(vectors, axis=1)
+        return lengths
+
+    @staticmethod
+    def __get_box_dims() -> dict[str, float]:
+        """return the box lims for plotting."""
+        box_dims: dict[str, float] = {}  # Box dimensions
+        if stinfo.box['centered']:
+            box_dims['x_hi'] = np.ceil(stinfo.box['x']/2)
+            box_dims['x_lo'] = -np.ceil(stinfo.box['x']/2)
+            box_dims['y_hi'] = np.ceil(stinfo.box['y']/2)
+            box_dims['y_lo'] = -np.ceil(stinfo.box['y']/2)
+            box_dims['z_hi'] = np.ceil(stinfo.box['z']/2)
+            box_dims['z_lo'] = -np.ceil(stinfo.box['z']/2)
+        else:
+            box_dims['x_hi'] = np.ceil(stinfo.box['x'])
+            box_dims['x_lo'] = 0.0
+            box_dims['y_hi'] = np.ceil(stinfo.box['y'])
+            box_dims['y_lo'] = 0.0
+            box_dims['z_hi'] = np.ceil(stinfo.box['z'])
+            box_dims['z_lo'] = 0.0
+        return box_dims
 
     @staticmethod
     def __get_grid_xy(x_data: np.ndarray,  # x component of the coms
