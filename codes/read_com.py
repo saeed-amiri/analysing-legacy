@@ -24,6 +24,7 @@ import plot_interface_z as pltz
 class ReadCom:
     """reading the center of mass file, the name is set static_info.py
     """
+    number_frame: int = 10  # Number of frames in the traj
     def __init__(self) -> None:
         self.f_name: str = stinfo.files['com_pickle']
         self.com_arr: np.ndarray = self.get_data()
@@ -45,8 +46,7 @@ class ReadCom:
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
-            number_frame: int = 200
-            for i in range(number_frame):
+            for i in range(self.number_frame):
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, _ = \
                         self.__get_interface_oda(res_arr[i, x_indices],
@@ -54,7 +54,7 @@ class ReadCom:
                                                  res_arr[i, z_indices],
                                                  res)
                     ax_com.scatter(x_data, y_data, s=5, c='black',
-                                   alpha=(i+1)/number_frame)
+                                   alpha=(i+1)/self.number_frame)
                 if res in ['SOL']:
                     x_surf, y_surf, z_surf = \
                         self.__plot_water_surface(res_arr[i, x_indices],
