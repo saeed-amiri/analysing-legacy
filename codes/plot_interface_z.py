@@ -62,6 +62,7 @@ class PlotInterfaceZ:
         ax_i.set_ylim([np.min(self.z_average)-2*std_max,
                        np.max(self.z_average)+2*std_max])
         ax_i = self.__plot_ave(ax_i)
+        ax_i = self.__set_y2ticks(ax_i)
         self.save_close_fig(fig_i, ax_i, fname=self.f_errbar)
 
     def __mk_inset(self) -> None:
@@ -71,6 +72,7 @@ class PlotInterfaceZ:
         self.__plot_inset()
         ax_i = self.__plt_data_and_fill(ax_i)
         ax_i = self.__plot_ave(ax_i)
+        ax_i = self.__set_y2ticks(ax_i)
         self.save_close_fig(fig_i, ax_i, fname=self.f_inset)
 
     def __plot_inset(self) -> plt.axes:
@@ -126,6 +128,7 @@ class PlotInterfaceZ:
                           edgecolor='none')
         ax_i.set_title('average thickness of interface: '
                        f'{self.__get_interface_thickness():.2f}', fontsize=12)
+        ax_i = self.__set_y2ticks(ax_i)
         self.save_close_fig(fig_i, ax_i, self.f_shadow)
 
     def __plot_ave(self,
@@ -154,7 +157,7 @@ class PlotInterfaceZ:
         xticks = np.linspace(self.x_range[0], self.x_range[-1], num_xticks)
         ax_main.set_xticks(xticks)
         ax_main = self.__set_x2ticks(ax_main)
-        ax_main = self.__set_y2ticks(ax_main)
+        # ax_main = self.__set_y2ticks(ax_main)
         ax_main = self.__set_ax_font_label(ax_main)
         return fig_main, ax_main
 
