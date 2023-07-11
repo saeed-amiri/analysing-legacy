@@ -193,6 +193,55 @@ class GetBulkDensity:
         log.info(self.info_msg)
 
 
+class PlotDensity:
+    """plot the density"""
+    def __init__(self,
+                 res_data: GetBulkDensity # All the densities data
+                 ) -> None:
+        self.plot_density(res_data)
+
+    def plot_density(self,
+                     res_data: GetBulkDensity # All the densities data
+                     ) -> None:
+        """plot densities which are asked for"""    
+        fig, ax = plt.subplots(1, figsize=set_sizes(width_pic=426.79135))
+        xvg_files: list = sys.argv[1:]
+        average: bool = True  # If write average on the legend
+        transparent: bool = False  # If the figure wants to be transparent
+        savefig_kwargs = {'fname': 'output.png',
+                        'dpi': 300,
+                        'bbox_inches': 'tight'
+                        }
+        if transparent:
+            savefig_kwargs['transparent'] = 'true'
+        for f in xvg_files:
+            xvg = res_data.residues_data[f]
+            label = f'{f}'
+            bulk_value = np.float64(1.0)
+            if f == 'SOL':
+                bulk_value = res_data.water_bulk
+                if average:
+                    label += f', bulk={bulk_value:.2f}'
+            elif f == 'D10':
+                bulk_value = res_data.oil_bulk
+                if average:
+                    label += f', bulk={bulk_value:.2f}'
+
+            ax.plot(xvg['data'][:, 0],
+                    xvg['data'][:, 1]/bulk_value,
+                    label=label)
+        plt.xlabel(xvg['xaxis'])
+        plt.ylabel(xvg['yaxis'])
+
+        # Adjust tick label font size and style if needed
+        plt.xticks(fontsize=8)
+        plt.yticks(fontsize=8)
+        plt.legend()
+        plt.savefig(**savefig_kwargs)
+        # plt.show()
+
+
 if __name__ == "__main__":
     log_file =  log = logger.setup_logger('density.log')
     res_data = GetBulkDensity(log=log_file)
+    PlotDensity(res_data)
