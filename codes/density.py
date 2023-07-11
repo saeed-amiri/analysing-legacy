@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pylab as plt
 from colors_text import TextColor as bcolors
+import logger
 
 
 def set_sizes(width_pic, fraction=1):
@@ -57,10 +58,10 @@ class GetBulkDensity:
     oil_bulk: np.float64  # Density of the bulk oil
     residues_data: dict[str, typing.Any]   # All data read for residues
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 log: logger.logging.Logger) -> None:
         self.get_bulk()
-        print(f'{bcolors.OKBLUE}{self.__class__.__name__}:\n'
-              f'\t{self.info_msg}{bcolors.ENDC}')
+        self.__write_msg(log)
 
     def get_bulk(self) -> None:
         """get the bulk density"""
@@ -183,41 +184,15 @@ class GetBulkDensity:
                 axis = 'legend'
         return axis, label_i
 
+    def __write_msg(self,
+                    log: logger.logging.Logger,  # To log info in it
+                    ) -> None:
+        """write and log messages"""
+        print(f'{bcolors.OKCYAN}{GetBulkDensity.__module__}:\n'
+              f'\t{self.info_msg}{bcolors.ENDC}')
+        log.info(self.info_msg)
+
 
 if __name__ == "__main__":
-    res_data = GetBulkDensity()
-    fig, ax = plt.subplots(1, figsize=set_sizes(width_pic=426.79135))
-    xvg_files: list = sys.argv[1:]
-    average: bool = True  # If write average on the legend
-    transparent: bool = False  # If the figure wants to be transparent
-    savefig_kwargs = {'fname': 'output.png',
-                      'dpi': 300,
-                      'bbox_inches': 'tight'
-                      }
-    if transparent:
-        savefig_kwargs['transparent'] = 'true'
-    for f in xvg_files:
-        xvg = res_data.residues_data[f]
-        label = f'{f}'
-        bulk_value = np.float64(1.0)
-        if f == 'SOL':
-            bulk_value = res_data.water_bulk
-            if average:
-                label += f', bulk={bulk_value:.2f}'
-        elif f == 'D10':
-            bulk_value = res_data.oil_bulk
-            if average:
-                label += f', bulk={bulk_value:.2f}'
-
-        ax.plot(xvg['data'][:, 0],
-                xvg['data'][:, 1]/bulk_value,
-                label=label)
-    plt.xlabel(xvg['xaxis'])
-    plt.ylabel(xvg['yaxis'])
-
-    # Adjust tick label font size and style if needed
-    plt.xticks(fontsize=8)
-    plt.yticks(fontsize=8)
-    plt.legend()
-    plt.savefig(**savefig_kwargs)
-    # plt.show()
+    log_file =  log = logger.setup_logger('density.log')
+    res_data = GetBulkDensity(log=log_file)
