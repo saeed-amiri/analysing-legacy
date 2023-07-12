@@ -8,10 +8,13 @@ import re
 import sys
 import typing
 import numpy as np
+
 import matplotlib as mpl
 import matplotlib.pylab as plt
-from colors_text import TextColor as bcolors
 import logger
+import plot_tools as ptools
+import static_info as stinfo
+from colors_text import TextColor as bcolors
 
 
 def set_sizes(width_pic, fraction=1):
@@ -82,8 +85,9 @@ class GetBulkDensity:
         bulk_area = residues_data[target]['data'][indices][:, 1]
         bulk_density: np.float64 = \
             np.average(bulk_area)
-        self.info_msg += f'\tThe bulk density for {target} is average of:\n'
-        self.info_msg += f'\t{bulk_area}\n'
+        self.info_msg += f'\tThe bulk density for {target} has average of:\n'
+        self.info_msg += f'\t{bulk_density}, which is average of:\n'
+        self.info_msg += f'\t\t{bulk_area}\n'
         return bulk_density
 
     def find_bulk(self,
@@ -195,53 +199,148 @@ class GetBulkDensity:
 
 class PlotDensity:
     """plot the density"""
+
+    fontsize: int = 14  # Fontsize for all in plots
+    transparent: bool = False  # Save fig background
+
     def __init__(self,
-                 res_data: GetBulkDensity # All the densities data
+                 res_data: GetBulkDensity  # All the densities data
                  ) -> None:
         self.plot_density(res_data)
 
     def plot_density(self,
-                     res_data: GetBulkDensity # All the densities data
+                     res_data: GetBulkDensity  # All the densities data
                      ) -> None:
-        """plot densities which are asked for"""    
-        fig, ax = plt.subplots(1, figsize=set_sizes(width_pic=426.79135))
+        """plot densities which are asked for"""
+        fig_i, ax_i = self.__mk_canvas()
         xvg_files: list = sys.argv[1:]
+        many_plot: bool = (len(xvg_files) == 2)
+
         average: bool = True  # If write average on the legend
         transparent: bool = False  # If the figure wants to be transparent
+
         savefig_kwargs = {'fname': 'output.png',
-                        'dpi': 300,
-                        'bbox_inches': 'tight'
-                        }
+                          'dpi': 300,
+                          'bbox_inches': 'tight'
+                          }
         if transparent:
             savefig_kwargs['transparent'] = 'true'
-        for f in xvg_files:
-            xvg = res_data.residues_data[f]
-            label = f'{f}'
+        for f_i in xvg_files:
+            xvg = res_data.residues_data[f_i]
+            label = f'{f_i}'
             bulk_value = np.float64(1.0)
-            if f == 'SOL':
-                bulk_value = res_data.water_bulk
-                if average:
-                    label += f', bulk={bulk_value:.2f}'
-            elif f == 'D10':
-                bulk_value = res_data.oil_bulk
-                if average:
-                    label += f', bulk={bulk_value:.2f}'
-
-            ax.plot(xvg['data'][:, 0],
+            if many_plot:
+                if f_i == 'SOL':
+                    bulk_value = res_data.water_bulk
+                    if average:
+                        label += f', bulk={bulk_value:.2f}'
+                elif f_i == 'D10':
+                    bulk_value = res_data.oil_bulk
+                    if average:
+                        label += f', bulk={bulk_value:.2f}'
+            ax_i.plot(xvg['data'][:, 0],
                     xvg['data'][:, 1]/bulk_value,
                     label=label)
-        plt.xlabel(xvg['xaxis'])
-        plt.ylabel(xvg['yaxis'])
+        ax_i = self.__set_y2ticks(ax_i)
+        ax_i = self.__set_ax_font_label(ax_i, xvg)
+        self.save_close_fig(fig_i, ax_i, fname='output.png', loc='center right')
 
-        # Adjust tick label font size and style if needed
-        plt.xticks(fontsize=8)
-        plt.yticks(fontsize=8)
-        plt.legend()
-        plt.savefig(**savefig_kwargs)
-        # plt.show()
+    def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
+        """make the pallete for the figure"""
+        width = stinfo.plot['width']
+        fig_main, ax_main = plt.subplots(1, figsize=ptools.set_sizes(width))
+        # Set font for all elements in the plot
+        x_hi: float  # Bounds of the self.x_range
+        x_lo: float  # Bounds of the self.x_range
+        y_hi: float  # For the main plot
+        y_lo: float  # For the main plot
+        x_hi, x_lo, y_hi, y_lo = 24, -1, 1.1, -.1
+        ax_main.set_xlim(x_lo, x_hi)
+        ax_main.set_ylim(y_lo, y_hi)
+        num_xticks = 5
+        xticks = np.linspace(0, 20, num_xticks)
+        ax_main.set_xticks(xticks)
+        ax_main = self.__set_x2ticks(ax_main)
+        return fig_main, ax_main
+
+    @staticmethod
+    def __set_x2ticks(ax_main: plt.axes  # The axes to wrok with
+                      ) -> plt.axes:
+        """set tickes"""
+        ax_main.tick_params(axis='both', direction='in')
+        # Set twiny
+        ax2 = ax_main.twiny()
+        ax2.set_xlim(ax_main.get_xlim())
+        # Synchronize x-axis limits and tick positions
+        ax2.xaxis.set_major_locator(ax_main.xaxis.get_major_locator())
+        ax2.xaxis.set_minor_locator(ax_main.xaxis.get_minor_locator())
+        ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
+        ax2.tick_params(axis='x', direction='in')
+        for ax_i in [ax_main, ax2]:
+            ax_i.xaxis.set_major_locator(mpl.ticker.AutoLocator())
+            ax_i.xaxis.set_minor_locator(
+                mpl.ticker.AutoMinorLocator(n=5))
+            ax_i.tick_params(which='minor', direction='in')
+        return ax_main
+
+    @staticmethod
+    def __set_y2ticks(ax_main: plt.axes  # The axes to wrok with
+                      ) -> plt.axes:
+        """set tickes"""
+        # Reset the y-axis ticks and locators
+        ax3 = ax_main.twinx()
+        ax3.set_ylim(ax_main.get_ylim())
+        # Synchronize y-axis limits and tick positions
+        ax3.yaxis.set_major_locator(ax_main.yaxis.get_major_locator())
+        ax3.yaxis.set_minor_locator(ax_main.yaxis.get_minor_locator())
+        ax3.set_yticklabels([])  # Remove the tick labels on the right y-axis
+        ax3.tick_params(axis='y', direction='in')
+        for ax_i in [ax_main, ax3]:
+            ax_i.yaxis.set_major_locator(mpl.ticker.AutoLocator())
+            ax_i.yaxis.set_minor_locator(
+                mpl.ticker.AutoMinorLocator(n=5))
+            ax_i.tick_params(which='minor', direction='in')
+        return ax_main
+
+    @classmethod
+    def __set_ax_font_label(cls,
+                            ax_main: plt.axes,  # Main axis to set parameters
+                            xvg,
+                            fsize: int = 0  # font size if called with font
+                            ) -> plt.axes:
+        """set parameters on the plot"""
+        if fsize == 0:
+            fontsize = cls.fontsize
+            ax_main.set_xlabel(xvg['xaxis'], fontsize=fontsize-2)
+            ax_main.set_ylabel('Density (normalized)', fontsize=fontsize-2)
+        else:
+            fontsize = fsize
+        mpl.rcParams['font.family'] = 'sans-serif'
+        mpl.rcParams['font.size'] = fontsize
+        ax_main.tick_params(axis='x', labelsize=fontsize)
+        ax_main.tick_params(axis='y', labelsize=fontsize)
+        return ax_main
+
+    @classmethod
+    def save_close_fig(cls,
+                       fig: plt.figure,  # The figure to save,
+                       axs: plt.axes,  # Axes to plot
+                       fname: str,  # Name of the output for the fig
+                       loc: str = 'upper right'  # Location of the legend
+                       ) -> None:
+        """to save all the fige"""
+        axs.legend(loc=loc, fontsize=11)
+        fig.savefig(fname,
+                    dpi=300,
+                    pad_inches=0.1,
+                    edgecolor='auto',
+                    bbox_inches='tight',
+                    transparent=cls.transparent
+                    )
+        plt.close(fig)
 
 
 if __name__ == "__main__":
-    log_file =  log = logger.setup_logger('density.log')
-    res_data = GetBulkDensity(log=log_file)
-    PlotDensity(res_data)
+    log_file = logger.setup_logger('density.log')
+    all_data = GetBulkDensity(log=log_file)
+    PlotDensity(all_data)
