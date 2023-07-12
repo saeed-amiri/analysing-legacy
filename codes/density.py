@@ -239,11 +239,15 @@ class PlotDensity:
                     if average:
                         label += f', bulk={bulk_value:.2f}'
             ax_i.plot(xvg['data'][:, 0],
-                    xvg['data'][:, 1]/bulk_value,
-                    label=label)
+                      xvg['data'][:, 1]/bulk_value,
+                      label=label)
         ax_i = self.__set_y2ticks(ax_i)
         ax_i = self.__set_ax_font_label(ax_i, xvg)
-        self.save_close_fig(fig_i, ax_i, fname='output.png', loc='center right')
+        ax_i.grid(which='major', linestyle='--', color='gray', alpha=0.4)
+        self.save_close_fig(fig=fig_i,
+                            axs=ax_i,
+                            fname='output.png',
+                            loc='center right')
 
     def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
