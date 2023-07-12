@@ -113,9 +113,12 @@ class GetBulkDensity:
         residues_data: dict[str, typing.Any] = {}  # Density of all
         for xvg_f in all_reses:
             fname = f'{xvg_f}.xvg'
-            data = self.__get_header(fname)
-            residues_data[xvg_f] = data
-            residues_data[xvg_f]['data'] = self.__read_data(data['data'])
+            try:
+                data = self.__get_header(fname)
+                residues_data[xvg_f] = data
+                residues_data[xvg_f]['data'] = self.__read_data(data['data'])
+            except FileNotFoundError:
+                self.info_msg += f'\tCannot read file: `{fname}`!!\n'
         return residues_data
 
     @staticmethod
