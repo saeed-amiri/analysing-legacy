@@ -40,11 +40,10 @@ class ResiduePositions:
     info_msg: str = 'Message:\n'  # To log info
 
     def __init__(self,
-                 trr_info: GetInfo,  # All the info from trr and gro files
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        self.trr_info: GetInfo = trr_info
         self.top = topo.ReadTop(log)
+        self.trr_info = GetInfo(sys.argv[1], log=log)
         self.get_center_of_mass(log)
 
     def get_center_of_mass(self,
@@ -98,8 +97,9 @@ class ResiduePositions:
                           ) -> np.ndarray:
         np_res_ind = self.get_np_residues()
         all_t_np_coms = []
-
-        with multiprocessing.Pool() as pool:
+        num_processes: int = multiprocessing.cpu_count() 
+        print(num_processes)
+        with multiprocessing.Pool(processes=num_processes) as pool:
             results = []
             for tstep in self.trr_info.u_traj.trajectory:
                 results.append(
@@ -250,6 +250,4 @@ class ResiduePositions:
 
 
 if __name__ == '__main__':
-    trr = GetInfo(sys.argv[1], log=logger.setup_logger('get_frames_log'))
-    positions = ResiduePositions(trr,
-                                 log=logger.setup_logger('get_frames_log'))
+    positions = ResiduePositions(log=logger.setup_logger('get_frames_log'))
