@@ -66,7 +66,7 @@ class GetInfo:
         self.info_msg += '\tInformation in the trajectory file are:\n'
         _json_data = \
             json.dumps({k: str(v) for k, v in num_dict.items()}, indent=8)
-        self.info_msg += f'{_json_data}\n'
+        self.info_msg += f'\t{_json_data}\n'
         return num_dict
 
     def __get_residues(self) -> dict:
