@@ -23,6 +23,7 @@ subtracted from it.
 """
 
 import sys
+import multiprocessing
 import pickle
 import numpy as np
 import logger
@@ -68,9 +69,54 @@ class ResiduePositions:
         """
         fname: str  # Name of the file to pickle to
         fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
-        _com_arr = self.get_coms(com_arr, sol_residues)
+        _com_arr = self.get_coms_parallel(com_arr, sol_residues)
+        # _com_arr = self.get_coms(com_arr, sol_residues)
         with open(fname, 'wb') as f_arr:
             pickle.dump(_com_arr, f_arr)
+
+    def process_tstep(self, tstep, np_res_ind, sol_residues, com_arr):
+        print(tstep)
+        i_step = int(tstep.time / stinfo.times['time_step'])
+        all_atoms = tstep.positions
+        ts_np_com = self.get_np_com(all_atoms, np_res_ind)
+        com_arr[i_step][0:3] = ts_np_com
+        for k, val in sol_residues.items():
+            for item in val:
+                com = self.get_com_all(all_atoms, item)
+                wrap_com = self.wrap_position(com, tstep.dimensions)
+                i_com = wrap_com - ts_np_com
+                element = int(item * 3)
+                com_arr[i_step][element:element + 3] = i_com
+                r_idx = stinfo.reidues_id[k]
+                com_arr[-1][element:element + 3] = \
+                    np.array([[r_idx, r_idx, r_idx]])
+        return ts_np_com
+
+    def get_coms_parallel(self,
+                          com_arr: np.ndarray,
+                          sol_residues: dict[str, list[int]]
+                          ) -> np.ndarray:
+        np_res_ind = self.get_np_residues()
+        all_t_np_coms = []
+
+        with multiprocessing.Pool() as pool:
+            results = []
+            for tstep in self.trr_info.u_traj.trajectory:
+                results.append(
+                    pool.apply_async(
+                                     self.process_tstep,
+                                     args=(tstep,
+                                           np_res_ind,
+                                           sol_residues,
+                                           com_arr)
+                                    )
+                              )
+            
+            for result in results:
+                ts_np_com = result.get()
+                all_t_np_coms.append(ts_np_com)
+
+        return com_arr
 
     def get_coms(self,
                  com_arr: np.ndarray,  # Zero array to save the coms
@@ -83,7 +129,7 @@ class ResiduePositions:
         """
         np_res_ind: list[int] = []  # All the index in the NP
         all_t_np_coms: list[np.ndarray] = []  # COMs at each timestep
-        np_res_ind = self.get_np_rsidues()
+        np_res_ind = self.get_np_residues()
         for tstep in self.trr_info.u_traj.trajectory:
             i_step = int(tstep.time/stinfo.times['time_step'])  # time step
             all_atoms: np.ndarray = tstep.positions
@@ -138,7 +184,7 @@ class ResiduePositions:
         atom_masses = i_residue.masses
         return np.average(atom_positions, weights=atom_masses, axis=0)
 
-    def get_np_rsidues(self) -> list[int]:
+    def get_np_residues(self) -> list[int]:
         """
         return list of the integer of the residues in the NP
         """
