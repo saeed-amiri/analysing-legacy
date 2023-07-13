@@ -70,8 +70,12 @@ class GetInfo:
         return num_dict
 
     def __get_residues(self) -> dict:
-        """get the all the residues in the dictionary"""
-        # Create a dictionary to store the residue indices
+        """
+        Get the indices of all residues in the trajectory.
+
+        Returns:
+        - Dictionary with residue indices.
+        """
         residue_indices: dict[str, list[int]] = {}
 
         # Iterate over the residues
@@ -84,11 +88,17 @@ class GetInfo:
             # Add the index to the dictionary
             if residue_name not in residue_indices:
                 residue_indices[residue_name] = []
+
             residue_indices[residue_name].append(residue_index)
         return residue_indices
 
     def read_traj(self) -> mda.Universe:
-        """read traj and topology file"""
+        """
+        Read the trajectory and topology files.
+
+        Returns:
+        - mda.Universe instance representing the trajectory.
+        """
         self.info_msg += f'\tTrajectory file `{self.trr}` and topology file:'
         self.info_msg += f' `{self.gro}` are read by MDAnalysis\n'
         return mda.Universe(self.gro, self.trr)
@@ -96,7 +106,12 @@ class GetInfo:
     def check_gro(self,
                   log: logger.logging.Logger  # Name of the log file
                   ) -> str:
-        """return the name of the gro file and check if it exist"""
+        """
+        Check if the gro file exists and return its name.
+
+        Returns:
+        - Name of the gro file.
+        """
         tmp: str = self.trr.split('.')[0]
         gro_file: str = f'{tmp}.gro'
         my_tools.check_file_exist(gro_file, log)
