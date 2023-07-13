@@ -24,6 +24,7 @@ subtracted from it.
 
 import sys
 import multiprocessing
+import concurrent.futures
 import pickle
 import numpy as np
 import logger
@@ -42,6 +43,7 @@ class ResiduePositions:
     def __init__(self,
                  log: logger.logging.Logger  # Name of the log file
                  ):
+        self.parra_sty = 'concurrent'
         self.top = topo.ReadTop(log)
         self.trr_info = GetInfo(sys.argv[1], log=log)
         self.get_center_of_mass(log)
@@ -68,12 +70,32 @@ class ResiduePositions:
         """
         fname: str  # Name of the file to pickle to
         fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
-        _com_arr = self.get_coms_parallel(com_arr, sol_residues)
+        if self.parra_sty == 'serial':
+            _com_arr = self.get_coms(com_arr, sol_residues)
+        elif self.parra_sty == 'concurrent':
+            _com_arr = self.get_coms_concurrent(com_arr, sol_residues)
+        else:
+            _com_arr = self.get_coms_multiprocessing(com_arr, sol_residues)
+
         # _com_arr = self.get_coms(com_arr, sol_residues)
         with open(fname, 'wb') as f_arr:
             pickle.dump(_com_arr, f_arr)
 
-    def process_tstep(self, tstep, np_res_ind, sol_residues, com_arr):
+    # def process_tstep(self, tstep, np_res_ind, sol_residues, com_arr):
+    def process_tstep(self,
+                      args: tuple  # All the arguments
+                      ):
+        """
+        Get each timestep and do the calculations
+
+        Parameters:
+        args:
+           tstep: int -> Time step of the frame
+           np_res_ind:  -> Indicies of the residues
+           sol_residues: dict[str, list[int]] -> Residues in solution pahse
+           com_arr: np.ndarray -> Array for the center of the mass of residues
+        """
+        tstep, np_res_ind, sol_residues, com_arr = args
         print(tstep)
         i_step = int(tstep.time / stinfo.times['time_step'])
         all_atoms = tstep.positions
@@ -91,15 +113,46 @@ class ResiduePositions:
                     np.array([[r_idx, r_idx, r_idx]])
         return ts_np_com
 
-    def get_coms_parallel(self,
-                          com_arr: np.ndarray,
-                          sol_residues: dict[str, list[int]]
-                          ) -> np.ndarray:
+    def get_coms_concurrent(self,
+                            com_arr: np.ndarray,
+                            sol_residues: dict[str, list[int]]
+                            ) -> np.ndarray:
+        """
+        Getting the COM with concurrent.futures
+        """
         np_res_ind = self.get_np_residues()
         all_t_np_coms = []
-        num_processes: int = multiprocessing.cpu_count() 
+
+        # Create a ProcessPoolExecutor
+        with concurrent.futures.ProcessPoolExecutor(
+                                                    max_workers=12
+                                                    ) as executor:
+            # Prepare the arguments for process_tstep function
+            args_list = \
+                [(tstep, np_res_ind, sol_residues, com_arr)
+                 for tstep in self.trr_info.u_traj.trajectory]
+
+            # Submit the tasks to the executor
+            results = executor.map(self.process_tstep, args_list)
+
+            # Iterate through the results and collect the ts_np_com values
+            for ts_np_com in results:
+                all_t_np_coms.append(ts_np_com)
+
+        return com_arr
+
+    def get_coms_multiprocessing(self,
+                                 com_arr: np.ndarray,  # Array of the COM
+                                 sol_residues: dict[str, list[int]]  # Reses
+                                 ) -> np.ndarray:
+        """
+        Getting the COM with multiprocessing
+        """
+        np_res_ind = self.get_np_residues()
+        all_t_np_coms = []
+        num_processes: int = multiprocessing.cpu_count()
         print(num_processes)
-        with multiprocessing.Pool(processes=num_processes) as pool:
+        with multiprocessing.Pool(processes=4) as pool:
             results = []
             for tstep in self.trr_info.u_traj.trajectory:
                 results.append(
@@ -111,7 +164,7 @@ class ResiduePositions:
                                            com_arr)
                                     )
                               )
-            
+
             for result in results:
                 ts_np_com = result.get()
                 all_t_np_coms.append(ts_np_com)
