@@ -35,21 +35,26 @@ from get_trajectory import GetInfo
 
 class ResiduePositions:
     """getting posotions of the com the residues"""
+
+    info_msg: str = 'Message:\n'  # To log info
+
     def __init__(self,
                  trr_info: GetInfo,  # All the info from trr and gro files
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        self.info: GetInfo = trr_info
+        self.trr_info: GetInfo = trr_info
         self.top = topo.ReadTop(log)
         self.get_center_of_mass(log)
 
     def get_center_of_mass(self,
                            log: logger.logging.Logger  # Name of the log file
                            ) -> None:
-        """calculate the center mass of the each residue"""
+        """
+        calculate the center mass of the each residue
+        """
         # update the residues index to get the NP: APT_COR
-        sol_residues: dict[str, list[int]] = self.__solution_residues()
-        com_arr: np.ndarray = self.__allocate(sol_residues)
+        sol_residues: dict[str, list[int]] = self.get_solution_residues()
+        com_arr: np.ndarray = self.mk_allocation(sol_residues)
         self.pickle_arr(com_arr, sol_residues, log)
 
     def pickle_arr(self,
@@ -57,34 +62,38 @@ class ResiduePositions:
                    sol_residues: dict[str, list[int]],  # Residues in solution
                    log: logger.logging.Logger  # Name of the log file
                    ) -> None:
-        """check the if the previus similar file exsitance the pickle
-        data into a file"""
+        """
+        check the if the previus similar file exsitance the pickle
+        data into a file
+        """
         fname: str  # Name of the file to pickle to
         fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
-        _com_arr = self.__get_coms(com_arr, sol_residues)
+        _com_arr = self.get_coms(com_arr, sol_residues)
         with open(fname, 'wb') as f_arr:
             pickle.dump(_com_arr, f_arr)
 
-    def __get_coms(self,
-                   com_arr: np.ndarray,  # Zero array to save the coms
-                   sol_residues: dict[str, list[int]]  # Residues in solution
-                   ) -> np.ndarray:
-        """set the center of the mass value of each residue with its
+    def get_coms(self,
+                 com_arr: np.ndarray,  # Zero array to save the coms
+                 sol_residues: dict[str, list[int]]  # Residues in solution
+                 ) -> np.ndarray:
+        """
+        Set the center of the mass value of each residue with its
         index in the main data and an integer as an id representing
-        its residue name data. These ids are set in "stinfo.py" """
+        its residue name data. These ids are set in "stinfo.py"
+        """
         np_res_ind: list[int] = []  # All the index in the NP
         all_t_np_coms: list[np.ndarray] = []  # COMs at each timestep
-        np_res_ind = self.__np_rsidues()
-        for tstep in self.info.u_traj.trajectory:
+        np_res_ind = self.get_np_rsidues()
+        for tstep in self.trr_info.u_traj.trajectory:
             i_step = int(tstep.time/stinfo.times['time_step'])  # time step
             all_atoms: np.ndarray = tstep.positions
             print(f'\n{tstep.time}:')
-            ts_np_com = self.__np_com(all_atoms, np_res_ind)
+            ts_np_com = self.get_np_com(all_atoms, np_res_ind)
             com_arr[i_step][0:3] = ts_np_com
             for k, val in sol_residues.items():
                 for item in val:
-                    com = self.__get_com_all(all_atoms, item)
-                    wrap_com = self.__wrap_position(com, tstep.dimensions)
+                    com = self.get_com_all(all_atoms, item)
+                    wrap_com = self.wrap_position(com, tstep.dimensions)
                     i_com = wrap_com - ts_np_com
                     element = int(item*3)
                     com_arr[i_step][element:element+3] = i_com
@@ -95,64 +104,74 @@ class ResiduePositions:
         return com_arr
 
     @staticmethod
-    def __wrap_position(pos: np.ndarray,  # The center of mass
-                        vec: np.ndarray  # Box vectors
-                        ) -> np.ndarray:
-        """wraped the position to the box for unwraped trr"""
+    def wrap_position(pos: np.ndarray,  # The center of mass
+                      vec: np.ndarray  # Box vectors
+                      ) -> np.ndarray:
+        """
+        Wraped the position to the box for unwraped trr.
+        """
         for i in range(3):
             pos[i] -= np.floor(pos[i]/vec[i])*vec[i]
         return pos
 
-    def __solution_residues(self) -> dict[str, list[int]]:
-        """return the dict of the residues in the solution with
-        dropping the NP residues"""
+    def get_solution_residues(self) -> dict[str, list[int]]:
+        """
+        Return the dict of the residues in the solution with
+        dropping the NP residues
+        """
         sol_dict: dict[str, list[int]] = {}  # All the residues in solution
-        for k, val in self.info.residues_indx.items():
+        for k, val in self.trr_info.residues_indx.items():
             if k in stinfo.np_info['solution_residues']:
                 sol_dict[k] = val
         return sol_dict
 
-    def __get_com_all(self,
-                      all_atoms: np.ndarray,  # All the atoms position
-                      ind: int  # Index of the residue
-                      ) -> np.ndarray:
-        """return all the residues com"""
-        i_residue = self.info.u_traj.select_atoms(f'resnum {ind}')
+    def get_com_all(self,
+                    all_atoms: np.ndarray,  # All the atoms position
+                    ind: int  # Index of the residue
+                    ) -> np.ndarray:
+        """
+        return all the residues com
+        """
+        i_residue = self.trr_info.u_traj.select_atoms(f'resnum {ind}')
         atom_indices = i_residue.indices
         atom_positions = all_atoms[atom_indices]
         atom_masses = i_residue.masses
         return np.average(atom_positions, weights=atom_masses, axis=0)
 
-    def __np_rsidues(self) -> list[int]:
-        """return list of the integer of the residues in the NP"""
+    def get_np_rsidues(self) -> list[int]:
+        """
+        return list of the integer of the residues in the NP
+        """
         np_res_ind: list[int] = []  # All the index in the NP
         for item in stinfo.np_info['np_residues']:
-            np_res_ind.extend(self.info.residues_indx[item])
+            np_res_ind.extend(self.trr_info.residues_indx[item])
         return np_res_ind
 
-    def __np_com(self,
-                 all_atoms: np.ndarray,  # Atoms positions
-                 np_res_ind: list[int]  # Index of the residues in NP
-                 ) -> np.ndarray:
+    def get_np_com(self,
+                   all_atoms: np.ndarray,  # Atoms positions
+                   np_res_ind: list[int]  # Index of the residues in NP
+                   ) -> np.ndarray:
         """get the COM for each time step"""
         i_com: list[np.ndarray] = []  # Arrays contains center of masses
         total_mass: float = 0  # Total mass of each residue in the NP
         for i in np_res_ind:
             com: np.ndarray  # Conter of mass of the residue i
             tmp_mass: float  # Mass of the residue
-            com, tmp_mass = self.__get_np_com(i, all_atoms)
+            com, tmp_mass = self.get_np_com_tstep(i, all_atoms)
             total_mass += tmp_mass
             i_com.append(com)
             step_com = np.vstack(i_com)
         return np.sum(step_com, axis=0) / total_mass
 
-    def __get_np_com(self,
-                     res_ind: int,  # index of the residue
-                     all_atoms: np.ndarray  # Atoms positions
-                     ) -> tuple[np.ndarray, float]:
-        """calculate the center of mass of each time step for NP"""
+    def get_np_com_tstep(self,
+                         res_ind: int,  # index of the residue
+                         all_atoms: np.ndarray  # Atoms positions
+                         ) -> tuple[np.ndarray, float]:
+        """
+        calculate the center of mass of each time step for NP
+        """
         i_residue: mda.core.groups.AtomGroup  # Atoms info in res
-        i_residue = self.info.u_traj.select_atoms(f'resnum {res_ind}')
+        i_residue = self.trr_info.u_traj.select_atoms(f'resnum {res_ind}')
         atom_indices = i_residue.indices
         atom_positions = all_atoms[atom_indices]
         atom_masses = i_residue.masses
@@ -161,15 +180,23 @@ class ResiduePositions:
                          axis=0) * tmp_mass
         return com, tmp_mass
 
-    def __allocate(self,
-                   sol_residues: dict[str, list[int]]  # residues in solution
-                   ) -> np.ndarray:
-        """allocate arraies for saving all the info"""
-        frames: int = self.info.num_dict['n_frames']
+    def mk_allocation(self,
+                      sol_residues: dict[str, list[int]]  # residues at water
+                      ) -> np.ndarray:
+        """
+        Allocate arrays for saving all the info.
+
+        Parameters:
+        - sol_residues: Residues in solution.
+
+        Returns:
+        - Initialized array.
+            Columns are as follow:
+            each atom has xyz, the center of mass also has xyx, and one
+            for labeling the name of the residues, for example SOL will be 1
+        """
+        frames: int = self.trr_info.num_dict['n_frames']
         rows: int = frames + 1  # Number of rows, 2 for name and index of res
-        # Columns are as follow:
-        # each atom has xyz, the center of mass also has xyx, and one
-        # for labeling the name of the residues, for example SOL will be 1
         max_residue = max(item for sublist in sol_residues.values() for
                           item in sublist)
         columns: int = 3 * (max_residue + 1)
