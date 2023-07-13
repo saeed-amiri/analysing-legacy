@@ -2,28 +2,31 @@
 essential information from them, including the number of molecules,
 frames, and atoms. """
 
-import os
 import sys
 import typing
 import logger
 import MDAnalysis as mda
-from colors_text import TextColor as bcolors
+import my_tools
 
 
 class GetInfo:
     """read trr files and return info from it"""
+
+    trr: str  # Name of the trajectory file
+    gro: str  # Name of the gro file (final step of trai from GROMACS)
+    u_traj: mda.Universe  # Trajectory read by MDAnalysis
+    residues_indx: dict[str, list[int]]  # Info from the traj and gro
+    num_dict: dict[str, typing.Any]  # Info from the traj and gro
+
     def __init__(self,
                  fname: str,  # Name of the trr file
                  log: logger.logging.Logger  # Name of the log file
                  ) -> None:
-        if not self.path_exist(fname):
-            log.error(f'No such file with name: {fname}')
-            sys.exit(f'No such file with name: {fname}')
-        self.trr: str = fname
-        self.gro: str = self.__get_gro(log)  # Toopology file
-        self.u_traj: mda.Universe = self.read_traj(log)
-        self.residues_indx: dict[str, list[int]]  # info from the traj and gro
-        self.num_dict: dict[str, typing.Any]  # info from the traj and gro
+        # Check the file
+        my_tools.check_file_exist(fname, log)
+        self.trr = fname
+        self.gro = self.check_gro(log)  # Toopology file
+        self.u_traj = self.read_traj(log)
         self.residues_indx, self.num_dict = self.__get_info()
 
     def __get_info(self) -> tuple[dict[str, list[int]], dict[str, typing.Any]]:
@@ -65,27 +68,16 @@ class GetInfo:
         """read traj and topology file"""
         log.info(f'Trajectory file `{self.trr}` and topology file'
                  f' `{self.gro}` are read.')
-        u = mda.Universe(self.gro, self.trr)
-        return u
+        return mda.Universe(self.gro, self.trr)
 
-    def __get_gro(self,
+    def check_gro(self,
                   log: logger.logging.Logger  # Name of the log file
                   ) -> str:
         """return the name of the gro file and check if it exist"""
         tmp: str = self.trr.split('.')[0]
         gro_file: str = f'{tmp}.gro'
-        if not self.path_exist(gro_file):
-            log.error(f'Error! `{gro_file}` dose not exist.')
-            sys.exit(f'{bcolors.FAIL}{self.__class__.__name__}: '
-                     f'({self.__module__})\n Error! `{gro_file}` dose not '
-                     f'exist \n{bcolors.ENDC}')
+        my_tools.check_file_exist(gro_file, log)
         return gro_file
-
-    def path_exist(self,
-                   fname: str  # Name of the file to check
-                   ) -> bool:
-        """check if the file exist"""
-        return os.path.exists(fname)
 
 
 if __name__ == '__main__':
