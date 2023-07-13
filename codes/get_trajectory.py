@@ -43,21 +43,30 @@ class GetInfo:
         return residues_indx, num_dict
 
     def __get_nums(self) -> dict[str, int]:
-        """return the dict of numbers of things"""
-        num_dict: dict[str, int] = {}
-        num_dict['n_atoms'] = self.u_traj.atoms.n_atoms
-        num_dict['total_mass'] = self.u_traj.atoms.total_mass
-        num_dict['n_frames'] = self.u_traj.trajectory.n_frames
-        num_dict['totaltime'] = self.u_traj.trajectory.totaltime
-        # Create a new dictionary with modified values to save info
-        new_dict = {}
-        for key, value in num_dict.items():
-            if callable(value):
-                new_dict[key] = 'method'
-            else:
-                new_dict[key] = str(value)
+        """
+        Return a dictionary with various numerical information from
+        the trajectory.
+
+        The returned dictionary contains:
+        - n_atoms: Number of atoms.
+        - total_mass: Total mass.
+        - n_frames: Number of frames.
+        - totaltime: Total time.
+
+        Returns:
+        - Dictionary with numerical information.
+        """
+        num_dict: dict[str, typing.Any] = \
+            {
+            'n_atoms': self.u_traj.atoms.n_atoms,
+            'total_mass': self.u_traj.atoms.total_mass,
+            'n_frames': self.u_traj.trajectory.n_frames,
+            'totaltime': self.u_traj.trajectory.totaltime
+            }
         self.info_msg += '\tInformation in the trajectory file are:\n'
-        self.info_msg += f'{json.dumps(new_dict, indent=8)}\n'
+        _json_data = \
+            json.dumps({k: str(v) for k, v in num_dict.items()}, indent=8)
+        self.info_msg += f'{_json_data}\n'
         return num_dict
 
     def __get_residues(self) -> dict:
