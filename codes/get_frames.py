@@ -40,7 +40,7 @@ class ResiduePositions:
                  log: logger.logging.Logger  # Name of the log file
                  ):
         self.info: GetInfo = trr_info
-        self.top = topo.ReadTop()
+        self.top = topo.ReadTop(log)
         self.get_center_of_mass(log)
 
     def get_center_of_mass(self,
