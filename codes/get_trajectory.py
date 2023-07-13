@@ -3,14 +3,18 @@ essential information from them, including the number of molecules,
 frames, and atoms. """
 
 import sys
+import json
 import typing
 import logger
 import MDAnalysis as mda
 import my_tools
+from colors_text import TextColor as bcolors
 
 
 class GetInfo:
     """read trr files and return info from it"""
+
+    info_msg: str = 'Message:\n'  # To log info
 
     trr: str  # Name of the trajectory file
     gro: str  # Name of the gro file (final step of trai from GROMACS)
@@ -26,8 +30,11 @@ class GetInfo:
         my_tools.check_file_exist(fname, log)
         self.trr = fname
         self.gro = self.check_gro(log)  # Toopology file
-        self.u_traj = self.read_traj(log)
+        self.info_msg += f'\tThe trajectory file is : `{self.trr}`\n'
+        self.info_msg += f'\tThe gro file is : `{self.gro}`\n'
+        self.u_traj = self.read_traj()
         self.residues_indx, self.num_dict = self.__get_info()
+        self.__write_msg(log)
 
     def __get_info(self) -> tuple[dict[str, list[int]], dict[str, typing.Any]]:
         """get all the info from the input files"""
@@ -42,6 +49,15 @@ class GetInfo:
         num_dict['total_mass'] = self.u_traj.atoms.total_mass
         num_dict['n_frames'] = self.u_traj.trajectory.n_frames
         num_dict['totaltime'] = self.u_traj.trajectory.totaltime
+        # Create a new dictionary with modified values to save info
+        new_dict = {}
+        for key, value in num_dict.items():
+            if callable(value):
+                new_dict[key] = 'method'
+            else:
+                new_dict[key] = str(value)
+        self.info_msg += '\tInformation in the trajectory file are:\n'
+        self.info_msg += f'{json.dumps(new_dict, indent=8)}\n'
         return num_dict
 
     def __get_residues(self) -> dict:
@@ -62,12 +78,10 @@ class GetInfo:
             residue_indices[residue_name].append(residue_index)
         return residue_indices
 
-    def read_traj(self,
-                  log: logger.logging.Logger
-                  ) -> mda.Universe:
+    def read_traj(self) -> mda.Universe:
         """read traj and topology file"""
-        log.info(f'Trajectory file `{self.trr}` and topology file'
-                 f' `{self.gro}` are read.')
+        self.info_msg += f'\tTrajectory file `{self.trr}` and topology file:'
+        self.info_msg += f' `{self.gro}` are read by MDAnalysis\n'
         return mda.Universe(self.gro, self.trr)
 
     def check_gro(self,
@@ -78,6 +92,14 @@ class GetInfo:
         gro_file: str = f'{tmp}.gro'
         my_tools.check_file_exist(gro_file, log)
         return gro_file
+
+    def __write_msg(self,
+                    log: logger.logging.Logger,  # To log info in it
+                    ) -> None:
+        """write and log messages"""
+        print(f'{bcolors.OKCYAN}{GetInfo.__module__}:\n'
+              f'\t{self.info_msg}{bcolors.ENDC}')
+        log.info(self.info_msg)
 
 
 if __name__ == '__main__':
