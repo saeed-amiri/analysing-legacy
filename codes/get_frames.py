@@ -75,6 +75,8 @@ class ResiduePositions:
             _com_arr = self.get_coms(com_arr, sol_residues)
         elif self.parra_sty == 'concurrent':
             _com_arr = self.get_coms_concurrent(com_arr, sol_residues)
+        elif self.parra_sty == 'split':
+            _com_arr = self.get_coms_parallel(com_arr, sol_residues)
         else:
             _com_arr = self.get_coms_multiprocessing(com_arr, sol_residues)
         # _com_arr = self.get_coms(com_arr, sol_residues)
@@ -190,7 +192,6 @@ class ResiduePositions:
         for tstep in self.trr_info.u_traj.trajectory:
             i_step = int(tstep.time/self.trr_info.num_dict['dt'])  # time step
             all_atoms: np.ndarray = tstep.positions
-            # print(f'\n{tstep.time}:')
             ts_np_com = self.get_np_com(all_atoms, np_res_ind)
             com_arr[i_step][0:3] = ts_np_com
             for k, val in sol_residues.items():
@@ -205,6 +206,18 @@ class ResiduePositions:
                         np.array([[r_idx, r_idx, r_idx]])
             all_t_np_coms.append(ts_np_com)
         return com_arr
+
+    def get_coms_parallel(self,
+                          com_arr: np.ndarray,  # Array of the COM
+                          sol_residues: dict[str, list[int]]  # Reses
+                          ) -> np.ndarray:
+        """
+        Getting the COM with multiprocessing by splititng the frames
+        """
+        all_steps = {}
+        for tstep in self.trr_info.u_traj.trajectory:
+            all_steps[tstep.frame] = np.copy(tstep.positions)
+
 
     @staticmethod
     def wrap_position(pos: np.ndarray,  # The center of mass
