@@ -14,12 +14,6 @@ files = {
     'com_pickle': 'com_pickle'
 }
 
-# time step (the frequncy of trr file)
-times: dict[str, float]
-times = {
-    'time_step': 100.0
-}
-
 # Constant values for reading topol file
 topo: dict[str, typing.Any]
 topo = {
