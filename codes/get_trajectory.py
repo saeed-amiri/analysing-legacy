@@ -62,7 +62,7 @@ class GetInfo:
             'total_mass': self.u_traj.atoms.total_mass,
             'n_frames': int(self.u_traj.trajectory.n_frames),
             'totaltime': int(self.u_traj.trajectory.totaltime),
-            'timestep': int(self.u_traj.trajectory.dt)
+            'dt': int(self.u_traj.trajectory.dt)
             }
         self.info_msg += '\tInformation in the trajectory file are:\n'
         _json_data = \
