@@ -58,10 +58,11 @@ class GetInfo:
         """
         num_dict: dict[str, typing.Any] = \
             {
-            'n_atoms': self.u_traj.atoms.n_atoms,
+            'n_atoms': int(self.u_traj.atoms.n_atoms),
             'total_mass': self.u_traj.atoms.total_mass,
-            'n_frames': self.u_traj.trajectory.n_frames,
-            'totaltime': self.u_traj.trajectory.totaltime
+            'n_frames': int(self.u_traj.trajectory.n_frames),
+            'totaltime': int(self.u_traj.trajectory.totaltime),
+            'timestep': int(self.u_traj.trajectory.dt)
             }
         self.info_msg += '\tInformation in the trajectory file are:\n'
         _json_data = \
