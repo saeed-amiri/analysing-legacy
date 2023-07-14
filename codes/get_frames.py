@@ -22,6 +22,7 @@ subtracted from it.
 ----------
 """
 
+import os
 import sys
 import multiprocessing
 import concurrent.futures
@@ -43,7 +44,7 @@ class ResiduePositions:
     def __init__(self,
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        self.parra_sty = 'concurrent'
+        self.parra_sty = 'concurrenhjgt'
         self.top = topo.ReadTop(log)
         self.trr_info = GetInfo(sys.argv[1], log=log)
         self.get_center_of_mass(log)
@@ -76,7 +77,6 @@ class ResiduePositions:
             _com_arr = self.get_coms_concurrent(com_arr, sol_residues)
         else:
             _com_arr = self.get_coms_multiprocessing(com_arr, sol_residues)
-
         # _com_arr = self.get_coms(com_arr, sol_residues)
         with open(fname, 'wb') as f_arr:
             pickle.dump(_com_arr, f_arr)
@@ -84,7 +84,7 @@ class ResiduePositions:
     # def process_tstep(self, tstep, np_res_ind, sol_residues, com_arr):
     def process_tstep(self,
                       args: tuple  # All the arguments
-                      ):
+                      ) -> np.ndarray:
         """
         Get each timestep and do the calculations
 
@@ -122,10 +122,13 @@ class ResiduePositions:
         """
         np_res_ind = self.get_np_residues()
         all_t_np_coms = []
-
+        num_worker: int = 4
+        self.info_msg += '\tUsing concurrent.futures module:\n'
+        self.info_msg += f'\tNumber of processes is: `{os.cpu_count()}`\n'
+        self.info_msg += f'\tNumber of worker is set to: `{num_worker}`\n'
         # Create a ProcessPoolExecutor
         with concurrent.futures.ProcessPoolExecutor(
-                                                    max_workers=12
+                                                    max_workers=num_worker
                                                     ) as executor:
             # Prepare the arguments for process_tstep function
             args_list = \
@@ -151,17 +154,18 @@ class ResiduePositions:
         np_res_ind = self.get_np_residues()
         all_t_np_coms = []
         num_processes: int = multiprocessing.cpu_count()
-        print(num_processes)
-        with multiprocessing.Pool(processes=4) as pool:
+        num_worker: int = 4
+        self.info_msg += '\tUsing multiprocessing module:\n'
+        self.info_msg += f'\tNumber of processes is: `{num_processes}`\n'
+        self.info_msg += f'\tNumber of worker is set to: `{num_worker}`\n'
+        with multiprocessing.Pool(processes=num_worker) as pool:
             results = []
             for tstep in self.trr_info.u_traj.trajectory:
+                args = (tstep, np_res_ind, sol_residues, com_arr)
                 results.append(
                     pool.apply_async(
                                      self.process_tstep,
-                                     args=(tstep,
-                                           np_res_ind,
-                                           sol_residues,
-                                           com_arr)
+                                     args=(args,)
                                     )
                               )
 
