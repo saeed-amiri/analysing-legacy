@@ -44,7 +44,7 @@ class ResiduePositions:
     def __init__(self,
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        self.parra_sty = 'concurrenhjgt'
+        self.parra_sty = 'serial'
         self.top = topo.ReadTop(log)
         self.trr_info = GetInfo(sys.argv[1], log=log)
         self.get_center_of_mass(log)
@@ -188,9 +188,9 @@ class ResiduePositions:
         all_t_np_coms: list[np.ndarray] = []  # COMs at each timestep
         np_res_ind = self.get_np_residues()
         for tstep in self.trr_info.u_traj.trajectory:
-            i_step = int(tstep.time/stinfo.times['time_step'])  # time step
+            i_step = int(tstep.time/self.trr_info.num_dict['dt'])  # time step
             all_atoms: np.ndarray = tstep.positions
-            print(f'\n{tstep.time}:')
+            # print(f'\n{tstep.time}:')
             ts_np_com = self.get_np_com(all_atoms, np_res_ind)
             com_arr[i_step][0:3] = ts_np_com
             for k, val in sol_residues.items():
