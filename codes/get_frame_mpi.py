@@ -23,7 +23,6 @@ and  the number of rows will be the number of timeframes
 
 
 import sys
-import json
 import logger
 import static_info as stinfo
 import get_topo as topo
@@ -39,16 +38,16 @@ class GetResidues:
     # The following will set in _initiate_reading
     top: topo.ReadTop  # Topology file
     trr_info: GetInfo  # All the info from trajectory
+    sol_res: dict[int, int]  # Residues with their type as an integer
+    np_res: dict[int, int]  # Residues with their type as an integer
 
     def __init__(self,
                  fname: str,  # Name of the trajectory file
                  log: logger.logging.Logger
                  ) -> None:
         self._initiate_reading(fname, log)
-        sol_res: dict[int, int]  # Residues with their type as an integer
-        np_res: dict[int, int]  # Residues with their type as an integer
-        sol_res, np_res = self._initiate_data()
-
+        self.sol_res,self. np_res = self._initiate_data()
+        print(self.info_msg)
 
     def _initiate_reading(self,
                           fname: str,  # Name of the trajectory file
@@ -90,11 +89,9 @@ class GetResidues:
     def set_residues_index(all_res_tmp: dict[str, list[int]]  # Name&index
                            ) -> dict[int, int]:
         """set the type of the each residue as an index"""
-        all_res_dict: dict[int, int] = {}  # All the residues with int type
-        for k, val in all_res_tmp.items():
-            for res in val:
-                all_res_dict[res] = stinfo.reidues_id[k]
-        return all_res_dict
+        return \
+            {res: stinfo.reidues_id[k] for k, val in all_res_tmp.items()
+             for res in val}
 
     def get_residues(self,
                      res_name: list[str]  # Name of the residues
@@ -104,11 +101,13 @@ class GetResidues:
         dropping the NP residues
         """
         self.info_msg += '\tGetting the residues:\n'
-        self.info_msg += f'\t{json.dumps(res_name, indent=8)}'
         all_res_dict: dict[str, list[int]] = {}  # All the residues in solution
-        for k, val in self.trr_info.residues_indx.items():
-            if k in res_name:
-                all_res_dict[k] = val
+        all_res_dict = \
+            {k: val for k, val in self.trr_info.residues_indx.items()
+             if k in res_name}
+        self.info_msg += \
+            (f'\tThe number of the read residues for {res_name} is:\n'
+             f'\t\t`{sum(len(lst) for lst in all_res_dict.values())}`\n')
         return all_res_dict
 
 
