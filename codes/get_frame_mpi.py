@@ -26,6 +26,7 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 
 
 import sys
+from typing import Union
 from mpi4py import MPI
 import logger
 import static_info as stinfo
@@ -39,7 +40,7 @@ class GetResidues:
     Get the residues, based on the description on the doc.
     """
 
-    info_msg: str = 'Messages:\n'  # To log
+    info_msg: str = 'Messages from GetResidues:\n'  # To log
     # The following will set in _initiate_reading
     top: topo.ReadTop  # Topology file
     trr_info: GetInfo  # All the info from trajectory
@@ -48,7 +49,7 @@ class GetResidues:
 
     def __init__(self,
                  fname: str,  # Name of the trajectory file
-                 log: logger.logging.Logger
+                 log: Union[logger.logging.Logger, None]
                  ) -> None:
         self._initiate_reading(fname, log)
         self.sol_res, self. np_res = self._initiate_data()
@@ -56,7 +57,7 @@ class GetResidues:
 
     def _initiate_reading(self,
                           fname: str,  # Name of the trajectory file
-                          log: logger.logging.Logger
+                          log: Union[logger.logging.Logger, None]
                           ) -> None:
         """
         Call the other modules and read the files
@@ -116,10 +117,10 @@ class GetResidues:
         return all_res_dict
 
     def __write_msg(self,
-                    log: logger.logging.Logger,  # To log info in it
+                    log: Union[logger.logging.Logger, None]  # To log info
                     ) -> None:
         """write and log messages"""
-        print(f'{bcolors.OKCYAN}{GetResidues.__module__}:\n'
+        print(f'{bcolors.OKCYAN}{GetResidues.__name__}:\n'
               f'\t{self.info_msg}{bcolors.ENDC}')
         log.info(self.info_msg)
 
@@ -134,17 +135,40 @@ class CalculateCom:
     """
 
     info_msg: str = 'Messages:\n'  # To log
+    get_residues: Union[GetResidues, None]  # Type of the info
 
     def __init__(self,
                  fname: str,  # Name of the trajectory files
-                 log: logger.logging.Logger
+                 log: Union[logger.logging.Logger, None]
                  ) -> None:
-        self.get_residues = GetResidues(fname, log)
-        self.comm = MPI.COMM_WORLD
-        self.rank = self.comm.Get_rank()
-        self.size = self.comm.Get_size()
+        self._initiate_data(fname, log)
+
+    def _initiate_data(self,
+                       fname: str,  # Name of the trajectory files
+                       log: Union[logger.logging.Logger, None]
+                       ) -> None:
+        """
+        call GetResidues class and get the data from it
+        """
+        if COMM.rank == 0:
+            self.get_residues = GetResidues(fname, log)
+        else:
+            self.get_residues = None
+        self._initiate_calc()
+
+    def _initiate_calc(self) -> None:
+        """initiate calculation"""
+        num_processes = COMM.Get_size()
+        print(num_processes)
 
 
 if __name__ == '__main__':
-    CalculateCom(fname=sys.argv[1],
-                 log=logger.setup_logger('get_frames_mpi_log'))
+    COMM = MPI.COMM_WORLD
+    RANK = COMM.Get_rank()
+    SIZE = COMM.Get_size()
+    LOG: Union[logger.logging.Logger, None]
+    if RANK == 0:
+        LOG = logger.setup_logger('get_frames_mpi_log')
+    else:
+        LOG = None
+    CalculateCom(fname=sys.argv[1], log=LOG)
