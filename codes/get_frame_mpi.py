@@ -30,10 +30,9 @@ import get_topo as topo
 from get_trajectory import GetInfo
 
 
-class GetResiduesPosition:
+class GetResidues:
     """
-    Get the positions of the residues, based on the description on the
-    doc.
+    Get the residues, based on the description on the doc.
     """
 
     info_msg: str = 'Messages:\n'  # To log
@@ -114,5 +113,5 @@ class GetResiduesPosition:
 
 
 if __name__ == '__main__':
-    GetResiduesPosition(fname=sys.argv[1],
+    GetResidues(fname=sys.argv[1],
                         log=logger.setup_logger('get_frames_mpi_log'))
