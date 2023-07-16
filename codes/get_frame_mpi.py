@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Read the trajectory file and return the residues' center of mass. There
 are a few things that have to be considered:
@@ -25,6 +26,7 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 
 
 import sys
+from mpi4py import MPI
 import logger
 import static_info as stinfo
 import get_topo as topo
@@ -49,7 +51,7 @@ class GetResidues:
                  log: logger.logging.Logger
                  ) -> None:
         self._initiate_reading(fname, log)
-        self.sol_res,self. np_res = self._initiate_data()
+        self.sol_res, self. np_res = self._initiate_data()
         self.__write_msg(log)
 
     def _initiate_reading(self,
@@ -122,7 +124,27 @@ class GetResidues:
         log.info(self.info_msg)
 
 
+class CalculateCom:
+    """
+    Calculating the center of mass (COM) of the residues.
+    input:
+        The objects of the GetResidues class
+    Output:
+        An array contains infos defined in the script's doc
+    """
+
+    info_msg: str = 'Messages:\n'  # To log
+
+    def __init__(self,
+                 fname: str,  # Name of the trajectory files
+                 log: logger.logging.Logger
+                 ) -> None:
+        self.get_residues = GetResidues(fname, log)
+        self.comm = MPI.COMM_WORLD
+        self.rank = self.comm.Get_rank()
+        self.size = self.comm.Get_size()
+
 
 if __name__ == '__main__':
-    GetResidues(fname=sys.argv[1],
-                        log=logger.setup_logger('get_frames_mpi_log'))
+    CalculateCom(fname=sys.argv[1],
+                 log=logger.setup_logger('get_frames_mpi_log'))
