@@ -134,7 +134,7 @@ class CalculateCom:
         An array contains infos defined in the script's doc
     """
 
-    info_msg: str = 'Messages:\n'  # To log
+    info_msg: str = 'Messages from CalculateCom:\n'  # To log
     get_residues: Union[GetResidues, None]  # Type of the info
 
     def __init__(self,
@@ -142,6 +142,7 @@ class CalculateCom:
                  log: Union[logger.logging.Logger, None]
                  ) -> None:
         self._initiate_data(fname, log)
+        self._initiate_calc()
 
     def _initiate_data(self,
                        fname: str,  # Name of the trajectory files
@@ -152,14 +153,13 @@ class CalculateCom:
         """
         if COMM.rank == 0:
             self.get_residues = GetResidues(fname, log)
+            num_processes = COMM.Get_size()
+            self.info_msg += f'\t Number of core is: `{(num_processes)}`\n'
         else:
             self.get_residues = None
-        self._initiate_calc()
 
     def _initiate_calc(self) -> None:
         """initiate calculation"""
-        num_processes = COMM.Get_size()
-        print(num_processes)
 
 
 if __name__ == '__main__':
