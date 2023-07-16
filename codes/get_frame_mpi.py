@@ -24,7 +24,6 @@ and  the number of rows will be the number of timeframes
 
 import sys
 import json
-import numpy as np
 import logger
 import static_info as stinfo
 import get_topo as topo
@@ -47,7 +46,10 @@ class GetResiduesPosition:
                  log: logger.logging.Logger
                  ) -> None:
         self._initiate_reading(fname, log)
-        self._initiate_data()
+        sol_res: dict[int, int]  # Residues with their type as an integer
+        np_res: dict[int, int]  # Residues with their type as an integer
+        sol_res, np_res = self._initiate_data()
+
 
     def _initiate_reading(self,
                           fname: str,  # Name of the trajectory file
@@ -55,16 +57,27 @@ class GetResiduesPosition:
                           ) -> None:
         """
         Call the other modules and read the files
+        Top contains info from forcefield parameters files, the numbers
+        of the residues.
+        ttr_info contains trajectory read by MDAnalysis
         """
         self.top = topo.ReadTop(log)
         self.trr_info = GetInfo(fname, log=log)
 
-    def _initiate_data(self) -> None:
+    def _initiate_data(self) -> tuple[dict[int, int], dict[int, int]]:
         """
-        Initiate setting data to get the COM of the residues
-        MDAnalysis cant manage the indicies correctly. So, I have to
-        save and set the indicies for NP (COR & APT) and solution
-        separately.
+        Initialize setting data to obtain the center of mass of
+        residues. MDAnalysis fails to manage indices, so NP (COR & APT)
+        and solution indices are saved and set separately.
+
+        Algorithm:
+            Retrieve all residues for nanoparticles and solution, then
+            set an index for each based on type defined in static_info.
+
+            Returns:
+            Dictionaries for each set with residue index as keys and
+            the reisdues' type as values.
+
         """
         sol_res_tmp: dict[str, list[int]] = \
             self.get_residues(stinfo.np_info["solution_residues"])
@@ -72,6 +85,7 @@ class GetResiduesPosition:
             self.get_residues(stinfo.np_info["np_residues"])
         sol_res = self.set_residues_index(sol_res_tmp)
         np_res = self.set_residues_index(np_res_tmp)
+        return sol_res, np_res
 
     @staticmethod
     def set_residues_index(all_res_tmp: dict[str, list[int]]  # Name&index
