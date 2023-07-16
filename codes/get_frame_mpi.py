@@ -8,16 +8,18 @@ are a few things that have to be considered:
 In the final array, rows indicate the timeframe, and columns show the
 center of mass of the residues.
 
+number of row will be"
+    number of frames + 1
+    The extra row is for the type of the residue
+
+
+number of the columns:
 n_residues: number of the residues
 n_ODA: number oda residues
 NP_com: Center of mass of the nanoparticle
-Shape of the array will be:
-
-number of the columns:
-timeframe + NP_com + n_residues: xyz,type + n_oda * xyz,type
-     1    +   3    + n_residues * 4       + n_oda * 4
-
-and  the number of rows will be the number of timeframes
+than:
+timeframe + NP_com + n_residues:  xyz + n_oda * xyz
+     1    +   3    +  n_residues * 3  +  n_oda * 3
 
 """
 
