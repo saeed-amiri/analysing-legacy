@@ -27,6 +27,7 @@ import logger
 import static_info as stinfo
 import get_topo as topo
 from get_trajectory import GetInfo
+from colors_text import TextColor as bcolors
 
 
 class GetResidues:
@@ -47,7 +48,7 @@ class GetResidues:
                  ) -> None:
         self._initiate_reading(fname, log)
         self.sol_res,self. np_res = self._initiate_data()
-        print(self.info_msg)
+        self.__write_msg(log)
 
     def _initiate_reading(self,
                           fname: str,  # Name of the trajectory file
@@ -109,6 +110,15 @@ class GetResidues:
             (f'\tThe number of the read residues for {res_name} is:\n'
              f'\t\t`{sum(len(lst) for lst in all_res_dict.values())}`\n')
         return all_res_dict
+
+    def __write_msg(self,
+                    log: logger.logging.Logger,  # To log info in it
+                    ) -> None:
+        """write and log messages"""
+        print(f'{bcolors.OKCYAN}{GetResidues.__module__}:\n'
+              f'\t{self.info_msg}{bcolors.ENDC}')
+        log.info(self.info_msg)
+
 
 
 if __name__ == '__main__':
