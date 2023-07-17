@@ -143,6 +143,9 @@ class CalculateCom:
                  ) -> None:
         self._initiate_data(fname, log)
         self._initiate_calc()
+        COMM.Barrier()
+        # Wait until the last CPU is finished
+        self.__write_msg(log)
 
     def _initiate_data(self,
                        fname: str,  # Name of the trajectory files
@@ -151,15 +154,26 @@ class CalculateCom:
         """
         call GetResidues class and get the data from it
         """
-        if COMM.rank == 0:
+        if RANK == 0:
             self.get_residues = GetResidues(fname, log)
             num_processes = COMM.Get_size()
-            self.info_msg += f'\t Number of core is: `{(num_processes)}`\n'
+            self.info_msg += f'\tNumber of cores is: `{(num_processes)}`\n'
         else:
             self.get_residues = None
 
     def _initiate_calc(self) -> None:
         """initiate calculation"""
+        if self.get_residues is not None:
+            print(self.get_residues.trr_info.u_traj)
+
+    def __write_msg(self,
+                    log: Union[logger.logging.Logger, None]  # To log info
+                    ) -> None:
+        """write and log messages"""
+        if RANK == 0:
+            print(f'{bcolors.OKCYAN}{CalculateCom.__name__}:\n'
+                  f'\t{self.info_msg}{bcolors.ENDC}')
+            log.info(self.info_msg)
 
 
 if __name__ == '__main__':
