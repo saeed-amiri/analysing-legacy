@@ -156,6 +156,9 @@ class CalculateCom:
         """
         if RANK == 0:
             self.get_residues = GetResidues(fname, log)
+            self.n_frames = self.get_residues.trr_info.num_dict['n_frames']
+            self.info_msg += (f'\tNumber of processes is: `{SIZE}`\n'
+                              f'\tNumber of frames is: `{self.n_frames}`\n')
         # Set None if RANK is not 0
         self.get_residues = None
 
@@ -177,22 +180,11 @@ class CalculateCom:
             of cores.
 
         Notes:
-            - The `n_frames must be equal or bigger than n_process
-            - Non-numeric values in the `numbers` list will raise a
-            `TypeError`.
+            - The `n_frames` should be equal or bigger than n_process,
+              otherwise it will reduced to n_frames
         """
         if RANK == 0:
-            if self.get_residues is not None:
-                n_frames: int = self.get_residues.trr_info.num_dict['n_frames']
-                if n_frames < COMM.Get_size():
-                    self.info_msg += \
-                        (f'\tNumber of processes `{COMM.Get_size()}` is '
-                         f'more then the number of frames `{n_frames}`.\n'
-                         '\tThe number of process reduces to the number '
-                         'frames\n')
-                    SIZE = n_frames
-            data: np.ndarray = np.arange(201)
-
+            data: np.ndarray = np.arange(self.n_frames)
             # determine the size of each sub-task
             ave, res = divmod(data.size, SIZE)
             counts: list[int]  # Length of each array in the list
@@ -209,8 +201,14 @@ class CalculateCom:
             chunk_tstep = None
 
         data = COMM.scatter(chunk_tstep, root=0)
+        self.get_com(RANK, data)
 
-        print(f'Process {RANK} has data:', data)
+    def get_com(self,
+                i_rank: int,  # Rank of the process
+                data: np.ndarray  # Array of the frames
+                ) -> None:
+        """Do sth here"""
+        print(f'Process {i_rank} has data:', np.mean(data))
 
     def __write_msg(self,
                     log: Union[logger.logging.Logger, None]  # To log info
@@ -227,6 +225,7 @@ if __name__ == '__main__':
     COMM = MPI.COMM_WORLD
     RANK = COMM.Get_rank()
     SIZE = COMM.Get_size()
+
     LOG: Union[logger.logging.Logger, None]
     if RANK == 0:
         LOG = logger.setup_logger('get_frames_mpi_log')
