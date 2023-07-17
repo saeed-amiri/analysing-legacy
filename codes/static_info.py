@@ -34,11 +34,12 @@ reidues_num = {
 # Giving id to each residues to not save str in array
 reidues_id: dict[str, int]
 reidues_id = {
-    'CLA': 1,
-    'SOL': 2,
+    'SOL': 1,
+    'CLA': 2,
     'ODN': 3,
     'D10': 4,
-    'APT_COR': 5
+    'APT': 5,
+    'COR': 6
 }
 
 # Nano partcle
@@ -47,7 +48,8 @@ np_info = {
     'radius': 32.6,  # It is in Angstrom
     'np_residues': ['APT', 'COR'],
     'np_name': 'APT_COR',
-    'solution_residues': ['CLA', 'SOL', 'ODN', 'D10']
+    'solution_residues': ['CLA', 'SOL', 'ODN', 'D10'],
+    'all_residues': ['CLA', 'SOL', 'ODN', 'D10', 'APT', 'COR']
 }
 
 # Box information
