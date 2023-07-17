@@ -122,7 +122,8 @@ class GetResidues:
         """write and log messages"""
         print(f'{bcolors.OKCYAN}{GetResidues.__name__}:\n'
               f'\t{self.info_msg}{bcolors.ENDC}')
-        log.info(self.info_msg)
+        if log is not None:
+            log.info(self.info_msg)
 
 
 class CalculateCom:
@@ -157,17 +158,18 @@ class CalculateCom:
         if RANK == 0:
             self.get_residues = GetResidues(fname, log)
             n_frames: int = self.get_residues.trr_info.num_dict['n_frames']
-            n_processes:int = COMM.Get_size()
-            self.get_tstep_chunks(n_frames, n_processes)
+            n_processes: int = COMM.Get_size()
+            self.get_tstep_chunks(n_frames, n_processes, log)
             self.info_msg += f'\tNumber of cores is: `{(n_processes)}`\n'
         else:
             self.get_residues = None
 
     @staticmethod
     def get_tstep_chunks(n_frames: int,  # Numbers of the frames in trajectory
-                         n_processes: int  # Number of cores
+                         n_processes: int,  # Number of cores
+                         log:  Union[logger.logging.Logger, None]
                          ) -> list[list[int]]:
-            """
+        """
         Get the lists the list contains timesteps.
         The number of sublist is equal to number of cores, thean each
         sublist will be send to one core.
@@ -184,15 +186,36 @@ class CalculateCom:
 
         Examples:
             >>> get_tstep_chunks(11, 4)
-            [[0, 1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+            [[0, 1], [2, 3], [4, 5], [6, 7], [8, 9], [10]]
 
         Notes:
             - The `n_frames must be equal or bigger than n_process
             - Non-numeric values in the `numbers` list will raise a
             `TypeError`.
         """
-        
+        if n_frames < n_processes:
+            message: str = \
+                "n_frames must be greater than or equal to n_processes."
+            if log is not None:
+                log.error(message)
+            raise ValueError(message)
 
+        chunk_size = n_frames // n_processes
+        remainder = n_frames % n_processes
+
+        chunks = []
+        start_tstep = 0
+
+        for _ in range(n_processes):
+            end_tstep = start_tstep + chunk_size
+
+            if remainder > 0:
+                end_tstep += 1
+                remainder -= 1
+
+            chunks.append(list(range(start_tstep, end_tstep)))
+            start_tstep = end_tstep
+        return chunks
 
     def _initiate_calc(self) -> None:
         """initiate calculation"""
@@ -209,7 +232,8 @@ class CalculateCom:
         if RANK == 0:
             print(f'{bcolors.OKCYAN}{CalculateCom.__name__}:\n'
                   f'\t{self.info_msg}{bcolors.ENDC}')
-            log.info(self.info_msg)
+            if log is not None:
+                log.info(self.info_msg)
 
 
 if __name__ == '__main__':
