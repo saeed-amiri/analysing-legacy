@@ -143,7 +143,7 @@ class CalculateCom:
                  ) -> None:
         self._initiate_data(fname, log)
         self._initiate_calc()
-        COMM.Barrier()
+        # COMM.Barrier()
         # Wait until the last CPU is finished
         self.__write_msg(log)
 
@@ -165,6 +165,9 @@ class CalculateCom:
         """initiate calculation"""
         if self.get_residues is not None:
             print(self.get_residues.trr_info.u_traj)
+            for tstep in self.get_residues.trr_info.u_traj.trajectory:
+                i_step = \
+                    int(tstep.time/self.get_residues.trr_info.num_dict['dt'])
 
     def __write_msg(self,
                     log: Union[logger.logging.Logger, None]  # To log info
