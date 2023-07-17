@@ -153,13 +153,19 @@ class CalculateCom:
                        log: Union[logger.logging.Logger, None]
                        ) -> None:
         """
-        call GetResidues class and get the data from it
+        This function Call GetResidues class and get the data from it,
+        and than performs the following steps:
+        1. Chunks the number of frames
+        2. Chunks the trajectory based the frames chunks
+        3. 
+        4. 
         """
         if RANK == 0:
             self.get_residues = GetResidues(fname, log)
             n_frames: int = self.get_residues.trr_info.num_dict['n_frames']
             n_processes: int = COMM.Get_size()
-            self.get_tstep_chunks(n_frames, n_processes, log)
+            chunks_tsteps: list[list[int]] = \
+                self.get_tstep_chunks(n_frames, n_processes, log)
             self.info_msg += f'\tNumber of cores is: `{(n_processes)}`\n'
         else:
             self.get_residues = None
