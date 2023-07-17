@@ -156,10 +156,43 @@ class CalculateCom:
         """
         if RANK == 0:
             self.get_residues = GetResidues(fname, log)
-            num_processes = COMM.Get_size()
-            self.info_msg += f'\tNumber of cores is: `{(num_processes)}`\n'
+            n_frames: int = self.get_residues.trr_info.num_dict['n_frames']
+            n_processes:int = COMM.Get_size()
+            self.get_tstep_chunks(n_frames, n_processes)
+            self.info_msg += f'\tNumber of cores is: `{(n_processes)}`\n'
         else:
             self.get_residues = None
+
+    @staticmethod
+    def get_tstep_chunks(n_frames: int,  # Numbers of the frames in trajectory
+                         n_processes: int  # Number of cores
+                         ) -> list[list[int]]:
+            """
+        Get the lists the list contains timesteps.
+        The number of sublist is equal to number of cores, thean each
+        sublist will be send to one core.
+
+        Args:
+            number of cores and number of frames
+
+        Returns:
+            list of lists
+
+        Raises:
+            ValueError: If the `the n_frames` is less than the number
+            of cores.
+
+        Examples:
+            >>> get_tstep_chunks(11, 4)
+            [[0, 1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]
+
+        Notes:
+            - The `n_frames must be equal or bigger than n_process
+            - Non-numeric values in the `numbers` list will raise a
+            `TypeError`.
+        """
+        
+
 
     def _initiate_calc(self) -> None:
         """initiate calculation"""
