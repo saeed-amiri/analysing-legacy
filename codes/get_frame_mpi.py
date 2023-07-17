@@ -28,6 +28,7 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 import sys
 from typing import Union
 from mpi4py import MPI
+import numpy as np
 import logger
 import static_info as stinfo
 import get_topo as topo
@@ -144,8 +145,6 @@ class CalculateCom:
                  ) -> None:
         self._initiate_data(fname, log)
         self._initiate_calc()
-        # COMM.Barrier()
-        # Wait until the last CPU is finished
         self.__write_msg(log)
 
     def _initiate_data(self,
@@ -153,29 +152,16 @@ class CalculateCom:
                        log: Union[logger.logging.Logger, None]
                        ) -> None:
         """
-        This function Call GetResidues class and get the data from it,
-        and than performs the following steps:
-        1. Chunks the number of frames
-        2. Chunks the trajectory based the frames chunks
-        3. 
-        4. 
+        This function Call GetResidues class and get the data from it.
         """
         if RANK == 0:
             self.get_residues = GetResidues(fname, log)
-            n_frames: int = self.get_residues.trr_info.num_dict['n_frames']
-            n_processes: int = COMM.Get_size()
-            chunks_tsteps: list[list[int]] = \
-                self.get_tstep_chunks(n_frames, n_processes, log)
-            self.info_msg += f'\tNumber of cores is: `{(n_processes)}`\n'
-        else:
-            self.get_residues = None
+        # Set None if RANK is not 0
+        self.get_residues = None
 
-    @staticmethod
-    def get_tstep_chunks(n_frames: int,  # Numbers of the frames in trajectory
-                         n_processes: int,  # Number of cores
-                         log:  Union[logger.logging.Logger, None]
-                         ) -> list[list[int]]:
+    def _initiate_calc(self) -> None:
         """
+        First divide the list, than brodcast between processes.
         Get the lists the list contains timesteps.
         The number of sublist is equal to number of cores, thean each
         sublist will be send to one core.
@@ -199,37 +185,25 @@ class CalculateCom:
             - Non-numeric values in the `numbers` list will raise a
             `TypeError`.
         """
-        if n_frames < n_processes:
-            message: str = \
-                "n_frames must be greater than or equal to n_processes."
-            if log is not None:
-                log.error(message)
-            raise ValueError(message)
+        if RANK == 0:
+            data = np.arange(201)
 
-        chunk_size = n_frames // n_processes
-        remainder = n_frames % n_processes
+            # determine the size of each sub-task
+            ave, res = divmod(data.size, SIZE)
+            counts = [ave + 1 if p < res else ave for p in range(SIZE)]
 
-        chunks = []
-        start_tstep = 0
+            # determine the starting and ending indices of each sub-task
+            starts = [sum(counts[:p]) for p in range(SIZE)]
+            ends = [sum(counts[:p+1]) for p in range(SIZE)]
 
-        for _ in range(n_processes):
-            end_tstep = start_tstep + chunk_size
+            # converts data into a list of arrays
+            data = [data[starts[p]:ends[p]] for p in range(SIZE)]
+        else:
+            data = None
 
-            if remainder > 0:
-                end_tstep += 1
-                remainder -= 1
+        data = COMM.scatter(data, root=0)
 
-            chunks.append(list(range(start_tstep, end_tstep)))
-            start_tstep = end_tstep
-        return chunks
-
-    def _initiate_calc(self) -> None:
-        """initiate calculation"""
-        if self.get_residues is not None:
-            print(self.get_residues.trr_info.u_traj)
-            for tstep in self.get_residues.trr_info.u_traj.trajectory:
-                i_step = \
-                    int(tstep.time/self.get_residues.trr_info.num_dict['dt'])
+        print(f'Process {RANK} has data:', data)
 
     def __write_msg(self,
                     log: Union[logger.logging.Logger, None]  # To log info
