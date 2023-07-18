@@ -47,6 +47,9 @@ class GetResidues:
     trr_info: GetInfo  # All the info from trajectory
     sol_res: dict[int, int]  # Residues with their type as an integer
     np_res: dict[int, int]  # Residues with their type as an integer
+    # The number of resdiues are set in _initiate_data
+    nr_sol_res: int  # Number of residues in solution (without NP)
+    nr_np_res: int  # Number of residues in NP
 
     def __init__(self,
                  fname: str,  # Name of the trajectory file
@@ -85,9 +88,11 @@ class GetResidues:
             the reisdues' type as values.
 
         """
-        sol_res_tmp: dict[str, list[int]] = \
+        sol_res_tmp: dict[str, list[int]]
+        np_res_tmp: dict[str, list[int]]
+        sol_res_tmp, self.nr_sol_res = \
             self.get_residues(stinfo.np_info["solution_residues"])
-        np_res_tmp: dict[str, list[int]] = \
+        np_res_tmp, self.nr_np_res = \
             self.get_residues(stinfo.np_info["np_residues"])
         sol_res = self.set_residues_index(sol_res_tmp)
         np_res = self.set_residues_index(np_res_tmp)
@@ -95,8 +100,9 @@ class GetResidues:
 
     @staticmethod
     def set_residues_index(all_res_tmp: dict[str, list[int]]  # Name&index
-                           ) -> dict[int, int]:
-        """set the type of the each residue as an index"""
+                           ) -> tuple[dict[int, int], int]:
+        """set the type of the each residue as an index and number of
+        residues"""
         return \
             {res: stinfo.reidues_id[k] for k, val in all_res_tmp.items()
              for res in val}
@@ -113,10 +119,11 @@ class GetResidues:
         all_res_dict = \
             {k: val for k, val in self.trr_info.residues_indx.items()
              if k in res_name}
+        nr_residues = int(sum(len(lst) for lst in all_res_dict.values()))
         self.info_msg += \
             (f'\tThe number of the read residues for {res_name} is:\n'
-             f'\t\t`{sum(len(lst) for lst in all_res_dict.values())}`\n')
-        return all_res_dict
+             f'\t\t`{nr_residues}`\n')
+        return all_res_dict, nr_residues
 
     def __write_msg(self,
                     log: typing.Union[logger.logging.Logger, None]  # To log
