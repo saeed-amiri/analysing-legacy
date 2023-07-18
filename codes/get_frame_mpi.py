@@ -184,20 +184,9 @@ class CalculateCom:
             - chunk_tstep: typing.Union[list[list[np.ndarray]], None]
         """
         if RANK == 0:
+            data: np.ndarray = np.arange(self.n_frames)
+            chunk_tstep = self.get_chunk_lists(data)
             if self.get_residues is not None:
-                data: np.ndarray = np.arange(self.n_frames)
-                # determine the size of each sub-task
-                ave, res = divmod(data.size, SIZE)
-                counts: list[int]  # Length of each array in the list
-                counts = [ave + 1 if p < res else ave for p in range(SIZE)]
-                # determine the starting and ending indices of each sub-task
-                starts: list[int]  # Start of each list of ranges
-                ends: list[int]  # Ends of each list of ranges
-                starts = [sum(counts[: p]) for p in range(SIZE)]
-                ends = [sum(counts[: p+1]) for p in range(SIZE)]
-                # converts data into a list of arrays
-                chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
-                               for p in range(SIZE)]
                 u_traj = self.get_residues.trr_info.u_traj.trajectory
         else:
             chunk_tstep = None
@@ -228,6 +217,24 @@ class CalculateCom:
                 ) -> None:
         """Do sth here"""
         print(f'Process {i_rank} has chunk_tstep:', chunk_tstep)
+
+    @staticmethod
+    def get_chunk_lists(data: np.ndarray  # Range of the time steps
+                        ) -> typing.Any:
+        """prepare chunk_tstep based on the numbers of frames"""
+        # determine the size of each sub-task
+        ave, res = divmod(data.size, SIZE)
+        counts: list[int]  # Length of each array in the list
+        counts = [ave + 1 if p < res else ave for p in range(SIZE)]
+        # determine the starting and ending indices of each sub-task
+        starts: list[int]  # Start of each list of ranges
+        ends: list[int]  # Ends of each list of ranges
+        starts = [sum(counts[: p]) for p in range(SIZE)]
+        ends = [sum(counts[: p+1]) for p in range(SIZE)]
+        # converts data into a list of arrays
+        chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
+                        for p in range(SIZE)]
+        return chunk_tstep
 
     def __write_msg(self,
                     log: typing.Union[logger.logging.Logger, None]  # To log
