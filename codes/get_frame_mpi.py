@@ -180,7 +180,7 @@ class CalculateCom:
         Notes:
             - The `n_frames` should be equal or bigger than n_process,
               otherwise it will reduced to n_frames
-            - u_traj has type: <class 'MDAnalysis.coordinates.TRR.TRRReader'>
+            - u_traj: <class 'MDAnalysis.coordinates.TRR.TRRReader'>
             - chunk_tstep: typing.Union[list[list[np.ndarray]], None]
         """
         if RANK == 0:
@@ -202,9 +202,9 @@ class CalculateCom:
         else:
             chunk_tstep = None
             u_traj = None
-        # Broadcast and scatter all the data
-        # Setting teh type
+        # Setting the type
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
+        # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
         u_traj = COMM.bcast(u_traj, root=0)
         self.process_trj(RANK, chunk_tstep, u_traj)
