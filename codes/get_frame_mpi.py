@@ -159,8 +159,8 @@ class CalculateCom:
             self.n_frames = self.get_residues.trr_info.num_dict['n_frames']
             self.info_msg += (f'\tNumber of processes is: `{SIZE}`\n'
                               f'\tNumber of frames is: `{self.n_frames}`\n')
-        # Set None if RANK is not 0
-        self.get_residues = None
+        else:
+            self.get_residues = None
 
     def _initiate_calc(self) -> None:
         """
@@ -197,7 +197,16 @@ class CalculateCom:
             chunk_tstep = None
 
         data = COMM.scatter(chunk_tstep, root=0)
+        self.process_trj(data)
         self.get_com(RANK, data)
+
+    def process_trj(self,
+                    data: np.ndarray) -> None:
+        """Get atoms in the timestep"""
+        for i in data:
+            frame = i
+            # Process the frame as needed
+            print(frame)
 
     def get_com(self,
                 i_rank: int,  # Rank of the process
