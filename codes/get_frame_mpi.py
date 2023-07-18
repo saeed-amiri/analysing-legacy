@@ -196,6 +196,10 @@ class CalculateCom:
             np_res_ind = self.get_np_residues()
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
+                com_arr: np.ndarray = \
+                    self.mk_allocation(self.n_frames,
+                                       self.get_residues.nr_sol_res,
+                                       n_oda=50)
         else:
             chunk_tstep = None
             np_res_ind = None
