@@ -186,25 +186,30 @@ class CalculateCom:
         if RANK == 0:
             data: np.ndarray = np.arange(self.n_frames)
             chunk_tstep = self.get_chunk_lists(data)
+            np_res_ind = self.get_np_residues()
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj.trajectory
         else:
             chunk_tstep = None
+            np_res_ind = None
             u_traj = None
         # Setting the type
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
+        np_res_ind = COMM.bcast(np_res_ind, root=0)
         u_traj = COMM.bcast(u_traj, root=0)
-        self.process_trj(RANK, chunk_tstep, u_traj)
-        self.get_com(RANK, chunk_tstep)
+
+        self.process_trj(RANK, chunk_tstep, u_traj, np_res_ind)
 
     def process_trj(self,
                     i_rank: int,  # Rank of the processor
                     chunk_tstep,  # Frames' ind
-                    u_traj
+                    u_traj,  # Trajectory
+                    np_res_ind: typing.Union[list[int], None]  # NP residues id
                     ) -> None:
         """Get atoms in the timestep"""
+        self.get_com(RANK, chunk_tstep)
         if chunk_tstep is not None:
             for i in chunk_tstep:
                 frame = u_traj[i]
@@ -217,6 +222,17 @@ class CalculateCom:
                 ) -> None:
         """Do sth here"""
         print(f'Process {i_rank} has chunk_tstep:', chunk_tstep)
+
+    def get_np_residues(self) -> list[int]:
+        """
+        return list of the integer of the residues in the NP
+        """
+        np_res_ind: list[int] = []  # All the index in the NP
+        if self.get_residues is not None:
+            for item in stinfo.np_info['np_residues']:
+                np_res_ind.extend(
+                    self.get_residues.trr_info.residues_indx[item])
+        return np_res_ind
 
     @staticmethod
     def get_chunk_lists(data: np.ndarray  # Range of the time steps
@@ -233,7 +249,7 @@ class CalculateCom:
         ends = [sum(counts[: p+1]) for p in range(SIZE)]
         # converts data into a list of arrays
         chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
-                        for p in range(SIZE)]
+                       for p in range(SIZE)]
         return chunk_tstep
 
     def __write_msg(self,
