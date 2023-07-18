@@ -17,7 +17,7 @@ def check_file_exist(fname: str,  # Name of the file to check
                  f'(Error! `{fname}` dose not '
                  f'exist \n{bcolors.ENDC}')
     else:
-        log.info(f'reading: `{fname}`')
+        log.info(f'Checking: `{fname}`')
 
 
 def check_file_reanme(fname: str,  # Name of the file to check
