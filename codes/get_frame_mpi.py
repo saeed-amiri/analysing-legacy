@@ -175,10 +175,6 @@ class CalculateCom:
         Returns:
             None
 
-        Raises:
-            ValueError: If the `the n_frames` is less than the number
-            of cores.
-
         Notes:
             - The `n_frames` should be equal or bigger than n_process,
               otherwise it will reduced to n_frames
@@ -192,11 +188,11 @@ class CalculateCom:
             # determine the starting and ending indices of each sub-task
             starts: list[int]  # Start of each list of ranges
             ends: list[int]  # Ends of each list of ranges
-            starts = [sum(counts[:p]) for p in range(SIZE)]
-            ends = [sum(counts[:p+1]) for p in range(SIZE)]
+            starts = [sum(counts[: p]) for p in range(SIZE)]
+            ends = [sum(counts[: p+1]) for p in range(SIZE)]
             # converts data into a list of arrays
             chunk_tstep: Union[list[np.ndarray], None] = \
-                [data[starts[p]:ends[p]] for p in range(SIZE)]
+                [data[starts[p]: ends[p]] for p in range(SIZE)]
         else:
             chunk_tstep = None
 
