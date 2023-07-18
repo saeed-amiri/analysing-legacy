@@ -26,7 +26,7 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 
 
 import sys
-from typing import Union
+import typing
 from mpi4py import MPI
 import numpy as np
 import logger
@@ -50,7 +50,7 @@ class GetResidues:
 
     def __init__(self,
                  fname: str,  # Name of the trajectory file
-                 log: Union[logger.logging.Logger, None]
+                 log: typing.Union[logger.logging.Logger, None]
                  ) -> None:
         self._initiate_reading(fname, log)
         self.sol_res, self. np_res = self._initiate_data()
@@ -58,7 +58,7 @@ class GetResidues:
 
     def _initiate_reading(self,
                           fname: str,  # Name of the trajectory file
-                          log: Union[logger.logging.Logger, None]
+                          log: typing.Union[logger.logging.Logger, None]
                           ) -> None:
         """
         Call the other modules and read the files
@@ -66,8 +66,9 @@ class GetResidues:
         of the residues.
         ttr_info contains trajectory read by MDAnalysis
         """
-        self.top = topo.ReadTop(log)
-        self.trr_info = GetInfo(fname, log=log)
+        if log is not None:
+            self.top = topo.ReadTop(log)
+            self.trr_info = GetInfo(fname, log=log)
 
     def _initiate_data(self) -> tuple[dict[int, int], dict[int, int]]:
         """
@@ -118,7 +119,7 @@ class GetResidues:
         return all_res_dict
 
     def __write_msg(self,
-                    log: Union[logger.logging.Logger, None]  # To log info
+                    log: typing.Union[logger.logging.Logger, None]  # To log
                     ) -> None:
         """write and log messages"""
         print(f'{bcolors.OKCYAN}{GetResidues.__name__}:\n'
@@ -137,11 +138,11 @@ class CalculateCom:
     """
 
     info_msg: str = 'Messages from CalculateCom:\n'  # To log
-    get_residues: Union[GetResidues, None]  # Type of the info
+    get_residues: typing.Union[GetResidues, None]  # Type of the info
 
     def __init__(self,
                  fname: str,  # Name of the trajectory files
-                 log: Union[logger.logging.Logger, None]
+                 log: typing.Union[logger.logging.Logger, None]
                  ) -> None:
         self._initiate_data(fname, log)
         self._initiate_calc()
@@ -149,7 +150,7 @@ class CalculateCom:
 
     def _initiate_data(self,
                        fname: str,  # Name of the trajectory files
-                       log: Union[logger.logging.Logger, None]
+                       log: typing.Union[logger.logging.Logger, None]
                        ) -> None:
         """
         This function Call GetResidues class and get the data from it.
@@ -166,8 +167,9 @@ class CalculateCom:
         """
         First divide the list, than brodcast between processes.
         Get the lists the list contains timesteps.
-        The number of sublist is equal to number of cores, thean each
+        The number of sublist is equal to number of cores, than each
         sublist will be send to one core.
+        The total trajectory will br brodcast to all the processors
 
         Args:
             None
@@ -178,45 +180,57 @@ class CalculateCom:
         Notes:
             - The `n_frames` should be equal or bigger than n_process,
               otherwise it will reduced to n_frames
+            - u_traj has type: <class 'MDAnalysis.coordinates.TRR.TRRReader'>
+            - chunk_tstep: typing.Union[list[list[np.ndarray]], None]
         """
         if RANK == 0:
-            data: np.ndarray = np.arange(self.n_frames)
-            # determine the size of each sub-task
-            ave, res = divmod(data.size, SIZE)
-            counts: list[int]  # Length of each array in the list
-            counts = [ave + 1 if p < res else ave for p in range(SIZE)]
-            # determine the starting and ending indices of each sub-task
-            starts: list[int]  # Start of each list of ranges
-            ends: list[int]  # Ends of each list of ranges
-            starts = [sum(counts[: p]) for p in range(SIZE)]
-            ends = [sum(counts[: p+1]) for p in range(SIZE)]
-            # converts data into a list of arrays
-            chunk_tstep: Union[list[np.ndarray], None] = \
-                [data[starts[p]: ends[p]] for p in range(SIZE)]
+            if self.get_residues is not None:
+                data: np.ndarray = np.arange(self.n_frames)
+                # determine the size of each sub-task
+                ave, res = divmod(data.size, SIZE)
+                counts: list[int]  # Length of each array in the list
+                counts = [ave + 1 if p < res else ave for p in range(SIZE)]
+                # determine the starting and ending indices of each sub-task
+                starts: list[int]  # Start of each list of ranges
+                ends: list[int]  # Ends of each list of ranges
+                starts = [sum(counts[: p]) for p in range(SIZE)]
+                ends = [sum(counts[: p+1]) for p in range(SIZE)]
+                # converts data into a list of arrays
+                chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
+                               for p in range(SIZE)]
+                u_traj = self.get_residues.trr_info.u_traj.trajectory
         else:
             chunk_tstep = None
-
-        data = COMM.scatter(chunk_tstep, root=0)
-        self.process_trj(data)
-        self.get_com(RANK, data)
+            u_traj = None
+        # Broadcast and scatter all the data
+        # Setting teh type
+        chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
+        chunk_tstep = COMM.scatter(chunk_tstep, root=0)
+        u_traj = COMM.bcast(u_traj, root=0)
+        self.process_trj(RANK, chunk_tstep, u_traj)
+        self.get_com(RANK, chunk_tstep)
 
     def process_trj(self,
-                    data: np.ndarray) -> None:
+                    i_rank: int,  # Rank of the processor
+                    chunk_tstep,  # Frames' ind
+                    u_traj
+                    ) -> None:
         """Get atoms in the timestep"""
-        for i in data:
-            frame = i
-            # Process the frame as needed
-            print(frame)
+        if chunk_tstep is not None:
+            for i in chunk_tstep:
+                frame = u_traj[i]
+                # Process the frame as needed
+                # print(i_rank, i, frame.positions, end=', ')
 
     def get_com(self,
                 i_rank: int,  # Rank of the process
-                data: np.ndarray  # Array of the frames
+                chunk_tstep,  # Index of frames
                 ) -> None:
         """Do sth here"""
-        print(f'Process {i_rank} has data:', np.mean(data))
+        print(f'Process {i_rank} has chunk_tstep:', chunk_tstep)
 
     def __write_msg(self,
-                    log: Union[logger.logging.Logger, None]  # To log info
+                    log: typing.Union[logger.logging.Logger, None]  # To log
                     ) -> None:
         """write and log messages"""
         if RANK == 0:
@@ -231,7 +245,7 @@ if __name__ == '__main__':
     RANK = COMM.Get_rank()
     SIZE = COMM.Get_size()
 
-    LOG: Union[logger.logging.Logger, None]
+    LOG: typing.Union[logger.logging.Logger, None]
     if RANK == 0:
         LOG = logger.setup_logger('get_frames_mpi_log')
     else:
