@@ -272,8 +272,8 @@ class CalculateCom:
                     self.get_residues.trr_info.residues_indx[item])
         return np_res_ind
 
-    def mk_allocation(self,
-                      n_frames: int,  # Number of frames
+    @staticmethod
+    def mk_allocation(n_frames: int,  # Number of frames
                       n_residues: int,  # Number of residues
                       n_oda: int  # Number of ODA in the system
                       ) -> np.ndarray:
