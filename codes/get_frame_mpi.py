@@ -188,7 +188,7 @@ class CalculateCom:
             chunk_tstep = self.get_chunk_lists(data)
             np_res_ind = self.get_np_residues()
             if self.get_residues is not None:
-                u_traj = self.get_residues.trr_info.u_traj.trajectory
+                u_traj = self.get_residues.trr_info.u_traj
         else:
             chunk_tstep = None
             np_res_ind = None
@@ -212,9 +212,10 @@ class CalculateCom:
         self.get_com(RANK, chunk_tstep)
         if chunk_tstep is not None:
             for i in chunk_tstep:
-                frame = u_traj[i]
+                frame = u_traj.trajectory[i]
                 # Process the frame as needed
-                # print(i_rank, i, frame.positions, end=', ')
+                np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
+                print(i_rank, i, np_com, end=', ')
 
     def get_com(self,
                 i_rank: int,  # Rank of the process
@@ -222,6 +223,43 @@ class CalculateCom:
                 ) -> None:
         """Do sth here"""
         print(f'Process {i_rank} has chunk_tstep:', chunk_tstep)
+
+    def get_np_com(self,
+                   all_atoms: np.ndarray,  # Atoms positions
+                   np_res_ind: typing.Union[list[int], None],  # Residues in NP
+                   u_traj
+                   ) -> typing.Union[np.ndarray, None]:
+        """get the COM for each time step"""
+        i_com: list[np.ndarray] = []  # Arrays contains center of masses
+        total_mass: float = 0  # Total mass of each residue in the NP
+        if np_res_ind is not None:
+            for i in np_res_ind:
+                com: np.ndarray  # Center of mass of the residue i
+                tmp_mass: float  # Mass of the residue
+                com, tmp_mass = self.get_np_com_tstep(i, all_atoms, u_traj)
+                total_mass += tmp_mass
+                i_com.append(com)
+                step_com = np.vstack(i_com)
+            return np.sum(step_com, axis=0) / total_mass
+        return None
+
+    def get_np_com_tstep(self,
+                         res_ind: int,  # index of the residue
+                         all_atoms: np.ndarray,  # Atoms positions
+                         u_traj
+                         ) -> tuple[np.ndarray, float]:
+        """
+        calculate the center of mass of each time step for NP
+        """
+        i_residue = \
+            u_traj.select_atoms(f'resnum {res_ind}')
+        atom_indices = i_residue.indices
+        atom_positions = all_atoms[atom_indices]
+        atom_masses = i_residue.masses
+        tmp_mass = np.sum(atom_masses)
+        com = np.average(atom_positions, weights=atom_masses,
+                         axis=0) * tmp_mass
+        return com, tmp_mass
 
     def get_np_residues(self) -> list[int]:
         """
