@@ -15,7 +15,7 @@ number of row will be"
 
 
 number of the columns:
-n_residues: number of the residues
+n_residues: number of the residues in solution, without residues in NP
 n_ODA: number oda residues
 NP_com: Center of mass of the nanoparticle
 than:
@@ -271,6 +271,39 @@ class CalculateCom:
                 np_res_ind.extend(
                     self.get_residues.trr_info.residues_indx[item])
         return np_res_ind
+
+    def mk_allocation(self,
+                      n_frames: int,  # Number of frames
+                      n_residues: int,  # Number of residues
+                      n_oda: int  # Number of ODA in the system
+                      ) -> np.ndarray:
+        """
+        Allocate arrays for saving all the info.
+
+        Parameters:
+        - sol_residues: Residues in solution.
+
+        Returns:
+        - Initialized array.
+            Columns are as follow:
+            each atom has xyz, the center of mass also has xyx, and one
+            for labeling the name of the residues, for example SOL will be 1
+
+        number of row will be"
+        number of frames + 1
+        The extra row is for the type of the residue
+        number of the columns:
+        n_residues: number of the residues in solution, without residues in NP
+        n_ODA: number oda residues
+        NP_com: Center of mass of the nanoparticle
+        than:
+        timeframe + NP_com + n_residues:  xyz + n_oda * xyz
+             1    +   3    +  n_residues * 3  +  n_oda * 3
+
+        """
+        rows: int = n_frames + 1  # Number of rows, 1 for name and index of res
+        columns: int = 1 + 3 + n_residues * 3 + n_oda * 3
+        return np.zeros((rows, columns))
 
     @staticmethod
     def get_chunk_lists(data: np.ndarray  # Range of the time steps
