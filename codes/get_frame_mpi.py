@@ -100,7 +100,7 @@ class GetResidues:
 
     @staticmethod
     def set_residues_index(all_res_tmp: dict[str, list[int]]  # Name&index
-                           ) -> tuple[dict[int, int], int]:
+                           ) -> dict[int, int]:
         """set the type of the each residue as an index and number of
         residues"""
         return \
@@ -109,7 +109,7 @@ class GetResidues:
 
     def get_residues(self,
                      res_name: list[str]  # Name of the residues
-                     ) -> dict[str, list[int]]:
+                     ) -> tuple[dict[str, list[int]], int]:
         """
         Return the dict of the residues in the solution with
         dropping the NP residues
@@ -196,37 +196,43 @@ class CalculateCom:
             np_res_ind = self.get_np_residues()
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
-                com_arr: np.ndarray = \
+                com_arr: typing.Union[np.ndarray, None] = \
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.nr_sol_res,
-                                       n_oda=50)
+                                       self.get_residues.top.mols_num['ODN'])
         else:
             chunk_tstep = None
             np_res_ind = None
+            com_arr = None
             u_traj = None
         # Setting the type
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
         np_res_ind = COMM.bcast(np_res_ind, root=0)
+        com_arr = COMM.bcast(com_arr, root=0)
         u_traj = COMM.bcast(u_traj, root=0)
 
-        self.process_trj(RANK, chunk_tstep, u_traj, np_res_ind)
+        self.process_trj(RANK, chunk_tstep[:3], u_traj, np_res_ind, com_arr)
 
     def process_trj(self,
                     i_rank: int,  # Rank of the processor
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
-                    np_res_ind: typing.Union[list[int], None]  # NP residues id
+                    np_res_ind: typing.Union[list[int], None],  # NP residue id
+                    com_arr: typing.Union[np.ndarray, None]  # To save COMs
                     ) -> None:
         """Get atoms in the timestep"""
         self.get_com(RANK, chunk_tstep)
-        if chunk_tstep is not None:
+        if chunk_tstep is not None and com_arr is not None:
             for i in chunk_tstep:
-                frame = u_traj.trajectory[i]
+                frame = u_traj.trajectory[int(i)]
                 # Process the frame as needed
                 np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
-                print(i_rank, i, np_com, end=', ')
+                com_arr[i][0] = int(i)
+                com_arr[i][1] = np_com[0]
+                com_arr[i][2] = np_com[1]
+                com_arr[i][3] = np_com[2]
 
     def get_com(self,
                 i_rank: int,  # Rank of the process
