@@ -201,24 +201,21 @@ class CalculateCom:
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.nr_sol_res,
                                        self.get_residues.top.mols_num['ODN'])
-                _, com_col = np.shape(com_arr)
+                if com_arr is not None:                                
+                    _, com_col = np.shape(com_arr)
         else:
             chunk_tstep = None
             np_res_ind = None
             com_arr = None
-            u_traj = None
             com_col = None
+            u_traj = None
         # Setting the type
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
-        #  Create a placeholder array for com_arr on all processes
-        com_arr_placeholder \
-            = np.empty_like(com_arr) if com_arr is not None else None
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
-        np_res_ind = COMM.bcast(np_res_ind, root=0)
-        com_arr = COMM.bcast(com_arr_placeholder, root=0)
-        com_col = COMM.bcast(com_col, root=0)
-        u_traj = COMM.bcast(u_traj, root=0)
+        np_res_ind, com_arr, com_col, u_traj = \
+            self.breodcaste_arg(np_res_ind, com_arr, com_col, u_traj)
+
         if chunk_tstep is not None:
             chunk_size = len(chunk_tstep)
         my_data = np.empty((chunk_size, com_col)) if \
@@ -232,8 +229,23 @@ class CalculateCom:
             com_arr_all = None
 
         # Combine the gathered com_arr data on the root process
-        if RANK == 0 and com_arr_all is not None:
-            final_com_arr = np.vstack(tuple(com_arr_all))
+        if RANK == 0:
+            if  com_arr_all is not None:
+                final_com_arr = np.vstack(tuple(com_arr_all))
+            if chunk_tstep is not None:
+                # Set the info_msg
+                self.get_processes_info(RANK, chunk_tstep)
+
+    def breodcaste_arg(self,
+                       *args  # All the things that should be broadcasted
+                       ) -> tuple[typing.Any, ...]:
+        """
+        Broadcasting data
+        """
+        broad_list: list[typing.Any] = []
+        for arg in args:
+            broad_list.append(COMM.bcast(arg, root=0))
+        return tuple(broad_list)
 
     def process_trj(self,
                     i_rank: int,  # Rank of the processor
