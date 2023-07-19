@@ -28,6 +28,7 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 import sys
 import typing
 from mpi4py import MPI
+
 import numpy as np
 import logger
 import static_info as stinfo
@@ -220,12 +221,19 @@ class CalculateCom:
         u_traj = COMM.bcast(u_traj, root=0)
         if chunk_tstep is not None:
             chunk_size = len(chunk_tstep)
-
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
         my_data = \
             self.process_trj(RANK, chunk_tstep, u_traj, np_res_ind, my_data)
-        self.get_processes_info(RANK, chunk_tstep)
+        # Gather all the com_arr data to the root process
+        if com_arr is not None:
+            com_arr_all = COMM.gather(my_data, root=0)
+        else:
+            com_arr_all = None
+
+        # Combine the gathered com_arr data on the root process
+        if RANK == 0 and com_arr_all is not None:
+            final_com_arr = np.vstack(tuple(com_arr_all))
 
     def process_trj(self,
                     i_rank: int,  # Rank of the processor
