@@ -214,6 +214,7 @@ class CalculateCom:
         u_traj = COMM.bcast(u_traj, root=0)
 
         self.process_trj(RANK, chunk_tstep[:3], u_traj, np_res_ind, com_arr)
+        self.get_processes_info(RANK, chunk_tstep)
 
     def process_trj(self,
                     i_rank: int,  # Rank of the processor
@@ -223,25 +224,28 @@ class CalculateCom:
                     com_arr: typing.Union[np.ndarray, None]  # To save COMs
                     ) -> None:
         """Get atoms in the timestep"""
-        self.get_com(RANK, chunk_tstep)
         if chunk_tstep is not None and com_arr is not None:
-            # Ensure that com_arr is not None before using it
             for i in chunk_tstep:
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
-                # Process the frame as needed
                 np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
                 com_arr[ind][0] = ind
                 com_arr[ind][1] = np_com[0]
                 com_arr[ind][2] = np_com[1]
                 com_arr[ind][3] = np_com[2]
 
-    def get_com(self,
-                i_rank: int,  # Rank of the process
-                chunk_tstep,  # Index of frames
-                ) -> None:
-        """Do sth here"""
-        print(f'Process {i_rank} has chunk_tstep:', chunk_tstep)
+    def get_processes_info(self,
+                           i_rank: int,  # Rank of the process
+                           chunk_tstep,  # Index of frames
+                           ) -> None:
+        """Write info message from each processor"""
+        info_msg_local: str = \
+            (f'\tProcess {i_rank: 3d} got `{len(chunk_tstep)}` '
+             f'timesteps: {chunk_tstep}\n')
+        info_msg_all = COMM.gather(info_msg_local, root=0)
+        if RANK == 0:
+            for msg in info_msg_all:
+                self.info_msg += msg
 
     def get_np_com(self,
                    all_atoms: np.ndarray,  # Atoms positions
