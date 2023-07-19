@@ -225,14 +225,16 @@ class CalculateCom:
         """Get atoms in the timestep"""
         self.get_com(RANK, chunk_tstep)
         if chunk_tstep is not None and com_arr is not None:
+            # Ensure that com_arr is not None before using it
             for i in chunk_tstep:
-                frame = u_traj.trajectory[int(i)]
+                ind = int(i)
+                frame = u_traj.trajectory[ind]
                 # Process the frame as needed
                 np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
-                com_arr[i][0] = int(i)
-                com_arr[i][1] = np_com[0]
-                com_arr[i][2] = np_com[1]
-                com_arr[i][3] = np_com[2]
+                com_arr[ind][0] = ind
+                com_arr[ind][1] = np_com[0]
+                com_arr[ind][2] = np_com[1]
+                com_arr[ind][3] = np_com[2]
 
     def get_com(self,
                 i_rank: int,  # Rank of the process
