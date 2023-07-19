@@ -200,20 +200,31 @@ class CalculateCom:
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.nr_sol_res,
                                        self.get_residues.top.mols_num['ODN'])
+                _, com_col = np.shape(com_arr)
         else:
             chunk_tstep = None
             np_res_ind = None
             com_arr = None
             u_traj = None
+            com_col = None
         # Setting the type
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
+        #  Create a placeholder array for com_arr on all processes
+        com_arr_placeholder \
+            = np.empty_like(com_arr) if com_arr is not None else None
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
         np_res_ind = COMM.bcast(np_res_ind, root=0)
-        com_arr = COMM.bcast(com_arr, root=0)
+        com_arr = COMM.bcast(com_arr_placeholder, root=0)
+        com_col = COMM.bcast(com_col, root=0)
         u_traj = COMM.bcast(u_traj, root=0)
+        if chunk_tstep is not None:
+            chunk_size = len(chunk_tstep)
 
-        self.process_trj(RANK, chunk_tstep[:3], u_traj, np_res_ind, com_arr)
+        my_data = np.empty((chunk_size, com_col)) if \
+            chunk_tstep is not None else None
+        my_data = \
+            self.process_trj(RANK, chunk_tstep, u_traj, np_res_ind, my_data)
         self.get_processes_info(RANK, chunk_tstep)
 
     def process_trj(self,
@@ -221,18 +232,20 @@ class CalculateCom:
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
-                    com_arr: typing.Union[np.ndarray, None]  # To save COMs
-                    ) -> None:
+                    my_data: typing.Union[np.ndarray, None]  # To save COMs
+                    ) -> typing.Union[np.ndarray, None]:
         """Get atoms in the timestep"""
-        if chunk_tstep is not None and com_arr is not None:
-            for i in chunk_tstep:
+        if chunk_tstep is not None and my_data is not None:
+            for row, i in enumerate(chunk_tstep):
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
                 np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
-                com_arr[ind][0] = ind
-                com_arr[ind][1] = np_com[0]
-                com_arr[ind][2] = np_com[1]
-                com_arr[ind][3] = np_com[2]
+                my_data[row][0] = ind
+                my_data[row][1] = np_com[0]
+                my_data[row][2] = np_com[1]
+                my_data[row][3] = np_com[2]
+            return my_data
+        return None
 
     def get_processes_info(self,
                            i_rank: int,  # Rank of the process
