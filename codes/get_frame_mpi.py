@@ -276,7 +276,7 @@ class CalculateCom:
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
-                atoms_position: np.ndarray = frame
+                atoms_position: np.ndarray = frame.positions
                 np_com = self.get_np_com(atoms_position, np_res_ind, u_traj)
                 # Update my_data with ind and np_com values
                 my_data[row, 0] = ind
@@ -301,6 +301,20 @@ class CalculateCom:
                     ) -> typing.Union[np.ndarray, None]:
         """
         return all the residues com
+
+        Algorithem:
+            Atoms belong to the residue `ind` is save to:
+                i_residue: <class 'MDAnalysis.core.groups.AtomGroup'>
+            Indicis of these atoms are:
+                atom_indices: <class 'numpy.ndarray'>
+            Positions of all the atoms in the residues are:
+                atom_positions: <class 'numpy.ndarray'>
+            Masses of these atoms are also found:
+                atom_masses: <class 'numpy.ndarray'>
+
+            By getting weightesd average of these atoms the center of
+            mass is returend
+
         """
         if self.get_residues is not None:
             i_residue = \
@@ -466,22 +480,24 @@ def cleanup_mpi() -> None:
     To register the cleanup function.
     """
     MPI.Finalize()
-    CUR_TIME = datetime.datetime.now()
-    FORMATED_TIME = CUR_TIME.strftime("%Y-%m-%d %H:%M:%S")
-    LOG.info(f'Finalized at{FORMATED_TIME}\t')
-    print(f'{FORMATED_TIME}\n')
+    current_time = datetime.datetime.now()
+    formated_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    msg = f'Finalized at{formated_time}\n'
+    print(msg)
+    if LOG is not None:
+        LOG.info(msg)
 
 
 if __name__ == '__main__':
 
     # Register the cleanup_mpi function to be called on script exit
+    LOG: typing.Union[logger.logging.Logger, None]
     atexit.register(cleanup_mpi)
 
     COMM = MPI.COMM_WORLD
     RANK = COMM.Get_rank()
     SIZE = COMM.Get_size()
 
-    LOG: typing.Union[logger.logging.Logger, None]
     if RANK == 0:
         LOG = logger.setup_logger('get_frames_mpi_log')
     else:
