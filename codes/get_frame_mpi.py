@@ -195,6 +195,8 @@ class CalculateCom:
             data: np.ndarray = np.arange(self.n_frames)
             chunk_tstep = self.get_chunk_lists(data)
             np_res_ind = self.get_np_residues()
+            sol_residues: typing.Union[dict[str, list[int]], None] = \
+                self.get_solution_residues()
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
@@ -204,6 +206,7 @@ class CalculateCom:
                 if com_arr is not None:
                     _, com_col = np.shape(com_arr)
         else:
+            sol_residues = None
             chunk_tstep = None
             np_res_ind = None
             com_arr = None
@@ -213,8 +216,9 @@ class CalculateCom:
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
-        np_res_ind, com_arr, com_col, u_traj = \
-            self.breodcaste_arg(np_res_ind, com_arr, com_col, u_traj)
+        np_res_ind, com_arr, com_col, u_traj, sol_residues = \
+            self.breodcaste_arg(
+                np_res_ind, com_arr, com_col, u_traj, sol_residues)
 
         if chunk_tstep is not None:
             chunk_size = len(chunk_tstep)
@@ -324,6 +328,17 @@ class CalculateCom:
                 np_res_ind.extend(
                     self.get_residues.trr_info.residues_indx[item])
         return np_res_ind
+
+    def get_solution_residues(self) -> dict[str, list[int]]:
+        """
+        Return the dict of the residues in the solution with
+        dropping the NP residues
+        """
+        sol_dict: dict[str, list[int]] = {}  # All the residues in solution
+        for k, val in self.get_residues.trr_info.residues_indx.items():
+            if k in stinfo.np_info['solution_residues']:
+                sol_dict[k] = val
+        return sol_dict
 
     @staticmethod
     def mk_allocation(n_frames: int,  # Number of frames
