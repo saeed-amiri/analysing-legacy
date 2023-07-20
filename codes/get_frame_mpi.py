@@ -27,9 +27,9 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 
 import sys
 import typing
+import datetime
 from mpi4py import MPI
 import numpy as np
-import datetime
 import logger
 import static_info as stinfo
 import get_topo as topo
@@ -51,6 +51,8 @@ class GetResidues:
     # The number of resdiues are set in _initiate_data
     nr_sol_res: int  # Number of residues in solution (without NP)
     nr_np_res: int  # Number of residues in NP
+    max_res: int  # Maxmum index of the residues in solution
+    min_res: int  # Minimum index of the residues in solution
 
     def __init__(self,
                  fname: str,  # Name of the trajectory file
@@ -91,9 +93,9 @@ class GetResidues:
         """
         sol_res_tmp: dict[str, list[int]]
         np_res_tmp: dict[str, list[int]]
-        sol_res_tmp, self.nr_sol_res = \
+        sol_res_tmp, self.nr_sol_res, self.max_res, self.min_res = \
             self.get_residues(stinfo.np_info["solution_residues"])
-        np_res_tmp, self.nr_np_res = \
+        np_res_tmp, self.nr_np_res, _, _ = \
             self.get_residues(stinfo.np_info["np_residues"])
         sol_res = self.set_residues_index(sol_res_tmp)
         np_res = self.set_residues_index(np_res_tmp)
@@ -110,7 +112,7 @@ class GetResidues:
 
     def get_residues(self,
                      res_name: list[str]  # Name of the residues
-                     ) -> tuple[dict[str, list[int]], int]:
+                     ) -> tuple[dict[str, list[int]], int, int, int]:
         """
         Return the dict of the residues in the solution with
         dropping the NP residues
@@ -121,10 +123,14 @@ class GetResidues:
             {k: val for k, val in self.trr_info.residues_indx.items()
              if k in res_name}
         nr_residues = int(sum(len(lst) for lst in all_res_dict.values()))
+        max_res = int(max(max(lst) for lst in all_res_dict.values()))
+        min_res = int(min(min(lst) for lst in all_res_dict.values()))
         self.info_msg += \
             (f'\tThe number of the read residues for {res_name} is:\n'
-             f'\t\t`{nr_residues}`\n')
-        return all_res_dict, nr_residues
+             f'\t\t`{nr_residues}`\n'
+             f'\t\tThe max & min of indices are: `{max_res}` and'
+             f' `{min_res}`\n')
+        return all_res_dict, nr_residues, max_res, min_res
 
     def __write_msg(self,
                     log: typing.Union[logger.logging.Logger, None]  # To log
@@ -201,7 +207,7 @@ class CalculateCom:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
                     self.mk_allocation(self.n_frames,
-                                       self.get_residues.nr_sol_res,
+                                       self.get_residues.max_res,
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None:
                     _, com_col = np.shape(com_arr)
@@ -224,13 +230,15 @@ class CalculateCom:
             chunk_size = len(chunk_tstep)
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
+
         my_data = self.process_trj(
-                                   chunk_tstep,
+                                   chunk_tstep[:1],
                                    u_traj,
                                    np_res_ind,
                                    my_data,
                                    sol_residues
                                    )
+
         # Gather all the com_arr data to the root process
         if com_arr is not None:
             com_arr_all = COMM.gather(my_data, root=0)
@@ -244,8 +252,8 @@ class CalculateCom:
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
 
-    def breodcaste_arg(self,
-                       *args  # All the things that should be broadcasted
+    @staticmethod
+    def breodcaste_arg(*args  # All the things that should be broadcasted
                        ) -> tuple[typing.Any, ...]:
         """
         Broadcasting data
@@ -389,7 +397,7 @@ class CalculateCom:
 
     @staticmethod
     def mk_allocation(n_frames: int,  # Number of frames
-                      n_residues: int,  # Number of residues
+                      max_residues: int,  # Max of residues' indices
                       n_oda: int  # Number of ODA in the system
                       ) -> np.ndarray:
         """
@@ -404,6 +412,9 @@ class CalculateCom:
             each atom has xyz, the center of mass also has xyx, and one
             for labeling the name of the residues, for example SOL will be 1
 
+        Since there is chance the maximum index would be bigger than
+        the number of the residues, the size of the array will be set
+        to max index.
         number of row will be"
         number of frames + 1
         The extra row is for the type of the residue
@@ -412,12 +423,12 @@ class CalculateCom:
         n_ODA: number oda residues
         NP_com: Center of mass of the nanoparticle
         than:
-        timeframe + NP_com + n_residues:  xyz + n_oda * xyz
-             1    +   3    +  n_residues * 3  +  n_oda * 3
+        timeframe + NP_com + max_residues:  xyz + n_oda * xyz
+             1    +   3    +  max_residues * 3  +  n_oda * 3
 
         """
         rows: int = n_frames + 1  # Number of rows, 1 for name and index of res
-        columns: int = 1 + 3 + n_residues * 3 + n_oda * 3
+        columns: int = 1 + 3 + max_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
 
     @staticmethod
