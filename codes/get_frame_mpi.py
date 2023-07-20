@@ -221,7 +221,7 @@ class CalculateCom:
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
         my_data = \
-            self.process_trj(RANK, chunk_tstep, u_traj, np_res_ind, my_data)
+            self.process_trj(RANK, chunk_tstep[:1], u_traj, np_res_ind, my_data)
         # Gather all the com_arr data to the root process
         if com_arr is not None:
             com_arr_all = COMM.gather(my_data, root=0)
@@ -259,9 +259,9 @@ class CalculateCom:
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
                 np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
-                my_data[row][0] = ind
-                for i in range(3):
-                    my_data[row][i+1] = np_com[i]
+                # Update my_data with ind and np_com values
+                my_data[row, 0] = ind
+                my_data[row, 1:4] = np_com
             return my_data
         return None
 
