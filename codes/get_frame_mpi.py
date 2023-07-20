@@ -260,9 +260,8 @@ class CalculateCom:
                 frame = u_traj.trajectory[ind]
                 np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
                 my_data[row][0] = ind
-                my_data[row][1] = np_com[0]
-                my_data[row][2] = np_com[1]
-                my_data[row][3] = np_com[2]
+                for i in range(3):
+                    my_data[row][i+1] = np_com[i]
             return my_data
         return None
 
