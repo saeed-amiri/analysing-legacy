@@ -232,7 +232,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep[:1],
+                                   chunk_tstep,
                                    u_traj,
                                    np_res_ind,
                                    my_data,
