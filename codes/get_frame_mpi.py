@@ -224,8 +224,13 @@ class CalculateCom:
             chunk_size = len(chunk_tstep)
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
-        my_data = \
-            self.process_trj(chunk_tstep[:1], u_traj, np_res_ind, my_data)
+        my_data = self.process_trj(
+                                   chunk_tstep[:1],
+                                   u_traj,
+                                   np_res_ind,
+                                   my_data,
+                                   sol_residues
+                                   )
         # Gather all the com_arr data to the root process
         if com_arr is not None:
             com_arr_all = COMM.gather(my_data, root=0)
@@ -254,18 +259,39 @@ class CalculateCom:
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
-                    my_data: typing.Union[np.ndarray, None]  # To save COMs
+                    my_data: typing.Union[np.ndarray, None],  # To save COMs
+                    sol_residues: typing.Union[dict[str, list[int]], None]
                     ) -> typing.Union[np.ndarray, None]:
         """Get atoms in the timestep"""
         if chunk_tstep is not None and my_data is not None:
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
-                np_com = self.get_np_com(frame.positions, np_res_ind, u_traj)
+                atoms_position: np.ndarray = frame
+                np_com = self.get_np_com(atoms_position, np_res_ind, u_traj)
                 # Update my_data with ind and np_com values
                 my_data[row, 0] = ind
                 my_data[row, 1:4] = np_com
+                for k, val in sol_residues.items():
+                    for item in val:
+                        com = self.get_com_all(atoms_position, item)
             return my_data
+        return None
+
+    def get_com_all(self,
+                    all_atoms: np.ndarray,  # All the atoms position
+                    ind: int  # Index of the residue
+                    ) -> typing.Union[np.ndarray, None]:
+        """
+        return all the residues com
+        """
+        if self.get_residues is not None:
+            i_residue = \
+                self.get_residues.trr_info.u_traj.select_atoms(f'resnum {ind}')
+            atom_indices = i_residue.indices
+            atom_positions = all_atoms[atom_indices]
+            atom_masses = i_residue.masses
+            return np.average(atom_positions, weights=atom_masses, axis=0)
         return None
 
     def get_processes_info(self,
