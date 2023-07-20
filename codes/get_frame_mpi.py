@@ -87,7 +87,7 @@ class GetResidues:
             Retrieve all residues for nanoparticles and solution, then
             set an index for each based on type defined in static_info.
 
-            Returns:
+        Returns:
             Dictionaries for each set with residue index as keys and
             the reisdues' type as values.
 
@@ -223,6 +223,7 @@ class CalculateCom:
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
+
         np_res_ind, com_arr, com_col, u_traj, sol_residues = \
             self.breodcaste_arg(
                 np_res_ind, com_arr, com_col, u_traj, sol_residues)
@@ -300,21 +301,36 @@ class CalculateCom:
                     ind: int  # Index of the residue
                     ) -> typing.Union[np.ndarray, None]:
         """
-        return all the residues com
+        return all the residues' center of mass
 
         Algorithem:
             Atoms belong to the residue `ind` is save to:
                 i_residue: <class 'MDAnalysis.core.groups.AtomGroup'>
+                e.g.:
+                <AtomGroup [<Atom 1: OH2 of type O of resname SOL,
+                             resid 1803 and segid SYSTEM>,
+                            <Atom 2: H1 of type H of resname SOL,
+                             resid 1803 and segid SYSTEM>,
+                            <Atom 3: H2 of type H of resname SOL,
+                             resid 1803 and segid SYSTEM>]>
+
             Indicis of these atoms are:
                 atom_indices: <class 'numpy.ndarray'>
+                e.g.: [0 1 2]
+
             Positions of all the atoms in the residues are:
                 atom_positions: <class 'numpy.ndarray'>
+                e.g.:
+                     [[186.44977   20.240488  14.459618]
+                     [185.91147   20.554382  13.733033]
+                     [186.8721    21.027851  14.803037]]
+
             Masses of these atoms are also found:
                 atom_masses: <class 'numpy.ndarray'>
-
+                e.g.: [15.999  1.008  1.008]
+        Return:
             By getting weightesd average of these atoms the center of
             mass is returend
-
         """
         if self.get_residues is not None:
             i_residue = \
@@ -482,7 +498,7 @@ def cleanup_mpi() -> None:
     MPI.Finalize()
     current_time = datetime.datetime.now()
     formated_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    msg = f'Finalized at{formated_time}\n'
+    msg = f'Finalized at {formated_time}\n'
     print(msg)
     if LOG is not None:
         LOG.info(msg)
