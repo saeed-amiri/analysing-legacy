@@ -233,7 +233,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep,
+                                   chunk_tstep[:1],
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -466,6 +466,10 @@ def cleanup_mpi() -> None:
     To register the cleanup function.
     """
     MPI.Finalize()
+    CUR_TIME = datetime.datetime.now()
+    FORMATED_TIME = CUR_TIME.strftime("%Y-%m-%d %H:%M:%S")
+    LOG.info(f'Finalized at{FORMATED_TIME}\t')
+    print(f'{FORMATED_TIME}\n')
 
 
 if __name__ == '__main__':
@@ -483,7 +487,3 @@ if __name__ == '__main__':
     else:
         LOG = None
     CalculateCom(fname=sys.argv[1], log=LOG)
-    CUR_TIME = datetime.datetime.now()
-    FORMATED_TIME = CUR_TIME.strftime("%Y-%m-%d %H:%M:%S")
-    LOG.info(FORMATED_TIME)
-    print(f'{FORMATED_TIME}\n')
