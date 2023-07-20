@@ -273,8 +273,17 @@ class CalculateCom:
                 my_data[row, 0] = ind
                 my_data[row, 1:4] = np_com
                 for k, val in sol_residues.items():
+                    print(stinfo.reidues_id[k])
                     for item in val:
                         com = self.get_com_all(atoms_position, item)
+                        if com is None:
+                            continue  # Skip if com is None
+                        wrap_com = self.wrap_position(com, frame.dimensions)
+                        element = int(item*3) + 1
+                        my_data[row][element:element+3] = wrap_com
+                        r_idx = stinfo.reidues_id[k]  # Residue idx
+                        my_data[-1][element:element+3] = \
+                            np.array([[r_idx, r_idx, r_idx]])
             return my_data
         return None
 
@@ -365,6 +374,19 @@ class CalculateCom:
             if k in stinfo.np_info['solution_residues']:
                 sol_dict[k] = val
         return sol_dict
+
+    @staticmethod
+    def wrap_position(pos: np.ndarray,  # The center of mass
+                      vec: np.ndarray  # Box vectors
+                      ) -> np.ndarray:
+        """
+        Wraped the position to the box for unwraped trr.
+        """
+        if pos is not None:
+            for i in range(3):
+                pos[i] -= np.floor(pos[i]/vec[i])*vec[i]
+            return pos
+        return np.zeros(3)
 
     @staticmethod
     def mk_allocation(n_frames: int,  # Number of frames
