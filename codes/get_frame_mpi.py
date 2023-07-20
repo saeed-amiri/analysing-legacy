@@ -201,7 +201,7 @@ class CalculateCom:
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.nr_sol_res,
                                        self.get_residues.top.mols_num['ODN'])
-                if com_arr is not None:                                
+                if com_arr is not None:
                     _, com_col = np.shape(com_arr)
         else:
             chunk_tstep = None
@@ -229,12 +229,11 @@ class CalculateCom:
             com_arr_all = None
 
         # Combine the gathered com_arr data on the root process
-        if RANK == 0:
-            if  com_arr_all is not None:
-                final_com_arr = np.vstack(tuple(com_arr_all))
-            if chunk_tstep is not None:
-                # Set the info_msg
-                self.get_processes_info(RANK, chunk_tstep)
+        if RANK == 0 and com_arr_all is not None:
+            final_com_arr = np.vstack(tuple(com_arr_all))
+            print(final_com_arr)
+        # Set the info_msg
+        self.get_processes_info(RANK, chunk_tstep)
 
     def breodcaste_arg(self,
                        *args  # All the things that should be broadcasted
