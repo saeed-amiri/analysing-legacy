@@ -28,8 +28,8 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 import sys
 import typing
 from mpi4py import MPI
-
 import numpy as np
+import datetime
 import logger
 import static_info as stinfo
 import get_topo as topo
@@ -225,7 +225,7 @@ class CalculateCom:
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
         my_data = self.process_trj(
-                                   chunk_tstep[:1],
+                                   chunk_tstep,
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -273,7 +273,6 @@ class CalculateCom:
                 my_data[row, 0] = ind
                 my_data[row, 1:4] = np_com
                 for k, val in sol_residues.items():
-                    print(stinfo.reidues_id[k])
                     for item in val:
                         com = self.get_com_all(atoms_position, item)
                         if com is None:
@@ -461,3 +460,6 @@ if __name__ == '__main__':
     else:
         LOG = None
     CalculateCom(fname=sys.argv[1], log=LOG)
+    current_datetime = datetime.datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    print(f'{formatted_datetime}\n')
