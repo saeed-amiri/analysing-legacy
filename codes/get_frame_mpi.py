@@ -28,6 +28,7 @@ timeframe + NP_com + n_residues:  xyz + n_oda * xyz
 import sys
 import typing
 import datetime
+import atexit
 from mpi4py import MPI
 import numpy as np
 import logger
@@ -460,7 +461,18 @@ class CalculateCom:
                 log.info(self.info_msg)
 
 
+def cleanup_mpi() -> None:
+    """
+    To register the cleanup function.
+    """
+    MPI.Finalize()
+
+
 if __name__ == '__main__':
+
+    # Register the cleanup_mpi function to be called on script exit
+    atexit.register(cleanup_mpi)
+
     COMM = MPI.COMM_WORLD
     RANK = COMM.Get_rank()
     SIZE = COMM.Get_size()
@@ -471,6 +483,7 @@ if __name__ == '__main__':
     else:
         LOG = None
     CalculateCom(fname=sys.argv[1], log=LOG)
-    current_datetime = datetime.datetime.now()
-    formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
-    print(f'{formatted_datetime}\n')
+    CUR_TIME = datetime.datetime.now()
+    FORMATED_TIME = CUR_TIME.strftime("%Y-%m-%d %H:%M:%S")
+    LOG.info(FORMATED_TIME)
+    print(f'{FORMATED_TIME}\n')
