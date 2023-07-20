@@ -221,7 +221,7 @@ class CalculateCom:
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
         my_data = \
-            self.process_trj(RANK, chunk_tstep[:1], u_traj, np_res_ind, my_data)
+            self.process_trj(chunk_tstep[:1], u_traj, np_res_ind, my_data)
         # Gather all the com_arr data to the root process
         if com_arr is not None:
             com_arr_all = COMM.gather(my_data, root=0)
@@ -247,7 +247,6 @@ class CalculateCom:
         return tuple(broad_list)
 
     def process_trj(self,
-                    i_rank: int,  # Rank of the processor
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
