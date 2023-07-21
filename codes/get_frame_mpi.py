@@ -392,11 +392,12 @@ class CalculateCom:
         if self.get_residues is not None:
             i_residue = \
                 self.get_residues.trr_info.u_traj.select_atoms(f'resnum {ind}')
-            i_atoms = i_residue.select_atoms(f'name NH2 HC*')
+            i_atoms = i_residue.select_atoms('name NH2 HC*')
             atom_indices = i_atoms.indices
             atom_positions = all_atoms[atom_indices]
             atom_masses = i_atoms.masses
             return np.average(atom_positions, weights=atom_masses, axis=0)
+        return None
 
     def get_processes_info(self,
                            i_rank: int,  # Rank of the process
