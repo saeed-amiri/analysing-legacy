@@ -527,7 +527,8 @@ def cleanup_mpi() -> None:
     MPI.Finalize()
     current_time = datetime.datetime.now()
     formated_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    msg = f'Finalized at {formated_time}\n'
+    msg: str = 'Message from cleanup_mpi:\n'
+    msg += f'Finalized at {formated_time}\n'
     print(msg)
     if LOG is not None:
         LOG.info(msg)
