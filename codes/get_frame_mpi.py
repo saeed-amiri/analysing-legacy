@@ -482,7 +482,6 @@ class CalculateCom:
             fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], LOG)
             with open(fname, 'wb') as f_arr:
                 pickle.dump(final_com_arr, f_arr)
-            print(final_com_arr)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
 
