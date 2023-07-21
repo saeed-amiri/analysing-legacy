@@ -212,6 +212,7 @@ class CalculateCom:
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None:
                     _, com_col = np.shape(com_arr)
+                    print(com_col)
                     amino_odn_index: typing.Union[dict[int, int], None] = \
                         self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
@@ -246,7 +247,8 @@ class CalculateCom:
                                    u_traj,
                                    np_res_ind,
                                    my_data,
-                                   sol_residues
+                                   sol_residues,
+                                   amino_odn_index
                                    )
 
         # Gather all the com_arr data to the root process
@@ -267,7 +269,8 @@ class CalculateCom:
                     u_traj,  # Trajectory
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
                     my_data: typing.Union[np.ndarray, None],  # To save COMs
-                    sol_residues: typing.Union[dict[str, list[int]], None]
+                    sol_residues: typing.Union[dict[str, list[int]], None],
+                    amino_odn_index: typing.Union[dict[int, int], None]
                     ) -> typing.Union[np.ndarray, None]:
         """Get atoms in the timestep"""
         if chunk_tstep is not None and my_data is not None:
@@ -287,9 +290,15 @@ class CalculateCom:
                         wrap_com = self.wrap_position(com, frame.dimensions)
                         element = int(item*3) + 1
                         my_data[row][element:element+3] = wrap_com
+
+                        # Getting the COM of the amino group in ODN residues
                         if k == 'ODN':
-                            self.get_odn_amino_com(atoms_position, item)
-                        r_idx = stinfo.reidues_id[k]  # Residue idx
+                            amin = self.get_odn_amino_com(atoms_position, item)
+                            amin_ind: int = amino_odn_index[item]
+                            my_data[row][amin_ind:amin_ind+3] = amin
+
+                        # Setting the residue ids in last row
+                        r_idx = stinfo.reidues_id[k]
                         my_data[-1][element:element+3] = \
                             np.array([[r_idx, r_idx, r_idx]])
             return my_data
@@ -455,11 +464,11 @@ class CalculateCom:
         be setted.
         The indices of the ODN could be not sequal!
         """
-        sorted_odn_residues: set[int] = sorted(odn_residues, reverse=True)
-        last_column: np.int64 = np.shape(com_arr)[1] - 1
+        sorted_odn_residues: list[int] = sorted(odn_residues, reverse=True)
+        last_column: int = np.shape(com_arr)[1]
         odn_amino_indices: dict[int, int] = {}
         for i, odn in enumerate(sorted_odn_residues):
-            odn_amino_indices[odn] = last_column - i
+            odn_amino_indices[odn] = int(last_column - (i+1) * 3)
         return odn_amino_indices
 
     @staticmethod
