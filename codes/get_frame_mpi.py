@@ -1,27 +1,202 @@
 #!/usr/bin/env python3
 """
-Read the trajectory file and return the residues' center of mass. There
-are a few things that have to be considered:
-    - Save the time of each step to ensure the correct setting.
-    - Set an index for each residue's type after its COM for later data
-      following.
-    - Save the COM of the amino group of the ODN.
-In the final array, rows indicate the timeframe, and columns show the
-center of mass of the residues.
+Trajectory Analysis with MPI Parallelization
 
-number of row will be"
-    number of frames + 1
-    The extra row is for the type of the residue
+This script calculates the center of mass (COM) of residues in a mol-
+ecular dynamics (MD) trajectory. It utilizes MPI parallelization to
+distribute the computation across multiple processes, making it effic-
+ient for large trajectory files.
 
+The script consists of two main classes:
+    1. GetResidues: Responsible for reading and processing the trajec-
+       tory file, setting indices for residues based on their types,
+       and storing the data for further calculation.
+    2. CalculateCom: Performs the center of mass calculation for each
+       frame in the trajectory using MPI parallelization.
 
-number of the columns:
-n_residues: number of the residues in solution, without residues in NP
-n_ODA: number oda residues
-NP_com: Center of mass of the nanoparticle
-than:
-timeframe + NP_com + n_residues:  xyz + n_oda * xyz
-     1    +   3    +  n_residues * 3  +  n_oda * 3
+The main steps in the script are as follows:
+    1. Read the trajectory file and topology information using MDAnal-
+       ysis.
+    2. Preprocess the data to obtain residues in the solution and the
+       nanoparticle (NP).
+    3. Set indices for each residue based on its type.
+    4. Utilize MPI to parallelize the computation and distribute the
+       data among processes.
+    5. Calculate the center of mass for each frame in the trajectory
+       for different types of residues.
+    6. Gather the results and combine them into a final array.
 
+Requirements:
+    - MDAnalysis: Required to read the trajectory file and topology.
+    - mpi4py: Required for MPI parallelization.
+    - numpy: Required for data manipulation.
+
+Usage:
+    python script_name.py trajectory_file.xtc
+
+Note:
+    Make sure you have the required dependencies installed before run-
+    ning the script.
+
+Main Classes and Methods:
+-------------------------
+
+Class GetResidues:
+------------------
+
+    Methods:
+    - __init__(self, fname: str, log: Union[Logger, None]) -> None:
+        Initializes the GetResidues class by reading the trajectory
+        file and topology.
+        Parameters:
+            - fname (str): Name of the trajectory file.
+            - log (Union[Logger, None]): Logger object for logging
+              messages.
+
+    - _initiate_reading(self, fname: str, log: Union[Logger, None]
+                        ) -> None:
+        Reads the trajectory file and topology using MDAnalysis.
+        Parameters:
+            - fname (str): Name of the trajectory file.
+            - log (Union[Logger, None]): Logger object for logging
+              messages.
+
+    - _initiate_data(self) -> Tuple[Dict[int, int], Dict[int, int]]:
+        Processes the data to obtain residues in the solution and NP.
+        Returns:
+            Tuple containing dictionaries with residue indices as keys
+            and residue types as values.
+
+    - set_residues_index(self, all_res_tmp: Dict[str, List[int]]
+                         ) -> Dict[int, int]:
+        Sets indices for each residue based on its type.
+        Parameters:
+            - all_res_tmp (Dict[str, List[int]]): Dictionary with
+              residue types as keys and residue indices as values.
+        Returns:
+            Dictionary containing residue indices as keys and their
+            corresponding residue types as values.
+
+    - get_residues(self, res_name: List[str]
+                   ) -> Tuple[Dict[str, List[int]], int, int, int]:
+        Returns a dictionary of residues in the solution, excluding NP
+        residues.
+        Parameters:
+            - res_name (List[str]): List of residue names to consider.
+        Returns:
+            Tuple containing a dictionary of residues, the number of
+            residues, and the maximum and minimum indices.
+
+Class CalculateCom:
+-------------------
+
+    Methods:
+    - __init__(self, fname: str, log: Union[Logger, None]) -> None:
+        Initializes the CalculateCom class and initiates data and
+        calculations.
+        Parameters:
+            - fname (str): Name of the trajectory file.
+            - log (Union[Logger, None]): Logger object for logging
+              messages.
+
+    - _initiate_data(self, fname: str, log: Union[Logger, None]
+                     ) -> None:
+        Calls the GetResidues class and gets the required data from it.
+        Parameters:
+            - fname (str): Name of the trajectory file.
+            - log (Union[Logger, None]): Logger object for logging
+              messages.
+
+    - _initiate_calc(self) -> None:
+        Divides the list of timesteps and broadcasts the data between
+        processes.
+        Computes the center of mass for each frame in the trajectory
+        using MPI parallelization.
+
+    - process_trj(self, chunk_tstep, u_traj, np_res_ind, my_data,
+                  sol_residues, amino_odn_index
+                  ) -> Union[np.ndarray, None]:
+        Processes the trajectory data and calculates the center of
+        mass
+        for each frame.
+        Parameters:
+            - chunk_tstep: List of timesteps assigned to the current
+            process.
+            - u_traj: MDAnalysis trajectory object.
+            - np_res_ind: List of residue indices in the nanoparticle.
+            - my_data: NumPy array to store the center of mass data.
+            - sol_residues: Dictionary of solution residues.
+            - amino_odn_index: Dictionary of indices for ODN amino
+              group center of mass.
+        Returns:
+            NumPy array containing the center of mass data for the
+            assigned timesteps.
+
+    - get_com_all(self, all_atoms, ind) -> Union[np.ndarray, None]:
+        Calculates the center of mass of all residues in a given frame.
+        Parameters:
+            - all_atoms: NumPy array containing positions of all atoms
+              in the frame.
+            - ind: Index of the residue.
+        Returns:
+            NumPy array containing the center of mass for all residues.
+
+    - get_odn_amino_com(self, all_atoms, ind
+                        ) -> Union[np.ndarray, None]:
+        Calculates the center of mass of the amino group in ODN
+        residues.
+        Parameters:
+            - all_atoms: NumPy array containing positions of all atoms
+              in the frame.
+            - ind: Index of the residue.
+        Returns:
+            NumPy array containing the center of mass for the ODN
+            amino group.
+
+    - get_np_com(self, all_atoms, np_res_ind, u_traj
+                 ) -> Union[np.ndarray, None]:
+        Calculates the center of mass for the nanoparticle residues in
+        a given frame.
+    Parameters:
+        - all_atoms: NumPy array containing positions of all atoms in
+          the frame.
+        - np_res_ind: List of residue indices in the nanoparticle.
+        - u_traj: MDAnalysis trajectory object.
+    Returns:
+        NumPy array containing the center of mass for the nanoparticle
+        residues.
+
+Utility Functions:
+------------------
+
+    - broadcaste_arg(self, val: Any) -> Any:
+        MPI broadcast function to broadcast data from the root process
+        to all other processes.
+        Parameters:
+            - val (Any): Data to be broadcasted.
+        Returns:
+            Broadcasted data.
+    
+    - set_amino_odn_index(self, all_res_tmp) -> Dict[int, int]:
+        Sets indices for ODN amino groups.
+        Parameters:
+            - all_res_tmp (Dict[str, List[int]]): Dictionary with
+            residue types as keys and residue indices as values.
+        Returns:
+            Dictionary containing residue indices as keys and their
+            corresponding residue types as values.
+    
+    - mk_allocation(self, size: int, rank: int, num_procs: int
+                   ) -> List[int]:
+        Computes the data distribution among processes for MPI
+        parallelization.
+        Parameters:
+            - size (int): Total data size.
+            - rank (int): Rank of the current process.
+            - num_procs (int): Total number of processes.
+        Returns:
+        List of data indices assigned to the current process.
+    Jul 21 2023
 """
 
 
@@ -243,7 +418,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep[:1],
+                                   chunk_tstep[:2],
                                    u_traj,
                                    np_res_ind,
                                    my_data,
