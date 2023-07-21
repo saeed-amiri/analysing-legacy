@@ -212,7 +212,7 @@ class CalculateCom:
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None and sol_residues is not None:
                     _, com_col = np.shape(com_arr)
-                    amino_odn_index: typing.Union[list[int], None] = \
+                    amino_odn_index: typing.Union[dict[int, int], None] = \
                         self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
         else:
@@ -270,12 +270,14 @@ class CalculateCom:
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
                     my_data: typing.Union[np.ndarray, None],  # To save COMs
                     sol_residues: typing.Union[dict[str, list[int]], None],
-                    amino_odn_index: typing.Union[list[int], None]
+                    amino_odn_index: typing.Union[dict[int, int], None]
                     ) -> typing.Union[np.ndarray, None]:
         """Get atoms in the timestep"""
-        if (chunk_tstep is not None and
-            my_data is not None and
-            sol_residues is not None):
+        if (
+           chunk_tstep is not None and
+           my_data is not None and
+           sol_residues is not None
+           ):
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
