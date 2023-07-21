@@ -210,10 +210,9 @@ class CalculateCom:
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.max_res,
                                        self.get_residues.top.mols_num['ODN'])
-                if com_arr is not None:
+                if com_arr is not None and sol_residues is not None:
                     _, com_col = np.shape(com_arr)
-                    print(com_col)
-                    amino_odn_index: typing.Union[dict[int, int], None] = \
+                    amino_odn_index: typing.Union[list[int], None] = \
                         self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
         else:
@@ -239,6 +238,7 @@ class CalculateCom:
 
         if chunk_tstep is not None:
             chunk_size = len(chunk_tstep)
+
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
 
@@ -270,10 +270,12 @@ class CalculateCom:
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
                     my_data: typing.Union[np.ndarray, None],  # To save COMs
                     sol_residues: typing.Union[dict[str, list[int]], None],
-                    amino_odn_index: typing.Union[dict[int, int], None]
+                    amino_odn_index: typing.Union[list[int], None]
                     ) -> typing.Union[np.ndarray, None]:
         """Get atoms in the timestep"""
-        if chunk_tstep is not None and my_data is not None:
+        if (chunk_tstep is not None and
+            my_data is not None and
+            sol_residues is not None):
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
@@ -293,9 +295,11 @@ class CalculateCom:
 
                         # Getting the COM of the amino group in ODN residues
                         if k == 'ODN':
-                            amin = self.get_odn_amino_com(atoms_position, item)
-                            amin_ind: int = amino_odn_index[item]
-                            my_data[row][amin_ind:amin_ind+3] = amin
+                            if amino_odn_index is not None:
+                                amin = self.get_odn_amino_com(atoms_position,
+                                                              item)
+                                amin_ind: int = amino_odn_index[item]
+                                my_data[row][amin_ind:amin_ind+3] = amin
 
                         # Setting the residue ids in last row
                         r_idx = stinfo.reidues_id[k]
@@ -384,11 +388,12 @@ class CalculateCom:
         """Write info message from each processor"""
         info_msg_local: str = \
             (f'\tProcess {i_rank: 3d} got `{len(chunk_tstep)}` '
-             f'timesteps: {chunk_tstep}\n')
+                f'timesteps: {chunk_tstep}\n')
         info_msg_all = COMM.gather(info_msg_local, root=0)
         if RANK == 0:
-            for msg in info_msg_all:
-                self.info_msg += msg
+            if info_msg_all is not None:
+                for msg in info_msg_all:
+                    self.info_msg += msg
 
     def get_np_com(self,
                    all_atoms: np.ndarray,  # Atoms positions
@@ -440,16 +445,18 @@ class CalculateCom:
 
     def get_solution_residues(self,
                               res_group: list[str]
-                              ) -> dict[str, list[int]]:
+                              ) -> typing.Union[dict[str, list[int]], None]:
         """
         Return the dict of the residues in the solution with
         dropping the NP residues
         """
         sol_dict: dict[str, list[int]] = {}  # All the residues in solution
-        for k, val in self.get_residues.trr_info.residues_indx.items():
-            if k in res_group:
-                sol_dict[k] = val
-        return sol_dict
+        if self.get_residues is not None:
+            for k, val in self.get_residues.trr_info.residues_indx.items():
+                if k in res_group:
+                    sol_dict[k] = val
+            return sol_dict
+        return None
 
     @staticmethod
     def set_amino_odn_index(com_arr,  # The array to set all com in it
