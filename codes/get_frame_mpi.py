@@ -176,7 +176,7 @@ Utility Functions:
             - val (Any): Data to be broadcasted.
         Returns:
             Broadcasted data.
-    
+
     - set_amino_odn_index(self, all_res_tmp) -> Dict[int, int]:
         Sets indices for ODN amino groups.
         Parameters:
@@ -185,7 +185,7 @@ Utility Functions:
         Returns:
             Dictionary containing residue indices as keys and their
             corresponding residue types as values.
-    
+
     - mk_allocation(self, size: int, rank: int, num_procs: int
                    ) -> List[int]:
         Computes the data distribution among processes for MPI
@@ -333,10 +333,31 @@ class GetResidues:
 class CalculateCom:
     """
     Calculating the center of mass (COM) of the residues.
-    input:
-        The objects of the GetResidues class
-    Output:
-        An array contains infos defined in the script's doc
+
+    Attributes:
+        info_msg (str): Messages from CalculateCom for logging.
+        get_residues (GetResidues or None): Objects of the GetResidues
+        class.
+
+    Args:
+        fname (str): Name of the trajectory files.
+        log (logging.Logger or None): Logger for logging messages
+        (optional).
+
+    Note:
+        The class calculates the center of mass for each frame in the
+        trajectory
+        and stores the data in a 2D array with columns representing
+        time,
+        center of mass of the nanoparticle, and center of mass for each
+        residue.
+
+        The array layout is as follows:
+        | time | NP_x | NP_y | NP_z | res1_x | res1_y | res1_z | ... |
+         resN_x | resN_y | resN_z | odn1_x| odn1_y| odn1_z| ... odnN_z|
+
+    Example:
+        CalculateCom(fname="trajectory.trr", log=my_logger)
     """
 
     info_msg: str = 'Messages from CalculateCom:\n'  # To log
@@ -346,6 +367,14 @@ class CalculateCom:
                  fname: str,  # Name of the trajectory files
                  log: typing.Union[logger.logging.Logger, None]
                  ) -> None:
+        """
+        Initialize CalculateCom and perform calculations.
+
+        Args:
+            fname (str): Name of the trajectory files.
+            log (logging.Logger or None, optional): Logger for logging
+            messages.
+        """
         self._initiate_data(fname, log)
         self._initiate_calc()
         self.__write_msg(log)
