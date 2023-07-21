@@ -262,37 +262,6 @@ class CalculateCom:
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
 
-    @staticmethod
-    def set_amino_odn_index(com_arr,  # The array to set all com in it
-                            odn_residues: list[int]  # Indices of ODN residues
-                            ) -> dict[int, int]:
-        """
-        Set (or find!) the indices for the COM of ODN amino group in
-        the com_arr
-        In the alocation of com_arr, nr_odn columns are added for the
-        com of the amino groups of the ODN. Since the COM of all ODN
-        are also set in the com_arr the extra indices should carefuly
-        be setted.
-        The indices of the ODN could be not sequal!
-        """
-        sorted_odn_residues: set[int] = sorted(odn_residues, reverse=True)
-        last_column: np.int64 = np.shape(com_arr)[1] - 1
-        odn_amino_indices: dict[int, int] = {}
-        for i, odn in enumerate(sorted_odn_residues):
-            odn_amino_indices[odn] = last_column - i
-        return odn_amino_indices
-
-    @staticmethod
-    def breodcaste_arg(*args  # All the things that should be broadcasted
-                       ) -> tuple[typing.Any, ...]:
-        """
-        Broadcasting data
-        """
-        broad_list: list[typing.Any] = []
-        for arg in args:
-            broad_list.append(COMM.bcast(arg, root=0))
-        return tuple(broad_list)
-
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
@@ -472,6 +441,37 @@ class CalculateCom:
             if k in res_group:
                 sol_dict[k] = val
         return sol_dict
+
+    @staticmethod
+    def set_amino_odn_index(com_arr,  # The array to set all com in it
+                            odn_residues: list[int]  # Indices of ODN residues
+                            ) -> dict[int, int]:
+        """
+        Set (or find!) the indices for the COM of ODN amino group in
+        the com_arr
+        In the alocation of com_arr, nr_odn columns are added for the
+        com of the amino groups of the ODN. Since the COM of all ODN
+        are also set in the com_arr the extra indices should carefuly
+        be setted.
+        The indices of the ODN could be not sequal!
+        """
+        sorted_odn_residues: set[int] = sorted(odn_residues, reverse=True)
+        last_column: np.int64 = np.shape(com_arr)[1] - 1
+        odn_amino_indices: dict[int, int] = {}
+        for i, odn in enumerate(sorted_odn_residues):
+            odn_amino_indices[odn] = last_column - i
+        return odn_amino_indices
+
+    @staticmethod
+    def breodcaste_arg(*args  # All the things that should be broadcasted
+                       ) -> tuple[typing.Any, ...]:
+        """
+        Broadcasting data
+        """
+        broad_list: list[typing.Any] = []
+        for arg in args:
+            broad_list.append(COMM.bcast(arg, root=0))
+        return tuple(broad_list)
 
     @staticmethod
     def wrap_position(pos: np.ndarray,  # The center of mass
