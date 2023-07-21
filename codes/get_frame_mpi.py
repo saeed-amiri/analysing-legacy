@@ -234,6 +234,13 @@ class GetResidues:
                  fname: str,  # Name of the trajectory file
                  log: typing.Union[logger.logging.Logger, None]
                  ) -> None:
+        """
+        Initialize GetResidues class.
+
+        Args:
+            fname (str): Name of the trajectory file.
+            log (Union[Logger, None]): Logger object for logging messages.
+        """
         self._initiate_reading(fname, log)
         self.sol_res, self. np_res = self._initiate_data()
         self.__write_msg(log)
@@ -246,7 +253,10 @@ class GetResidues:
         Call the other modules and read the files
         Top contains info from forcefield parameters files, the numbers
         of the residues.
-        ttr_info contains trajectory read by MDAnalysis
+        ttr_info contains trajectory read by MDAnalysis.
+        Args:
+            fname (str): Name of the trajectory file.
+            log (Union[Logger, None]): Logger object for logging messages.
         """
         if log is not None:
             self.top = topo.ReadTop(log)
@@ -254,17 +264,17 @@ class GetResidues:
 
     def _initiate_data(self) -> tuple[dict[int, int], dict[int, int]]:
         """
-        Initialize setting data to obtain the center of mass of
-        residues. MDAnalysis fails to manage indices, so NP (COR & APT)
-        and solution indices are saved and set separately.
+        Initialize data to obtain the center of mass of residues.
+        MDAnalysis fails to manage indices, so NP (COR & APT) and
+        solution indices are saved and set separately.
 
         Algorithm:
             Retrieve all residues for nanoparticles and solution, then
             set an index for each based on type defined in static_info.
 
         Returns:
-            Dictionaries for each set with residue index as keys and
-            the reisdues' type as values.
+            Tuple of dictionaries for each set with residue index as
+            keys and the residues' type as values.
 
         """
         sol_res_tmp: dict[str, list[int]]
@@ -280,8 +290,10 @@ class GetResidues:
     @staticmethod
     def set_residues_index(all_res_tmp: dict[str, list[int]]  # Name&index
                            ) -> dict[int, int]:
-        """set the type of the each residue as an index and number of
-        residues"""
+        """
+        Set the type of the each residue as an index and number of
+        residues
+        """
         return \
             {res: stinfo.reidues_id[k] for k, val in all_res_tmp.items()
              for res in val}
