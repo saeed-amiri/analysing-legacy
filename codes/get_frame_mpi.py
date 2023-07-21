@@ -290,6 +290,8 @@ class CalculateCom:
                         wrap_com = self.wrap_position(com, frame.dimensions)
                         element = int(item*3) + 1
                         my_data[row][element:element+3] = wrap_com
+                        if k == 'ODN':
+                            self.get_odn_amino_com(atoms_position, item)
                         r_idx = stinfo.reidues_id[k]  # Residue idx
                         my_data[-1][element:element+3] = \
                             np.array([[r_idx, r_idx, r_idx]])
@@ -340,6 +342,33 @@ class CalculateCom:
             atom_masses = i_residue.masses
             return np.average(atom_positions, weights=atom_masses, axis=0)
         return None
+
+    def get_odn_amino_com(self,
+                          all_atoms: np.ndarray,  # All the atoms poistion
+                          ind: int  # Index of the residue
+                          ) -> typing.Union[np.ndarray, None]:
+        """
+        Calculating the center of mass of the amino group in the ODN
+        See the doc of get_com_all
+        Here, only atoms in NH2 and HC (3 H atoms)
+        i_atoms:
+            <Atom 523033: NH2 of type N of resname ODN, resid 176274
+             and segid SYSTEM>,
+            <Atom 523034: HC1 of type H of resname ODN, resid 176274
+             and segid SYSTEM>,
+            <Atom 523035: HC2 of type H of resname ODN, resid 176274
+             and segid SYSTEM>,
+            <Atom 523036: HC3 of type H of resname ODN, resid 176274
+             and segid SYSTEM>
+        """
+        if self.get_residues is not None:
+            i_residue = \
+                self.get_residues.trr_info.u_traj.select_atoms(f'resnum {ind}')
+            i_atoms = i_residue.select_atoms(f'name NH2 HC*')
+            atom_indices = i_atoms.indices
+            atom_positions = all_atoms[atom_indices]
+            atom_masses = i_atoms.masses
+            return np.average(atom_positions, weights=atom_masses, axis=0)
 
     def get_processes_info(self,
                            i_rank: int,  # Rank of the process
