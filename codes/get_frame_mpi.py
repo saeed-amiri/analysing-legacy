@@ -203,7 +203,7 @@ class CalculateCom:
             chunk_tstep = self.get_chunk_lists(data)
             np_res_ind = self.get_np_residues()
             sol_residues: typing.Union[dict[str, list[int]], None] = \
-                self.get_solution_residues()
+                self.get_solution_residues(stinfo.np_info['solution_residues'])
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
@@ -212,6 +212,13 @@ class CalculateCom:
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None:
                     _, com_col = np.shape(com_arr)
+                    amino_odn_index = \
+                        self.set_amino_odn_index(
+                            com_arr,
+                            self.get_residues.top.mols_num['ODN'],
+                            sol_residues['ODN']
+                            )
+
         else:
             sol_residues = None
             chunk_tstep = None
@@ -253,6 +260,20 @@ class CalculateCom:
             print(final_com_arr)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
+
+    def set_amino_odn_index(self,
+                            com_arr,
+                            nr_odn: int
+                            ) -> dict[int, int]:
+        """
+        Set (or find!) the indices for the COM of ODN amino group in
+        the com_arr
+        In the alocation of com_arr, nr_odn columns are added for the
+        com of the amino groups of the ODN. Since the COM of all ODN
+        are also set in the com_arr the extra indices should carefuly
+        be setted.
+        The indices of the ODN could be not sequal!
+        """
 
     @staticmethod
     def breodcaste_arg(*args  # All the things that should be broadcasted
@@ -431,14 +452,16 @@ class CalculateCom:
                     self.get_residues.trr_info.residues_indx[item])
         return np_res_ind
 
-    def get_solution_residues(self) -> dict[str, list[int]]:
+    def get_solution_residues(self,
+                              res_group: list[str]
+                              ) -> dict[str, list[int]]:
         """
         Return the dict of the residues in the solution with
         dropping the NP residues
         """
         sol_dict: dict[str, list[int]] = {}  # All the residues in solution
         for k, val in self.get_residues.trr_info.residues_indx.items():
-            if k in stinfo.np_info['solution_residues']:
+            if k in res_group:
                 sol_dict[k] = val
         return sol_dict
 
