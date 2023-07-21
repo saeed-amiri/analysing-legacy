@@ -364,6 +364,7 @@ class CalculateCom:
 
     info_msg: str = 'Messages from CalculateCom:\n'  # To log
     get_residues: typing.Union[GetResidues, None]  # Type of the info
+    n_frames: int  # Number of the frame in the trajectory
 
     def __init__(self,
                  fname: str,  # Name of the trajectory files
