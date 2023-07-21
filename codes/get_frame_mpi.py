@@ -212,14 +212,11 @@ class CalculateCom:
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None:
                     _, com_col = np.shape(com_arr)
-                    amino_odn_index = \
-                        self.set_amino_odn_index(
-                            com_arr,
-                            self.get_residues.top.mols_num['ODN'],
-                            sol_residues['ODN']
-                            )
+                    amino_odn_index: typing.Union[dict[int, int], None] = \
+                        self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
         else:
+            amino_odn_index = None
             sol_residues = None
             chunk_tstep = None
             np_res_ind = None
@@ -231,9 +228,13 @@ class CalculateCom:
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
 
-        np_res_ind, com_arr, com_col, u_traj, sol_residues = \
-            self.breodcaste_arg(
-                np_res_ind, com_arr, com_col, u_traj, sol_residues)
+        np_res_ind, com_arr, com_col, u_traj, sol_residues, amino_odn_index = \
+            self.breodcaste_arg(np_res_ind,
+                                com_arr,
+                                com_col,
+                                u_traj,
+                                sol_residues,
+                                amino_odn_index)
 
         if chunk_tstep is not None:
             chunk_size = len(chunk_tstep)
@@ -261,9 +262,9 @@ class CalculateCom:
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
 
-    def set_amino_odn_index(self,
-                            com_arr,
-                            nr_odn: int
+    @staticmethod
+    def set_amino_odn_index(com_arr,  # The array to set all com in it
+                            odn_residues: list[int]  # Indices of ODN residues
                             ) -> dict[int, int]:
         """
         Set (or find!) the indices for the COM of ODN amino group in
@@ -274,6 +275,12 @@ class CalculateCom:
         be setted.
         The indices of the ODN could be not sequal!
         """
+        sorted_odn_residues: set[int] = sorted(odn_residues, reverse=True)
+        last_column: np.int64 = np.shape(com_arr)[1] - 1
+        odn_amino_indices: dict[int, int] = {}
+        for i, odn in enumerate(sorted_odn_residues):
+            odn_amino_indices[odn] = last_column - i
+        return odn_amino_indices
 
     @staticmethod
     def breodcaste_arg(*args  # All the things that should be broadcasted
