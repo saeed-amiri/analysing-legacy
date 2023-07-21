@@ -204,11 +204,13 @@ import sys
 import typing
 import datetime
 import atexit
+import pickle
 from mpi4py import MPI
 import numpy as np
 import logger
 import static_info as stinfo
 import get_topo as topo
+import my_tools
 from get_trajectory import GetInfo
 from colors_text import TextColor as bcolors
 
@@ -459,7 +461,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep[:2],
+                                   chunk_tstep,
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -476,6 +478,10 @@ class CalculateCom:
         # Combine the gathered com_arr data on the root process
         if RANK == 0 and com_arr_all is not None:
             final_com_arr = np.vstack(tuple(com_arr_all))
+            fname: str  # Name of the file to pickle to
+            fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], LOG)
+            with open(fname, 'wb') as f_arr:
+                pickle.dump(final_com_arr, f_arr)
             print(final_com_arr)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
