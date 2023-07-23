@@ -11,6 +11,8 @@ import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pylab as plt
+from scipy.interpolate import interp1d 
+
 import logger
 import plot_tools as ptools
 import static_info as stinfo
@@ -119,6 +121,13 @@ class GetBulkDensity:
                 residues_data[xvg_f]['data'] = self.__read_data(data['data'])
             except FileNotFoundError:
                 self.info_msg += f'\tCannot read file: `{fname}`!!\n'
+        if 'COR_APT' not in residues_data.keys():
+            residues_data['COR_APT'] = residues_data['COR']
+            residues_data['COR_APT']['data'][:, 1] = \
+                residues_data['COR']['data'][:, 1] + \
+                residues_data['APT']['data'][:, 1]
+            residues_data['fname'] = 'COR_APT.xvg'
+            self.info_msg += '\tDensity for COR_APT is calculated!\n'
         return residues_data
 
     @staticmethod
@@ -204,7 +213,7 @@ class PlotDensity:
     """plot the density"""
 
     fontsize: int = 14  # Fontsize for all in plots
-    transparent: bool = False  # Save fig background
+    transparent: bool = True  # Save fig background
 
     def __init__(self,
                  res_data: GetBulkDensity  # All the densities data
@@ -215,19 +224,12 @@ class PlotDensity:
                      res_data: GetBulkDensity  # All the densities data
                      ) -> None:
         """plot densities which are asked for"""
-        fig_i, ax_i = self.__mk_canvas()
         xvg_files: list = sys.argv[1:]
         many_plot: bool = (len(xvg_files) == 2)
+        fig_i, ax_i = self.__mk_canvas(many_plot)
 
         average: bool = True  # If write average on the legend
-        transparent: bool = False  # If the figure wants to be transparent
 
-        savefig_kwargs = {'fname': 'output.png',
-                          'dpi': 300,
-                          'bbox_inches': 'tight'
-                          }
-        if transparent:
-            savefig_kwargs['transparent'] = 'true'
         for f_i in xvg_files:
             xvg = res_data.residues_data[f_i]
             label = f'{f_i}'
@@ -245,14 +247,16 @@ class PlotDensity:
                       xvg['data'][:, 1]/bulk_value,
                       label=label)
         ax_i = self.__set_y2ticks(ax_i)
-        ax_i = self.__set_ax_font_label(ax_i, xvg)
+        ax_i = self.__set_ax_font_label(ax_i, xvg, many_plot)
         ax_i.grid(which='major', linestyle='--', color='gray', alpha=0.4)
         self.save_close_fig(fig=fig_i,
                             axs=ax_i,
                             fname='output.png',
                             loc='center right')
 
-    def __mk_canvas(self) -> tuple[plt.figure, plt.axes]:
+    def __mk_canvas(self,
+                    many_plot: bool = False  # If more then water and oil
+                    ) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
         width = stinfo.plot['width']
         fig_main, ax_main = plt.subplots(1, figsize=ptools.set_sizes(width))
@@ -261,9 +265,10 @@ class PlotDensity:
         x_lo: float  # Bounds of the self.x_range
         y_hi: float  # For the main plot
         y_lo: float  # For the main plot
-        x_hi, x_lo, y_hi, y_lo = 24, -1, 1.1, -.1
-        ax_main.set_xlim(x_lo, x_hi)
-        ax_main.set_ylim(y_lo, y_hi)
+        if many_plot:
+            x_hi, x_lo, y_hi, y_lo = 24, -1, 1.055, -.052
+            ax_main.set_xlim(x_lo, x_hi)
+            ax_main.set_ylim(y_lo, y_hi)
         num_xticks = 5
         xticks = np.linspace(0, 20, num_xticks)
         ax_main.set_xticks(xticks)
@@ -313,13 +318,18 @@ class PlotDensity:
     def __set_ax_font_label(cls,
                             ax_main: plt.axes,  # Main axis to set parameters
                             xvg,
+                            many_plot: bool = False,  # If more then D10 & SOL
                             fsize: int = 0  # font size if called with font
                             ) -> plt.axes:
         """set parameters on the plot"""
         if fsize == 0:
             fontsize = cls.fontsize
             ax_main.set_xlabel(xvg['xaxis'], fontsize=fontsize-2)
-            ax_main.set_ylabel('Density (normalized)', fontsize=fontsize-2)
+            if many_plot:
+                ax_main.set_ylabel('Density (normalized)', fontsize=fontsize-2)
+            else:
+                ax_main.set_ylabel(xvg['yaxis'], fontsize=fontsize-2)
+
         else:
             fontsize = fsize
         mpl.rcParams['font.family'] = 'sans-serif'
