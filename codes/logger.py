@@ -45,7 +45,7 @@ def write_header(log_file: str  # name of the asked logfile
         f_w.write(f'{formatted_datetime}\n')
         f_w.write(f'{os.getcwd()}\n')
         f_w.write('\n')
-
+    print(f'\nLogger: {formatted_datetime}\n')
 
 def setup_logger(log_name: str  # Name of the log file
                  ) -> logging.Logger:
