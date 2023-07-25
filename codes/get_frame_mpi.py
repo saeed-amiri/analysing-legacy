@@ -459,7 +459,7 @@ class CalculateCom:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
                     self.mk_allocation(self.n_frames,
-                                       self.get_residues.nr_np_res,
+                                       self.get_residues.nr_sol_res,
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None and sol_residues is not None:
                     _, com_col = np.shape(com_arr)
@@ -536,8 +536,10 @@ class CalculateCom:
                             continue  # Skip if com is None
 
                         wrap_com = self.wrap_position(com, frame.dimensions)
+
                         element = residues_index_dict[item]
                         my_data[row][element:element+3] = wrap_com
+
                         if k == 'ODN':
                             if amino_odn_index is not None:
                                 amin = self.get_odn_amino_com(atoms_position,
@@ -729,7 +731,7 @@ class CalculateCom:
             sorted_residues: list[int] = sorted(all_residues)
             residues_index_dict: typing.Union[dict[int, int], None] = {}
             for i, res in enumerate(sorted_residues):
-                residues_index_dict[res] = i + 4
+                residues_index_dict[res] = i * 3 + 4
             return residues_index_dict
         return None
 
@@ -808,7 +810,7 @@ class CalculateCom:
              1    +   3    +  nr_residues * 3  +  n_oda * 3
 
         """
-        rows: int = n_frames + 2 # Number of rows, 2 for name and index of res
+        rows: int = n_frames + 2 # Number of rows, 2`` for name and index of res
         columns: int = 1 + 3 + nr_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
 
