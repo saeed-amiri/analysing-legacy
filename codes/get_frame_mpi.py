@@ -200,7 +200,6 @@ Utility Functions:
 """
 
 
-import os
 import sys
 import typing
 import datetime
@@ -214,13 +213,6 @@ import get_topo as topo
 import my_tools
 from get_trajectory import GetInfo
 from colors_text import TextColor as bcolors
-
-
-def create_process_dir(rank):
-    dir_name = f"process_{rank}_data"
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-    return dir_name
 
 
 class GetResidues:
