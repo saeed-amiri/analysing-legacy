@@ -286,7 +286,7 @@ class GetResidues:
         sol_res_tmp, self.nr_sol_res, self.max_res, self.min_res = \
             self.get_residues(stinfo.np_info["solution_residues"], log)
         np_res_tmp, self.nr_np_res, _, _ = \
-            self.get_residues(stinfo.np_info["np_residues"])
+            self.get_residues(stinfo.np_info["np_residues"], log)
         sol_res = self.set_residues_index(sol_res_tmp)
         np_res = self.set_residues_index(np_res_tmp)
         return sol_res, np_res
@@ -453,6 +453,7 @@ class CalculateCom:
             np_res_ind = self.get_np_residues()
             sol_residues: typing.Union[dict[str, list[int]], None] = \
                 self.get_solution_residues(stinfo.np_info['solution_residues'])
+            self.mk_residues_dict(sol_residues)
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
@@ -697,6 +698,33 @@ class CalculateCom:
                 if k in res_group:
                     sol_dict[k] = val
             return sol_dict
+        return None
+
+    @staticmethod
+    def mk_residues_dict(sol_residues: typing.Union[dict[str, list[int]], None]
+                         ) -> typing.Union[dict[int, int], None]:
+        """
+        Make a dict for indexing all the residues. Not always residues
+        indexed from zero and/or are numberd sequently.
+
+        Args:
+            sol_residues of index for each residue in the solution
+        Return:
+            new indexing for each residues
+            Since in the recived method of this return, the result could
+            be None, the type is Union
+        Notes:
+            Since we already have 4 elements before the these resideus,
+            numbering will start from 4
+        """
+        if sol_residues is not None:
+            all_residues: list[int] = \
+                [item for sublist in sol_residues.values() for item in sublist]
+            sorted_residues: list[int] = sorted(all_residues)
+            residues_index_dict: typing.Union[dict[int, int], None] = {}
+            for i, res in enumerate(sorted_residues):
+                residues_index_dict[res] = i + 4
+            return residues_index_dict
         return None
 
     @staticmethod
