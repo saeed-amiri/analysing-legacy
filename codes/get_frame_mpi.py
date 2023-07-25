@@ -518,6 +518,7 @@ class CalculateCom:
                 # Update my_data with ind and np_com values
                 my_data[row, 0] = ind
                 my_data[row, 1:4] = np_com
+
             return my_data
         return None
 
@@ -747,7 +748,7 @@ class CalculateCom:
              1    +   3    +  max_residues * 3  +  n_oda * 3
 
         """
-        rows: int = n_frames + 1 # Number of rows, 1 for name and index of res
+        rows: int = n_frames  # Number of rows, 1 for name and index of res
         columns: int = 1 + 3 + max_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
 
