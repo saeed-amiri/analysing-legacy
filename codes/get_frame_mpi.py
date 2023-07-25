@@ -200,6 +200,7 @@ Utility Functions:
 """
 
 
+import os
 import sys
 import typing
 import datetime
@@ -214,13 +215,13 @@ import my_tools
 from get_trajectory import GetInfo
 from colors_text import TextColor as bcolors
 
-import os
 
 def create_process_dir(rank):
     dir_name = f"process_{rank}_data"
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     return dir_name
+
 
 class GetResidues:
     """
@@ -251,7 +252,7 @@ class GetResidues:
             log (Union[Logger, None]): Logger object for logging messages.
         """
         self._initiate_reading(fname, log)
-        self.sol_res, self. np_res = self._initiate_data()
+        self.sol_res, self. np_res = self._initiate_data(log)
         self.__write_msg(log)
 
     def _initiate_reading(self,
@@ -271,7 +272,9 @@ class GetResidues:
             self.top = topo.ReadTop(log)
             self.trr_info = GetInfo(fname, log=log)
 
-    def _initiate_data(self) -> tuple[dict[int, int], dict[int, int]]:
+    def _initiate_data(self,
+                       log: logger.logging.Logger
+                       ) -> tuple[dict[int, int], dict[int, int]]:
         """
         Initialize data to obtain the center of mass of residues.
         MDAnalysis fails to manage indices, so NP (COR & APT) and
@@ -289,7 +292,7 @@ class GetResidues:
         sol_res_tmp: dict[str, list[int]]
         np_res_tmp: dict[str, list[int]]
         sol_res_tmp, self.nr_sol_res, self.max_res, self.min_res = \
-            self.get_residues(stinfo.np_info["solution_residues"])
+            self.get_residues(stinfo.np_info["solution_residues"], log)
         np_res_tmp, self.nr_np_res, _, _ = \
             self.get_residues(stinfo.np_info["np_residues"])
         sol_res = self.set_residues_index(sol_res_tmp)
@@ -308,7 +311,8 @@ class GetResidues:
              for res in val}
 
     def get_residues(self,
-                     res_name: list[str]  # Name of the residues
+                     res_name: list[str],  # Name of the residues
+                     log: logger.logging.Logger
                      ) -> tuple[dict[str, list[int]], int, int, int]:
         """
         Return the dict of the residues in the solution with
@@ -319,6 +323,13 @@ class GetResidues:
         all_res_dict = \
             {k: val for k, val in self.trr_info.residues_indx.items()
              if k in res_name}
+        if self.check_similar_items(all_res_dict):
+            msg: str = (f'{self.__class__.__name__}:\n'
+                        '\tError: There is a douplicate index in the '
+                        'residues. Most modifying the code!\n')
+            log.error(msg)
+            sys.exit(f'{bcolors.FAIL}{msg}{bcolors.ENDC}')
+
         nr_residues = int(sum(len(lst) for lst in all_res_dict.values()))
         max_res = int(max(max(lst) for lst in all_res_dict.values()))
         min_res = int(min(min(lst) for lst in all_res_dict.values()))
@@ -328,6 +339,26 @@ class GetResidues:
              f'\t\tThe max & min of indices are: `{max_res}` and'
              f' `{min_res}`\n')
         return all_res_dict, nr_residues, max_res, min_res
+
+    @staticmethod
+    def check_similar_items(d: dict[str, list[int]]) -> bool:
+        # Create an empty set to store all unique elements
+        unique_elements = set()
+
+        # Iterate over the lists in the dictionary values
+        for lst in d.values():
+            # Convert the list to a set to remove duplicates
+            unique_set = set(lst)
+
+            # Check if there are any common elements with the previous sets
+            if unique_set & unique_elements:
+                return True
+            else:
+                # Update the set of unique elements
+                unique_elements |= unique_set
+
+        # If no common elements were found, return False
+        return False
 
     def __write_msg(self,
                     log: typing.Union[logger.logging.Logger, None]  # To log
@@ -467,7 +498,7 @@ class CalculateCom:
 
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
-        
+
         my_data = self.process_trj(
                                    chunk_tstep[0:1],
                                    u_traj,
@@ -480,7 +511,6 @@ class CalculateCom:
 
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
-
 
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
@@ -505,6 +535,7 @@ class CalculateCom:
                         com = self.get_com_all(atoms_position, item)
                         if com is None:
                             continue  # Skip if com is None
+
                         wrap_com = self.wrap_position(com, frame.dimensions)
                         element = int(item*3) + 1
                         my_data[row][element:element+3] = wrap_com
@@ -518,7 +549,11 @@ class CalculateCom:
                 # Update my_data with ind and np_com values
                 my_data[row, 0] = ind
                 my_data[row, 1:4] = np_com
-
+                # print(row, my_data[row])
+                        # Setting the residue ids in last row
+                        # r_idx = stinfo.reidues_id[k]
+                        # my_data[-1][element:element+3] = \
+                        #     np.array([[r_idx, r_idx, r_idx]])
             return my_data
         return None
 
