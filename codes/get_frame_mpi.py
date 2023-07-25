@@ -453,7 +453,8 @@ class CalculateCom:
             np_res_ind = self.get_np_residues()
             sol_residues: typing.Union[dict[str, list[int]], None] = \
                 self.get_solution_residues(stinfo.np_info['solution_residues'])
-            self.mk_residues_dict(sol_residues)
+            residues_index_dict: typing.Union[dict[int, int], None] = \
+                self.mk_residues_dict(sol_residues)
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
@@ -466,6 +467,7 @@ class CalculateCom:
                         self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
         else:
+            residues_index_dict = None
             amino_odn_index = None
             sol_residues = None
             chunk_tstep = None
@@ -478,13 +480,15 @@ class CalculateCom:
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
 
-        np_res_ind, com_arr, com_col, u_traj, sol_residues, amino_odn_index = \
+        np_res_ind, com_arr, com_col, u_traj, sol_residues, amino_odn_index, \
+            residues_index_dict = \
             self.breodcaste_arg(np_res_ind,
                                 com_arr,
                                 com_col,
                                 u_traj,
                                 sol_residues,
-                                amino_odn_index)
+                                amino_odn_index,
+                                residues_index_dict)
 
         if chunk_tstep is not None:
             chunk_size = len(chunk_tstep)
@@ -498,7 +502,8 @@ class CalculateCom:
                                    np_res_ind,
                                    my_data,
                                    sol_residues,
-                                   amino_odn_index
+                                   amino_odn_index,
+                                   residues_index_dict
                                    )
         COMM.barrier()
 
@@ -511,7 +516,8 @@ class CalculateCom:
                     np_res_ind: typing.Union[list[int], None],  # NP residue id
                     my_data: typing.Union[np.ndarray, None],  # To save COMs
                     sol_residues: typing.Union[dict[str, list[int]], None],
-                    amino_odn_index: typing.Union[dict[int, int], None]
+                    amino_odn_index: typing.Union[dict[int, int], None],
+                    residues_index_dict: typing.Union[dict[int, int], None]
                     ) -> typing.Union[np.ndarray, None]:
         """Get atoms in the timestep"""
         if (
@@ -530,7 +536,7 @@ class CalculateCom:
                             continue  # Skip if com is None
 
                         wrap_com = self.wrap_position(com, frame.dimensions)
-                        element = int(item*3) + 1
+                        element = residues_index_dict[item]
                         my_data[row][element:element+3] = wrap_com
                         if k == 'ODN':
                             if amino_odn_index is not None:
