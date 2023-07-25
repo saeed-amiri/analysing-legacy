@@ -214,6 +214,13 @@ import my_tools
 from get_trajectory import GetInfo
 from colors_text import TextColor as bcolors
 
+import os
+
+def create_process_dir(rank):
+    dir_name = f"process_{rank}_data"
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    return dir_name
 
 class GetResidues:
     """
@@ -460,31 +467,20 @@ class CalculateCom:
 
         my_data = np.empty((chunk_size, com_col)) if \
             chunk_tstep is not None else None
-
+        
         my_data = self.process_trj(
-                                   chunk_tstep,
+                                   chunk_tstep[0:1],
                                    u_traj,
                                    np_res_ind,
                                    my_data,
                                    sol_residues,
                                    amino_odn_index
                                    )
+        COMM.barrier()
 
-        # Gather all the com_arr data to the root process
-        if com_arr is not None:
-            com_arr_all = COMM.gather(my_data, root=0)
-        else:
-            com_arr_all = None
-
-        # Combine the gathered com_arr data on the root process
-        if RANK == 0 and com_arr_all is not None:
-            final_com_arr = np.vstack(tuple(com_arr_all))
-            fname: str  # Name of the file to pickle to
-            fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], LOG)
-            with open(fname, 'wb') as f_arr:
-                pickle.dump(final_com_arr, f_arr)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
+
 
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
@@ -504,10 +500,6 @@ class CalculateCom:
                 ind = int(i)
                 frame = u_traj.trajectory[ind]
                 atoms_position: np.ndarray = frame.positions
-                np_com = self.get_np_com(atoms_position, np_res_ind, u_traj)
-                # Update my_data with ind and np_com values
-                my_data[row, 0] = ind
-                my_data[row, 1:4] = np_com
                 for k, val in sol_residues.items():
                     for item in val:
                         com = self.get_com_all(atoms_position, item)
@@ -516,19 +508,16 @@ class CalculateCom:
                         wrap_com = self.wrap_position(com, frame.dimensions)
                         element = int(item*3) + 1
                         my_data[row][element:element+3] = wrap_com
-
-                        # Getting the COM of the amino group in ODN residues
                         if k == 'ODN':
                             if amino_odn_index is not None:
                                 amin = self.get_odn_amino_com(atoms_position,
                                                               item)
-                                amin_ind: int = amino_odn_index[item]
-                                my_data[row][amin_ind:amin_ind+3] = amin
-
-                        # Setting the residue ids in last row
-                        r_idx = stinfo.reidues_id[k]
-                        my_data[-1][element:element+3] = \
-                            np.array([[r_idx, r_idx, r_idx]])
+                                amino_ind: int = amino_odn_index[item]
+                                my_data[row][amino_ind:amino_ind+3] = amin
+                np_com = self.get_np_com(atoms_position, np_res_ind, u_traj)
+                # Update my_data with ind and np_com values
+                my_data[row, 0] = ind
+                my_data[row, 1:4] = np_com
             return my_data
         return None
 
@@ -758,7 +747,7 @@ class CalculateCom:
              1    +   3    +  max_residues * 3  +  n_oda * 3
 
         """
-        rows: int = n_frames + 1  # Number of rows, 1 for name and index of res
+        rows: int = n_frames + 1 # Number of rows, 1 for name and index of res
         columns: int = 1 + 3 + max_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
 
