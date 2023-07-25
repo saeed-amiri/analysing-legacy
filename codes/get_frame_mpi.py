@@ -459,7 +459,7 @@ class CalculateCom:
                 u_traj = self.get_residues.trr_info.u_traj
                 com_arr: typing.Union[np.ndarray, None] = \
                     self.mk_allocation(self.n_frames,
-                                       self.get_residues.max_res,
+                                       self.get_residues.nr_np_res,
                                        self.get_residues.top.mols_num['ODN'])
                 if com_arr is not None and sol_residues is not None:
                     _, com_col = np.shape(com_arr)
@@ -779,7 +779,7 @@ class CalculateCom:
 
     @staticmethod
     def mk_allocation(n_frames: int,  # Number of frames
-                      max_residues: int,  # Max of residues' indices
+                      nr_residues: int,  # Numbers of residues' indices
                       n_oda: int  # Number of ODA in the system
                       ) -> np.ndarray:
         """
@@ -794,9 +794,8 @@ class CalculateCom:
             each atom has xyz, the center of mass also has xyx, and one
             for labeling the name of the residues, for example SOL will be 1
 
-        Since there is chance the maximum index would be bigger than
-        the number of the residues, the size of the array will be set
-        to max index.
+        The indexing method is updated, now every index getting a defiend
+        index which is started from 4. See: mk_residues_dict
         number of row will be"
         number of frames + 1
         The extra row is for the type of the residue
@@ -805,12 +804,12 @@ class CalculateCom:
         n_ODA: number oda residues
         NP_com: Center of mass of the nanoparticle
         than:
-        timeframe + NP_com + max_residues:  xyz + n_oda * xyz
-             1    +   3    +  max_residues * 3  +  n_oda * 3
+        timeframe + NP_com + nr_residues:  xyz + n_oda * xyz
+             1    +   3    +  nr_residues * 3  +  n_oda * 3
 
         """
         rows: int = n_frames  # Number of rows, 1 for name and index of res
-        columns: int = 1 + 3 + max_residues * 3 + n_oda * 3
+        columns: int = 1 + 3 + nr_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
 
     @staticmethod
