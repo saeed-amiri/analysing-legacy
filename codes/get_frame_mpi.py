@@ -457,7 +457,7 @@ class CalculateCom:
                 self.mk_residues_dict(sol_residues)
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
-                com_arr: typing.Union[np.ndarray, None] = \
+                com_arr: np.ndarray = \
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.nr_sol_res,
                                        self.get_residues.top.mols_num['ODN'])
@@ -472,18 +472,17 @@ class CalculateCom:
             sol_residues = None
             chunk_tstep = None
             np_res_ind = None
-            com_arr = None
             com_col = None
             u_traj = None
+
         # Setting the type
         chunk_tstep = typing.cast(typing.List[typing.Any], chunk_tstep)
         # Broadcast and scatter all the data
         chunk_tstep = COMM.scatter(chunk_tstep, root=0)
 
-        np_res_ind, com_arr, com_col, u_traj, sol_residues, amino_odn_index, \
+        np_res_ind, com_col, u_traj, sol_residues, amino_odn_index, \
             residues_index_dict = \
-            self.breodcaste_arg(np_res_ind,
-                                com_arr,
+            self.broadcaste_arg(np_res_ind,
                                 com_col,
                                 u_traj,
                                 sol_residues,
@@ -497,7 +496,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep[0:1],
+                                   chunk_tstep[-1:],
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -514,7 +513,7 @@ class CalculateCom:
 
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
-
+    
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
@@ -763,7 +762,7 @@ class CalculateCom:
         return odn_amino_indices
 
     @staticmethod
-    def breodcaste_arg(*args  # All the things that should be broadcasted
+    def broadcaste_arg(*args  # All the things that should be broadcasted
                        ) -> tuple[typing.Any, ...]:
         """
         Broadcasting data
