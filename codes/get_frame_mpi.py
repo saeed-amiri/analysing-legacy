@@ -335,7 +335,7 @@ class GetResidues:
     @staticmethod
     def check_similar_items(d: dict[str, list[int]]) -> bool:
         # Create an empty set to store all unique elements
-        unique_elements = set()
+        unique_elements: set[typing.Any] = set()
 
         # Iterate over the lists in the dictionary values
         for lst in d.values():
@@ -506,6 +506,11 @@ class CalculateCom:
                                    residues_index_dict
                                    )
         COMM.barrier()
+        # Gather my_data from all processes into my_data_list
+        my_data_list = COMM.gather(my_data, root=0)
+        # On the root process, concatenate all arrays in my_data_list
+        if RANK == 0:
+            recvdata = np.concatenate(my_data_list, axis=0)
 
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
@@ -523,7 +528,8 @@ class CalculateCom:
         if (
            chunk_tstep is not None and
            my_data is not None and
-           sol_residues is not None
+           sol_residues is not None and
+           residues_index_dict is not None 
            ):
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
@@ -730,8 +736,9 @@ class CalculateCom:
                 [item for sublist in sol_residues.values() for item in sublist]
             sorted_residues: list[int] = sorted(all_residues)
             residues_index_dict: typing.Union[dict[int, int], None] = {}
-            for i, res in enumerate(sorted_residues):
-                residues_index_dict[res] = i * 3 + 4
+            if residues_index_dict is not None:
+                for i, res in enumerate(sorted_residues):
+                    residues_index_dict[res] = i * 3 + 4
             return residues_index_dict
         return None
 
