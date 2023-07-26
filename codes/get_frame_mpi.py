@@ -509,10 +509,25 @@ class CalculateCom:
         my_data_list = COMM.gather(my_data, root=0)
         # On the root process, concatenate all arrays in my_data_list
         if RANK == 0:
-            recvdata = np.concatenate(my_data_list, axis=0)
+            recvdata: np.ndarray = np.concatenate(my_data_list, axis=0)
+            self.set_residue_ind(com_arr, recvdata, sol_residues)
 
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
+
+    @staticmethod
+    def set_residue_ind(com_arr: np.ndarray,  # The final array
+                        recvdata: np.ndarray,  # Info about time frames
+                        sol_residues: typing.Union[dict[int, int], None]
+                        ) -> np.ndarray:
+        """
+        Set the original residues' indices to the com_arr[-2]
+        Set the type of residues' indices to the com_arr[-1]
+        """
+        # Copy data to the final array
+        for row in range(len(recvdata)):
+            tstep = int(row[0])
+            com_arr[0, tstep] = row
     
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
@@ -726,6 +741,8 @@ class CalculateCom:
             new indexing for each residues
             Since in the recived method of this return, the result could
             be None, the type is Union
+            Key: The residue index in the main data (traj from MDAnalysis)
+            Value: The new orderd indices
         Notes:
             Since we already have 4 elements before the these resideus,
             numbering will start from 4
@@ -753,6 +770,9 @@ class CalculateCom:
         are also set in the com_arr the extra indices should carefuly
         be setted.
         The indices of the ODN could be not sequal!
+        Returns:
+            key: 0 - nr_odn
+            value: the column in the com_arr (the final arry)
         """
         sorted_odn_residues: list[int] = sorted(odn_residues, reverse=True)
         last_column: int = np.shape(com_arr)[1]
