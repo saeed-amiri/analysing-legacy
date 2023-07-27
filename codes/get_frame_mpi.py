@@ -510,7 +510,7 @@ class CalculateCom:
         # On the root process, concatenate all arrays in my_data_list
         if RANK == 0:
             recvdata: np.ndarray = np.concatenate(my_data_list, axis=0)
-            self.set_residue_ind(com_arr, recvdata, sol_residues)
+            self.set_residue_ind(com_arr, recvdata, residues_index_dict)
 
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
@@ -518,17 +518,22 @@ class CalculateCom:
     @staticmethod
     def set_residue_ind(com_arr: np.ndarray,  # The final array
                         recvdata: np.ndarray,  # Info about time frames
-                        sol_residues: typing.Union[dict[int, int], None]
+                        residues_index_dict: typing.Union[dict[int, int], None]
                         ) -> np.ndarray:
         """
         Set the original residues' indices to the com_arr[-2]
         Set the type of residues' indices to the com_arr[-1]
         """
         # Copy data to the final array
-        for row in range(len(recvdata)):
+        for row in recvdata:
             tstep = int(row[0])
-            com_arr[0, tstep] = row
-    
+            com_arr[tstep] = row.copy()
+        if residues_index_dict is not None:
+            for res_ind, col_in_arr in residues_index_dict.items():
+                ind = int(res_ind)
+                com_arr[-2][col_in_arr:col_in_arr+3] = \
+                    np.array([ind, ind, ind]).copy()
+
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
                     u_traj,  # Trajectory
@@ -543,7 +548,7 @@ class CalculateCom:
            chunk_tstep is not None and
            my_data is not None and
            sol_residues is not None and
-           residues_index_dict is not None 
+           residues_index_dict is not None
            ):
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
@@ -570,11 +575,6 @@ class CalculateCom:
                 # Update my_data with ind and np_com values
                 my_data[row, 0] = ind
                 my_data[row, 1:4] = np_com
-                # print(row, my_data[row])
-                        # Setting the residue ids in last row
-                        # r_idx = stinfo.reidues_id[k]
-                        # my_data[-1][element:element+3] = \
-                        #     np.array([[r_idx, r_idx, r_idx]])
             return my_data
         return None
 
@@ -836,7 +836,8 @@ class CalculateCom:
              1    +   3    +  nr_residues * 3  +  n_oda * 3
 
         """
-        rows: int = n_frames + 2 # Number of rows, 2`` for name and index of res
+
+        rows: int = n_frames + 2  # Number of rows, 2 for name and index of res
         columns: int = 1 + 3 + nr_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
 
