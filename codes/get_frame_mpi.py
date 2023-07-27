@@ -333,21 +333,22 @@ class GetResidues:
         return all_res_dict, nr_residues, max_res, min_res
 
     @staticmethod
-    def check_similar_items(d: dict[str, list[int]]) -> bool:
-        # Create an empty set to store all unique elements
+    def check_similar_items(dic: dict[str, list[int]]) -> bool:
+        """
+        Create an empty set to store all unique elements
+        """
         unique_elements: set[typing.Any] = set()
 
         # Iterate over the lists in the dictionary values
-        for lst in d.values():
+        for lst in dic.values():
             # Convert the list to a set to remove duplicates
             unique_set = set(lst)
 
             # Check if there are any common elements with the previous sets
             if unique_set & unique_elements:
                 return True
-            else:
-                # Update the set of unique elements
-                unique_elements |= unique_set
+            # Update the set of unique elements
+            unique_elements |= unique_set
 
         # If no common elements were found, return False
         return False
