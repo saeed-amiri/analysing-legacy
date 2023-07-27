@@ -497,7 +497,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep[-1:],
+                                   chunk_tstep[:1],
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -559,31 +559,6 @@ class CalculateCom:
                     com_arr[-1, ind] = stinfo.reidues_id[res_name]
                 except KeyError:
                     pass
-            return com_arr
-        return None
-
-
-    @staticmethod
-    def set_residue_ind(com_arr: np.ndarray,  # The final array
-                        recvdata: np.ndarray,  # Info about time frames
-                        residues_index_dict: typing.Union[dict[int, int], None]
-                        ) -> typing.Union[np.ndarray, None]:
-        """
-        Set the original residues' indices to the com_arr[-2]
-        Set the type of residues' indices to the com_arr[-1]
-        """
-        # Copy data to the final array
-        for row in recvdata:
-            tstep = int(row[0])
-            com_arr[tstep] = row.copy()
-        if residues_index_dict is not None:
-            # setting the index of NP and ODA Amino heads
-            com_arr[-2, 1:4] = [-1, -1, -1]
-            com_arr[-2, -50:] = np.arange(-1, -51, -1)
-            for res_ind, col_in_arr in residues_index_dict.items():
-                ind = int(res_ind)
-                com_arr[-2][col_in_arr:col_in_arr+3] = \
-                    np.array([ind, ind, ind]).copy()
             return com_arr
         return None
 
@@ -779,6 +754,30 @@ class CalculateCom:
                 if k in res_group:
                     sol_dict[k] = val
             return sol_dict
+        return None
+
+    @staticmethod
+    def set_residue_ind(com_arr: np.ndarray,  # The final array
+                        recvdata: np.ndarray,  # Info about time frames
+                        residues_index_dict: typing.Union[dict[int, int], None]
+                        ) -> typing.Union[np.ndarray, None]:
+        """
+        Set the original residues' indices to the com_arr[-2]
+        Set the type of residues' indices to the com_arr[-1]
+        """
+        # Copy data to the final array
+        for row in recvdata:
+            tstep = int(row[0])
+            com_arr[tstep] = row.copy()
+        if residues_index_dict is not None:
+            # setting the index of NP and ODA Amino heads
+            com_arr[-2, 1:4] = [-1, -1, -1]
+            com_arr[-2, -50:] = np.arange(-1, -51, -1)
+            for res_ind, col_in_arr in residues_index_dict.items():
+                ind = int(res_ind)
+                com_arr[-2][col_in_arr:col_in_arr+3] = \
+                    np.array([ind, ind, ind]).copy()
+            return com_arr
         return None
 
     @staticmethod
