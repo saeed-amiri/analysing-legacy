@@ -511,8 +511,8 @@ class CalculateCom:
         # On the root process, concatenate all arrays in my_data_list
         if RANK == 0:
             recvdata: np.ndarray = np.concatenate(my_data_list, axis=0)
-            self.set_residue_ind(com_arr, recvdata, residues_index_dict)
-
+            com_arr = \
+                self.set_residue_ind(com_arr, recvdata, residues_index_dict)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
 
@@ -530,6 +530,9 @@ class CalculateCom:
             tstep = int(row[0])
             com_arr[tstep] = row.copy()
         if residues_index_dict is not None:
+            # setting the index of NP and ODA Amino heads
+            com_arr[-2, 1:4] = [-1, -1, -1]
+            com_arr[-2, -50:] = np.arange(-1, -51, -1)
             for res_ind, col_in_arr in residues_index_dict.items():
                 ind = int(res_ind)
                 com_arr[-2][col_in_arr:col_in_arr+3] = \
