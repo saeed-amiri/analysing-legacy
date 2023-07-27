@@ -513,8 +513,55 @@ class CalculateCom:
             recvdata: np.ndarray = np.concatenate(my_data_list, axis=0)
             com_arr = \
                 self.set_residue_ind(com_arr, recvdata, residues_index_dict)
+            com_arr = self.set_residue_type(com_arr, sol_residues)
+            self.pickle_arr(com_arr, log=LOG)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
+
+    def pickle_arr(self,
+                   com_arr: np.ndarray,  # Array of the center of mass
+                   log: logger.logging.Logger  # Name of the log file
+                   ) -> None:
+        """
+        check the if the previus similar file exsitance the pickle
+        data into a file
+        """
+        fname: str  # Name of the file to pickle to
+        fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
+        with open(fname, 'wb') as f_arr:
+            pickle.dump(com_arr, f_arr)
+
+    def set_residue_type(self,
+                         com_arr: np.ndarray,  # Updated array to set the type
+                         sol_residues: typing.Union[dict[str, list[int]], None]
+                         ) -> np.ndarray:
+        """
+        I need to assign types to all residues and place them in the
+        final row of the array.
+        Args:
+            com_arr: Filled array with information about COM and real
+                     index
+            sol_residues: key: Name of the residue
+                          Value: Residues belongs to the Key
+        Return:
+            Updated com_arr with type of each residue in the row below
+            them.
+        """
+        if sol_residues is not None:
+            reverse_mapping = {}
+            for key, value_list in sol_residues.items():
+                for num in value_list:
+                    reverse_mapping[num] = key
+            for ind in range(com_arr.shape[1]):
+                try:
+                    res_ind = int(com_arr[-2, ind])
+                    res_name: str = reverse_mapping.get(res_ind)
+                    com_arr[-1, ind] = stinfo.reidues_id[res_name]
+                except KeyError:
+                    pass
+            return com_arr
+        return None
+
 
     @staticmethod
     def set_residue_ind(com_arr: np.ndarray,  # The final array
