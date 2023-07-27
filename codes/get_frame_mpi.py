@@ -520,7 +520,7 @@ class CalculateCom:
     def set_residue_ind(com_arr: np.ndarray,  # The final array
                         recvdata: np.ndarray,  # Info about time frames
                         residues_index_dict: typing.Union[dict[int, int], None]
-                        ) -> np.ndarray:
+                        ) -> typing.Union[np.ndarray, None]:
         """
         Set the original residues' indices to the com_arr[-2]
         Set the type of residues' indices to the com_arr[-1]
@@ -534,6 +534,8 @@ class CalculateCom:
                 ind = int(res_ind)
                 com_arr[-2][col_in_arr:col_in_arr+3] = \
                     np.array([ind, ind, ind]).copy()
+            return com_arr
+        return None
 
     def process_trj(self,
                     chunk_tstep,  # Frames' ind
