@@ -458,7 +458,7 @@ class CalculateCom:
                 self.mk_residues_dict(sol_residues)
             if self.get_residues is not None:
                 u_traj = self.get_residues.trr_info.u_traj
-                com_arr: np.ndarray = \
+                com_arr: typing.Union[np.ndarray, None] = \
                     self.mk_allocation(self.n_frames,
                                        self.get_residues.nr_sol_res,
                                        self.get_residues.top.mols_num['ODN'])
@@ -497,7 +497,7 @@ class CalculateCom:
             chunk_tstep is not None else None
 
         my_data = self.process_trj(
-                                   chunk_tstep[:1],
+                                   chunk_tstep,
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -509,12 +509,14 @@ class CalculateCom:
         # Gather my_data from all processes into my_data_list
         my_data_list = COMM.gather(my_data, root=0)
         # On the root process, concatenate all arrays in my_data_list
-        if RANK == 0:
+        if RANK == 0 and com_arr is not None:
             recvdata: np.ndarray = np.concatenate(my_data_list, axis=0)
-            com_arr = \
+            tmp_arr = \
                 self.set_residue_ind(com_arr, recvdata, residues_index_dict)
-            com_arr = self.set_residue_type(com_arr, sol_residues)
-            self.pickle_arr(com_arr, log=LOG)
+
+            com_arr = self.set_residue_type(tmp_arr, sol_residues).copy()
+            if com_arr is not None and LOG is not None:
+                self.pickle_arr(com_arr, log=LOG)
         # Set the info_msg
         self.get_processes_info(RANK, chunk_tstep)
 
@@ -534,7 +536,7 @@ class CalculateCom:
     def set_residue_type(self,
                          com_arr: np.ndarray,  # Updated array to set the type
                          sol_residues: typing.Union[dict[str, list[int]], None]
-                         ) -> np.ndarray:
+                         ) -> typing.Union[np.ndarray, None]:
         """
         I need to assign types to all residues and place them in the
         final row of the array.
@@ -555,7 +557,7 @@ class CalculateCom:
             for ind in range(com_arr.shape[1]):
                 try:
                     res_ind = int(com_arr[-2, ind])
-                    res_name: str = reverse_mapping.get(res_ind)
+                    res_name = reverse_mapping.get(res_ind)
                     com_arr[-1, ind] = stinfo.reidues_id[res_name]
                 except KeyError:
                     pass
@@ -769,6 +771,7 @@ class CalculateCom:
         for row in recvdata:
             tstep = int(row[0])
             com_arr[tstep] = row.copy()
+
         if residues_index_dict is not None:
             # setting the index of NP and ODA Amino heads
             com_arr[-2, 1:4] = [-1, -1, -1]
