@@ -875,15 +875,19 @@ class CalculateCom:
         - Initialized array.
             Columns are as follow:
             each atom has xyz, the center of mass also has xyx, and one
-            for labeling the name of the residues, for example SOL will be 1
+            for labeling the name of the residues, for example SOL will
+            be 1
 
         The indexing method is updated, now every index getting a defiend
         index which is started from 4. See: mk_residues_dict
         number of row will be:
         number of frames + 2
-        The extra row is for the type of the residue
+        The extra row is for the type of the residue at -1 and the
+        orginal ids of the residues in the traj file
+
         number of the columns:
-        n_residues: number of the residues in solution, without residues in NP
+        n_residues: number of the residues in solution, without residues
+        in NP
         n_ODA: number oda residues
         NP_com: Center of mass of the nanoparticle
         than:
