@@ -879,8 +879,8 @@ class CalculateCom:
 
         The indexing method is updated, now every index getting a defiend
         index which is started from 4. See: mk_residues_dict
-        number of row will be"
-        number of frames + 1
+        number of row will be:
+        number of frames + 2
         The extra row is for the type of the residue
         number of the columns:
         n_residues: number of the residues in solution, without residues in NP
