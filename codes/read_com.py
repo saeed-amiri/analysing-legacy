@@ -56,7 +56,11 @@ class GetData:
 
     Attributes:
         f_name (str): The filename of the input pickle file.
-
+        split_arr_dict (dict[str, np.ndarray]): A dictionary containing
+            split data arrays organized by residue types.
+        nr_dict (dict[str, int]): A dictionary containing numerical
+            information about the data, including the number of time
+            frames and the number of residues for each type.
     Methods:
         __init__(): Initialize the GetData instance.
         initiate_data(): Read and split the data from the pickle file.
@@ -179,12 +183,20 @@ class GetData:
         return com_arr
 
 
-class PlotCom:
-    """reading the center of mass file, the name is set static_info.py
+class PlotCom(GetData):
     """
-    number_frame: int = 200  # Number of frames in the traj
+    Reading the center of mass file, the name is set static_info.py
+    Attributes from parent class:
+        f_name (str): The filename of the input pickle file.
+        split_arr_dict (dict[str, np.ndarray]): A dictionary containing
+            split data arrays organized by residue types.
+        nr_dict (dict[str, int]): A dictionary containing numerical
+            information about the data, including the number of time
+            frames and the number of residues for each type.
+    """
 
     def __init__(self) -> None:
+        super().__init__()
         self.f_name: str = stinfo.files['com_pickle']
         self.com_arr: np.ndarray = self.get_data()
         self.box_dims: dict[str, float]  # Box dimensions, from stinfo
@@ -205,7 +217,7 @@ class PlotCom:
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
-            for i in range(self.number_frame):
+            for i in range(self.nr_dict['nr_frames']):
                 if res in ['ODN', 'CLA']:
                     x_data, y_data, _ = \
                         self.__get_interface_oda(res_arr[i, x_indices],
@@ -213,7 +225,7 @@ class PlotCom:
                                                  res_arr[i, z_indices],
                                                  res)
                     ax_com.scatter(x_data, y_data, s=5, c='black',
-                                   alpha=(i+1)/self.number_frame)
+                                   alpha=(i+1)/self.nr_dict['nr_frames'])
                 if res in ['SOL']:
                     x_surf, y_surf, z_surf = \
                         self.__plot_water_surface(res_arr[i, x_indices],
@@ -469,5 +481,4 @@ class PlotCom:
 
 
 if __name__ == '__main__':
-    # data = PlotCom()
-    GetData()
+    data = PlotCom()
