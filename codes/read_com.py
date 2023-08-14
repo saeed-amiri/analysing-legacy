@@ -103,6 +103,7 @@ class GetData:
         """
         com_arr: np.ndarray = self.load_pickle()
         split_arr_dict: dict[str, np.ndarray] = self.split_data(com_arr[:, 4:])
+        split_arr_dict['APT_COR'] = com_arr[:-2, 1:4]
         return split_arr_dict
 
     def get_box_dimensions(self) -> dict[str, float]:
@@ -256,7 +257,11 @@ class PlotCom(GetData):
         y_indices: range  # Range of the indices
         z_indices: range  # Range of the indices
         interface_locz: list[tuple[float, float]] = []  # Z mean & std of water
-        self.plot_odn(self.split_arr_dict['ODN'], interface_loc=107.7)
+        apt_cor_mean: np.ndarray = self.find_mean_of_np_com()
+        nanop_shift: np.ndarray = self.find_np_shift_from_mean(apt_cor_mean)
+        self.plot_odn(self.split_arr_dict['ODN'],
+                      interface_loc=107.7,
+                      nanop_shift=nanop_shift)
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
@@ -284,7 +289,8 @@ class PlotCom(GetData):
 
     def plot_odn(self,
                  res_arr: np.ndarray,  # ODN array
-                 interface_loc: float  # Location of the interface
+                 interface_loc: float,  # Location of the interface
+                 nanop_shift: np.ndarray  # Shift of the nanoparticle from mean
                  ) -> None:
         """Plot ODN center of the masses"""
         odn_fig, odn_ax = plt.subplots()
@@ -299,13 +305,27 @@ class PlotCom(GetData):
         indices: list[np.ndarray] = \
             [np.where(row_mask)[0] for row_mask in mask]
         for i_step in range(self.nr_dict['nr_frames']):
-            odn_ax.scatter(odn_data['x'][i_step][indices[i_step]],
-                           odn_data['y'][i_step][indices[i_step]],
+            x_data = \
+                odn_data['x'][i_step][indices[i_step]] - nanop_shift[i_step][0]
+            y_data = \
+                odn_data['y'][i_step][indices[i_step]] - nanop_shift[i_step][1]
+            odn_ax.scatter(x_data,
+                           y_data,
                            s=5,
                            c='black',
                            alpha=(i_step+1)/self.nr_dict['nr_frames'])
         odn_fig.savefig('test_odn.png')
 
+    def find_mean_of_np_com(self) -> np.ndarray:
+        """find mean of the nanoparticle center of mass"""
+        return np.mean(self.split_arr_dict['APT_COR'], axis=0)
+
+    def find_np_shift_from_mean(self,
+                                apt_cor_mean: np.ndarray
+                                ) -> np.ndarray:
+        """frind the shift of com of nanoparticle from mean value at
+        each time step"""
+        return self.split_arr_dict['APT_COR'] - apt_cor_mean
 
     def get_interface_loc(self,
                           x_data: np.ndarray,  # x component of water interface
