@@ -179,7 +179,7 @@ class GetData:
         return com_arr
 
 
-class ReadCom:
+class PlotCom:
     """reading the center of mass file, the name is set static_info.py
     """
     number_frame: int = 200  # Number of frames in the traj
@@ -469,5 +469,5 @@ class ReadCom:
 
 
 if __name__ == '__main__':
-    # data = ReadCom()
+    # data = PlotCom()
     GetData()
