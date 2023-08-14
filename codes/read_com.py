@@ -47,8 +47,25 @@ import plot_interface_z as plt_z
 
 class GetData:
     """
-    This class splits the data based on their index in row -1, and each
-    part of the data will be treated separately by reading com_pickle.
+    A data processing class for splitting and organizing data based on
+    residue types.
+
+    This class reads input data from a pickle file and splits it based
+    on the residue types indicated by the last row indices. Each split
+    data is organized and stored separately for further analysis.
+
+    Attributes:
+        f_name (str): The filename of the input pickle file.
+    
+    Methods:
+        __init__(): Initialize the GetData instance.
+        initiate_data(): Read and split the data from the pickle file.
+        split_data(data: np.ndarray) -> dict[str, np.ndarray]:
+            Split data based on residue types.
+        find_key_by_value(dictionary: dict[typing.Any, typing.Any], \
+            target_value: typing.Any) -> typing.Any:
+            Find a key in a dictionary based on a target value.
+        load_pickle() -> np.ndarray: Load data from the input pickle file.
     """
 
     def __init__(self) -> None:
@@ -56,7 +73,14 @@ class GetData:
         self.initiate_data()
 
     def initiate_data(self) -> None:
-        """initiate by reading and spliting the data"""
+        """
+        Read and split the data from the pickle file.
+
+        The data is loaded from the pickle file and split based on
+        residue types.
+        The split data is printed as a dictionary of residue names and
+        corresponding arrays.
+        """
         com_arr: np.ndarray = self.load_pickle()
         split_arr_dict = self.split_data(com_arr[:, 4:])
         print(split_arr_dict)
@@ -65,17 +89,19 @@ class GetData:
                    data: np.ndarray  # Loaded data without first 4 columns
                    ) -> dict[str, np.ndarray]:
         """
-        Split data based on the type of the residues
-        Return:
-            dict of name of the residues and their data as the vlaues
+        Split data based on the type of the residues.
+
+        Args:
+            data (np.ndarray): The data to be split, excluding the
+            first 4 columns.
+
+        Returns:
+            dict[str, np.ndarray]: A dictionary of residue names and
+            their associated arrays.
         """
         # Get the last row of the array
         last_row: np.ndarray = data[-1]
-
-        # Convert the last row to integers
         last_row_indices: np.ndarray = last_row.astype(int)
-
-        # Determine the unique integer indices from the last row
         unique_indices: np.ndarray = np.unique(last_row_indices)
 
         # Create an empty dictionary to store the split arrays
@@ -89,7 +115,6 @@ class GetData:
         result: list[np.ndarray] = \
             [np.array(arr_list).T for arr_list in result_dict.values()]
 
-        # Print the result
         array_dict: dict[str, np.ndarray] = {}
         for i, arr in enumerate(result):
             residue_name = self.find_key_by_value(stinfo.reidues_id, i)
