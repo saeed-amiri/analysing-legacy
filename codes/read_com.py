@@ -62,8 +62,7 @@ class GetData:
             information about the data, including the number of time
             frames and the number of residues for each type.
         box_dims (dict[str, float]): A dictionary containing the
-            maximum and minimum values for x, y, and z axes of each
-            residue.
+            the dimensions of the box
     Methods:
         __init__(): Initialize the GetData instance.
         initiate_data(): Read and split the data from the pickle file.
@@ -237,6 +236,8 @@ class PlotCom(GetData):
         nr_dict (dict[str, int]): A dictionary containing numerical
             information about the data, including the number of time
             frames and the number of residues for each type.
+        box_dims (dict[str, float]): A dictionary containing the
+            the dimensions of the box
     """
 
     def __init__(self) -> None:
