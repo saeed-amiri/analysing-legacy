@@ -56,10 +56,13 @@ class GetData:
 
     Attributes:
         f_name (str): The filename of the input pickle file.
-    
+
     Methods:
         __init__(): Initialize the GetData instance.
         initiate_data(): Read and split the data from the pickle file.
+        get_numbers(data: dict[str, np.ndarray]) -> dict[str, int]:
+            Get the number of time frames and the number of residues
+            for each type.
         split_data(data: np.ndarray) -> dict[str, np.ndarray]:
             Split data based on residue types.
         find_key_by_value(dictionary: dict[typing.Any, typing.Any], \
@@ -70,10 +73,19 @@ class GetData:
     """
 
     def __init__(self) -> None:
-        self.f_name: str = stinfo.files['com_pickle']
-        self.initiate_data()
+        """
+        Initialize the GetData instance.
 
-    def initiate_data(self) -> None:
+        The filename of the input pickle file is set based on the
+        stinfo module.
+        The data is read, split, and relevant numbers are calculated
+        during initialization.
+        """
+        self.f_name: str = stinfo.files['com_pickle']
+        self.split_arr_dict: dict[str, np.ndarray] = self.initiate_data()
+        self.nr_dict: dict[str, int] = self.get_numbers(self.split_arr_dict)
+
+    def initiate_data(self) -> dict[str, np.ndarray]:
         """
         Read and split the data from the pickle file.
 
@@ -83,8 +95,28 @@ class GetData:
         corresponding arrays.
         """
         com_arr: np.ndarray = self.load_pickle()
-        split_arr_dict = self.split_data(com_arr[:, 4:])
-        print(split_arr_dict)
+        split_arr_dict: dict[str, np.ndarray] = self.split_data(com_arr[:, 4:])
+        return split_arr_dict
+
+    @staticmethod
+    def get_numbers(data: dict[str, np.ndarray]  # Splitted np.arrays
+                    ) -> dict[str, int]:
+        """
+        Get the number of time frames and the number of residues for
+        each type.
+
+        Args:
+            data (dict[str, np.ndarray]): The split data dictionary.
+
+        Returns:
+            dict[str, int]: A dictionary containing the number of time
+            frames and the number of residues for each type.
+        """
+        nr_dict: dict[str, int] = {}
+        nr_dict['nr_frames'] = np.shape(data['SOL'])[0] - 2
+        for item, arr in data.items():
+            nr_dict[item] = np.shape(arr)[1]
+        return nr_dict
 
     def split_data(self,
                    data: np.ndarray  # Loaded data without first 4 columns
