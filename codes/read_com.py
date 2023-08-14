@@ -32,7 +32,7 @@ Update:
     of the ODN heads is either 0 or the index of ODN defined in the
     stinfo. If they are zero, it is straightforward forward. If not,
     the data of the ODN should be split in half.
-    
+
 """
 
 
@@ -55,6 +55,7 @@ class ReadCom:
     """reading the center of mass file, the name is set static_info.py
     """
     number_frame: int = 200  # Number of frames in the traj
+
     def __init__(self) -> None:
         self.f_name: str = stinfo.files['com_pickle']
         self.com_arr: np.ndarray = self.get_data()
