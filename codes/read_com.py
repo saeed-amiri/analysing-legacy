@@ -10,6 +10,29 @@ Number of columns is 3(N+1) + 1
     N: number of the residues,
     and one for the center of mass of the NP at the time
     and last row for saving the label of each residue
+date: NN
+Update:
+  Reading updated com_pickle from get_frame_mpi.py Jul 21 2023
+    The array layout is as follows:
+        | time | NP_x | NP_y | NP_z | res1_x | res1_y | res1_z | ... |
+         resN_x | resN_y | resN_z | odn1_x| odn1_y| odn1_z| ... odnN_z|
+    number of row is:
+        number of frames + 2
+        The extra rows are for the type of the residue at -1 and the
+        orginal ids of the residues in the traj file
+        number of the columns:
+        n_residues: number of the residues in solution, without residues
+        in NP
+        n_ODA: number oda residues
+        NP_com: Center of mass of the nanoparticle
+        than:
+        timeframe + NP_com + nr_residues:  xyz + n_oda * xyz
+             1    +   3    +  nr_residues * 3  +  n_oda * 3
+    The data can be split based on the index in the last row. The index
+    of the ODN heads is either 0 or the index of ODN defined in the
+    stinfo. If they are zero, it is straightforward forward. If not,
+    the data of the ODN should be split in half.
+    
 """
 
 
@@ -19,6 +42,13 @@ import matplotlib
 import matplotlib.pylab as plt
 import static_info as stinfo
 import plot_interface_z as plt_z
+
+
+class GetData:
+    """
+    This class splits the data based on their index in row -1, and each
+    part of the data will be treated separately by reading com_pickle.
+    """
 
 
 class ReadCom:
