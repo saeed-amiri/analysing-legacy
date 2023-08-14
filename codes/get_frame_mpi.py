@@ -882,7 +882,7 @@ class CalculateCom:
         index which is started from 4. See: mk_residues_dict
         number of row will be:
         number of frames + 2
-        The extra row is for the type of the residue at -1 and the
+        The extra rows are for the type of the residue at -1 and the
         orginal ids of the residues in the traj file
 
         number of the columns:
