@@ -61,6 +61,9 @@ class GetData:
         nr_dict (dict[str, int]): A dictionary containing numerical
             information about the data, including the number of time
             frames and the number of residues for each type.
+        box_dims (dict[str, float]): A dictionary containing the
+            maximum and minimum values for x, y, and z axes of each
+            residue.
     Methods:
         __init__(): Initialize the GetData instance.
         initiate_data(): Read and split the data from the pickle file.
@@ -88,7 +91,7 @@ class GetData:
         self.f_name: str = stinfo.files['com_pickle']
         self.split_arr_dict: dict[str, np.ndarray] = self.initiate_data()
         self.nr_dict: dict[str, int] = self.get_numbers(self.split_arr_dict)
-        self.box_dims: dict[str, float] = self.get_box_size()
+        self.box_dims: dict[str, float] = self.get_box_dimensions()
 
     def initiate_data(self) -> dict[str, np.ndarray]:
         """
@@ -103,7 +106,7 @@ class GetData:
         split_arr_dict: dict[str, np.ndarray] = self.split_data(com_arr[:, 4:])
         return split_arr_dict
 
-    def get_box_size(self) -> dict[str, float]:
+    def get_box_dimensions(self) -> dict[str, float]:
         """
         Calculate the maximum and minimum values for x, y, and z axes
         of each residue.
@@ -111,9 +114,9 @@ class GetData:
         Returns:
             dict[str, np.float64]: A dictionary where keys are axis
             names ('xlo', 'xhi', etc.)
-            and values are the corresponding minimum values.
+            and values are the corresponding minimum and maximum values.
         """
-        box_size: dict[str, float] = {}
+        box_dims: dict[str, float] = {}
         box_residues = ['SOL', 'D10']
         axis_names = ['x', 'y', 'z']
 
@@ -133,11 +136,11 @@ class GetData:
                 # Update min and max values for the axis
                 min_values[axis] = min(min_values[axis], axis_min)
                 max_values[axis] = max(max_values[axis], axis_max)
-        box_size = {
+        box_dims = {
             f'{axis}lo': min_values[axis] for axis in axis_names
         }
 
-        box_size.update({
+        box_dims.update({
             f'{axis}hi': max_values[axis] for axis in axis_names
         })
 
