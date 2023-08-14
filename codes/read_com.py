@@ -256,11 +256,12 @@ class PlotCom(GetData):
         y_indices: range  # Range of the indices
         z_indices: range  # Range of the indices
         interface_locz: list[tuple[float, float]] = []  # Z mean & std of water
+        self.plot_odn(self.split_arr_dict['ODN'], interface_loc=107.7)
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
             for i in range(self.nr_dict['nr_frames']):
-                if res in ['ODN', 'CLA']:
+                if res in ['ODN']:
                     x_data, y_data, _ = \
                         self.__get_interface_oda(res_arr[i, x_indices],
                                                  res_arr[i, y_indices],
@@ -280,6 +281,31 @@ class PlotCom(GetData):
                 self.__plot_odn_com(ax_com, res)
         # Plot interface based on the z location
         plt_z.PlotInterfaceZ(interface_locz)
+
+    def plot_odn(self,
+                 res_arr: np.ndarray,  # ODN array
+                 interface_loc: float  # Location of the interface
+                 ) -> None:
+        """Plot ODN center of the masses"""
+        odn_fig, odn_ax = plt.subplots()
+        axis_names = ['x', 'y', 'z']
+        odn_data: dict[str, np.ndarray] = {}
+        for axis_idx, axis in enumerate(axis_names):
+            odn_data[axis] = res_arr[:, axis_idx::3]
+        # Find the ODN at the interface
+        mask = (odn_data['z'] < interface_loc+10) & \
+               (odn_data['z'] > interface_loc-10) 
+        # Get the indices where the mask is True for each row
+        indices: list[np.ndarray] = \
+            [np.where(row_mask)[0] for row_mask in mask]
+        for i_step in range(self.nr_dict['nr_frames']):
+            odn_ax.scatter(odn_data['x'][i_step][indices[i_step]],
+                           odn_data['y'][i_step][indices[i_step]],
+                           s=5,
+                           c='black',
+                           alpha=(i_step+1)/self.nr_dict['nr_frames'])
+        odn_fig.savefig('test_odn.png')
+
 
     def get_interface_loc(self,
                           x_data: np.ndarray,  # x component of water interface
@@ -463,9 +489,9 @@ class PlotCom(GetData):
     def __get_res_xyz(res_arr: np.ndarray,  # All the times
                       ) -> tuple[range, range, range]:
         """return the x, y, and z data for the residues"""
-        x_indices = range(3, res_arr.shape[1], 3)
-        y_indices = range(4, res_arr.shape[1], 3)
-        z_indices = range(5, res_arr.shape[1], 3)
+        x_indices = range(0, res_arr.shape[1], 3)
+        y_indices = range(1, res_arr.shape[1], 3)
+        z_indices = range(2, res_arr.shape[1], 3)
         return x_indices, y_indices, z_indices
 
     @staticmethod
@@ -475,7 +501,7 @@ class PlotCom(GetData):
                             res: str  # Name of the residue
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """get xyz for all the oda at the interface and or ion in the bolck"""
-        interface_z: float = 10  # should be calculated, interface treshhold
+        interface_z: float = 107.7  # should be calculated, interface treshhold
         if res == 'ODN':
             inface_indx = np.where(z_data > interface_z)[0]  # At interface
         elif res == 'CLA':
