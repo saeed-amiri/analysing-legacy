@@ -600,7 +600,9 @@ class CalculateCom:
                                 amin = self.get_odn_amino_com(atoms_position,
                                                               item)
                                 amino_ind: int = amino_odn_index[item]
-                                my_data[row][amino_ind:amino_ind+3] = amin
+                                wrap_amin = \
+                                    self.wrap_position(amin, frame.dimensions)
+                                my_data[row][amino_ind:amino_ind+3] = wrap_amin
                 np_com = self.get_np_com(atoms_position, np_res_ind, u_traj)
                 # Update my_data with ind and np_com values
                 my_data[row, 0] = ind
