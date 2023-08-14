@@ -39,7 +39,8 @@ reidues_id = {
     'ODN': 3,
     'D10': 4,
     'APT': 5,
-    'COR': 6
+    'COR': 6,
+    'AMINO_ODN': 0
 }
 
 # Nano partcle
@@ -58,7 +59,7 @@ box = {
     'x': 230,
     'y': 230,
     'z': 230,
-    'centered': True  # If the center of mass moved to zero
+    'centered': False  # If the center of mass moved to zero
 }
 
 # Plot data
