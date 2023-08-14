@@ -50,6 +50,20 @@ class GetData:
     part of the data will be treated separately by reading com_pickle.
     """
 
+    def __init__(self) -> None:
+        self.f_name: str = stinfo.files['com_pickle']
+        self.initiate_data()
+
+    def initiate_data(self) -> None:
+        """initiate by reading and spliting the data"""
+        com_arr: np.ndarray = self.load_pickle()
+
+    def load_pickle(self) -> np.ndarray:
+        """loading the input file"""
+        with open(self.f_name, 'rb') as f_rb:
+            com_arr = pickle.load(f_rb)
+        return com_arr
+
 
 class ReadCom:
     """reading the center of mass file, the name is set static_info.py
@@ -341,4 +355,5 @@ class ReadCom:
 
 
 if __name__ == '__main__':
-    data = ReadCom()
+    # data = ReadCom()
+    GetData()
