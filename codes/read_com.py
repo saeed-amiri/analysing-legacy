@@ -257,11 +257,13 @@ class PlotCom(GetData):
         y_indices: range  # Range of the indices
         z_indices: range  # Range of the indices
         interface_locz: list[tuple[float, float]] = []  # Z mean & std of water
-        apt_cor_mean: np.ndarray = self.find_mean_of_np_com()
-        nanop_shift: np.ndarray = self.find_np_shift_from_mean(apt_cor_mean)
+        nanop_center: np.ndarray = self.find_mean_of_np_com()
+        nanop_shift: np.ndarray = self.find_np_shift_from_mean(nanop_center)
         self.plot_odn(self.split_arr_dict['ODN'],
                       interface_loc=107.7,
-                      nanop_shift=nanop_shift)
+                      nanop_shift=nanop_shift,
+                      nanop_center=nanop_center)
+
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
@@ -290,7 +292,8 @@ class PlotCom(GetData):
     def plot_odn(self,
                  res_arr: np.ndarray,  # ODN array
                  interface_loc: float,  # Location of the interface
-                 nanop_shift: np.ndarray  # Shift of the nanoparticle from mean
+                 nanop_shift: np.ndarray,  # Shift of the nanoparticle from ave
+                 nanop_center: np.ndarray
                  ) -> None:
         """Plot ODN center of the masses"""
         odn_fig, odn_ax = plt.subplots()
@@ -314,6 +317,10 @@ class PlotCom(GetData):
                            s=5,
                            c='black',
                            alpha=(i_step+1)/self.nr_dict['nr_frames'])
+        circ: matplotlib.patches.Circle = \
+            self.__mk_circle(center=(nanop_center[0], nanop_center[1]))
+        odn_ax.add_artist(circ)
+        plt.axis('equal')
         odn_fig.savefig('test_odn.png')
 
     def find_mean_of_np_com(self) -> np.ndarray:
@@ -529,9 +536,9 @@ class PlotCom(GetData):
         return x_data[inface_indx], y_data[inface_indx], z_data[inface_indx]
 
     @staticmethod
-    def __mk_circle() -> matplotlib.patches.Circle:
+    def __mk_circle(center=(0, 0)) -> matplotlib.patches.Circle:
         radius = stinfo.np_info['radius']
-        circle = plt.Circle((0, 0),
+        circle = plt.Circle(center,
                             radius,
                             color='red',
                             linestyle='dashed',
