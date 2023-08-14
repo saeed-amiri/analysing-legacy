@@ -65,7 +65,8 @@ class GetData:
         find_key_by_value(dictionary: dict[typing.Any, typing.Any], \
             target_value: typing.Any) -> typing.Any:
             Find a key in a dictionary based on a target value.
-        load_pickle() -> np.ndarray: Load data from the input pickle file.
+        load_pickle() -> np.ndarray: Load data from the input pickle
+        file.
     """
 
     def __init__(self) -> None:
