@@ -136,14 +136,14 @@ class GetData:
                 min_values[axis] = min(min_values[axis], axis_min)
                 max_values[axis] = max(max_values[axis], axis_max)
         box_dims = {
-            f'{axis}lo': min_values[axis] for axis in axis_names
+            f'{axis}_lo': min_values[axis] for axis in axis_names
         }
 
         box_dims.update({
-            f'{axis}hi': max_values[axis] for axis in axis_names
+            f'{axis}_hi': max_values[axis] for axis in axis_names
         })
 
-        return box_size
+        return box_dims
 
     @staticmethod
     def get_numbers(data: dict[str, np.ndarray]  # Splitted np.arrays
@@ -243,8 +243,6 @@ class PlotCom(GetData):
     def __init__(self) -> None:
         super().__init__()
         self.f_name: str = stinfo.files['com_pickle']
-        self.box_dims: dict[str, float]  # Box dimensions, from stinfo
-        self.box_dims = self.__get_box_dims()
         self.plot_interface: bool = False  # If plot and save water
         self.plot_com()
 
@@ -424,26 +422,6 @@ class PlotCom(GetData):
         vectors: np.ndarray = np.column_stack((x_data, y_data))
         lengths: np.ndarray = np.linalg.norm(vectors, axis=1)
         return lengths
-
-    @staticmethod
-    def __get_box_dims() -> dict[str, float]:
-        """return the box lims for plotting."""
-        box_dims: dict[str, float] = {}  # Box dimensions
-        if stinfo.box['centered']:
-            box_dims['x_hi'] = np.ceil(stinfo.box['x']/2)
-            box_dims['x_lo'] = -np.ceil(stinfo.box['x']/2)
-            box_dims['y_hi'] = np.ceil(stinfo.box['y']/2)
-            box_dims['y_lo'] = -np.ceil(stinfo.box['y']/2)
-            box_dims['z_hi'] = np.ceil(stinfo.box['z']/2)
-            box_dims['z_lo'] = -np.ceil(stinfo.box['z']/2)
-        else:
-            box_dims['x_hi'] = np.ceil(stinfo.box['x'])
-            box_dims['x_lo'] = 0.0
-            box_dims['y_hi'] = np.ceil(stinfo.box['y'])
-            box_dims['y_lo'] = 0.0
-            box_dims['z_hi'] = np.ceil(stinfo.box['z'])
-            box_dims['z_lo'] = 0.0
-        return box_dims
 
     @staticmethod
     def __get_grid_xy(x_data: np.ndarray,  # x component of the coms
