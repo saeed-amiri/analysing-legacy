@@ -198,7 +198,6 @@ class PlotCom(GetData):
     def __init__(self) -> None:
         super().__init__()
         self.f_name: str = stinfo.files['com_pickle']
-        self.com_arr: np.ndarray = self.get_data()
         self.box_dims: dict[str, float]  # Box dimensions, from stinfo
         self.box_dims = self.__get_box_dims()
         self.plot_interface: bool = False  # If plot and save water
@@ -238,12 +237,6 @@ class PlotCom(GetData):
                 self.__plot_odn_com(ax_com, res)
         # Plot interface based on the z location
         plt_z.PlotInterfaceZ(interface_locz)
-
-    def get_data(self) -> np.ndarray:
-        """reading the file"""
-        with open(self.f_name, 'rb') as f_rb:
-            com_arr = pickle.load(f_rb)
-        return com_arr
 
     def get_interface_loc(self,
                           x_data: np.ndarray,  # x component of water interface
