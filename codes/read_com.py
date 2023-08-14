@@ -88,6 +88,7 @@ class GetData:
         self.f_name: str = stinfo.files['com_pickle']
         self.split_arr_dict: dict[str, np.ndarray] = self.initiate_data()
         self.nr_dict: dict[str, int] = self.get_numbers(self.split_arr_dict)
+        self.box_dims: dict[str, float] = self.get_box_size()
 
     def initiate_data(self) -> dict[str, np.ndarray]:
         """
@@ -101,6 +102,46 @@ class GetData:
         com_arr: np.ndarray = self.load_pickle()
         split_arr_dict: dict[str, np.ndarray] = self.split_data(com_arr[:, 4:])
         return split_arr_dict
+
+    def get_box_size(self) -> dict[str, float]:
+        """
+        Calculate the maximum and minimum values for x, y, and z axes
+        of each residue.
+
+        Returns:
+            dict[str, np.float64]: A dictionary where keys are axis
+            names ('xlo', 'xhi', etc.)
+            and values are the corresponding minimum values.
+        """
+        box_size: dict[str, float] = {}
+        box_residues = ['SOL', 'D10']
+        axis_names = ['x', 'y', 'z']
+
+        # Initialize dictionaries for min and max values of each axis
+        min_values = {axis: np.inf for axis in axis_names}
+        max_values = {axis: -np.inf for axis in axis_names}
+
+        for res in box_residues:
+            arr = self.split_arr_dict[res]
+
+            # Iterate through each axis (x, y, z)
+            for axis_idx, axis in enumerate(axis_names):
+                axis_values = arr[:-2, axis_idx::3]
+                axis_min = np.min(axis_values)
+                axis_max = np.max(axis_values)
+
+                # Update min and max values for the axis
+                min_values[axis] = min(min_values[axis], axis_min)
+                max_values[axis] = max(max_values[axis], axis_max)
+        box_size = {
+            f'{axis}lo': min_values[axis] for axis in axis_names
+        }
+
+        box_size.update({
+            f'{axis}hi': max_values[axis] for axis in axis_names
+        })
+
+        return box_size
 
     @staticmethod
     def get_numbers(data: dict[str, np.ndarray]  # Splitted np.arrays
@@ -119,7 +160,7 @@ class GetData:
         nr_dict: dict[str, int] = {}
         nr_dict['nr_frames'] = np.shape(data['SOL'])[0] - 2
         for item, arr in data.items():
-            nr_dict[item] = np.shape(arr)[1]
+            nr_dict[item] = np.shape(arr)[1] // 3
         return nr_dict
 
     def split_data(self,
@@ -471,4 +512,4 @@ class PlotCom(GetData):
 
 
 if __name__ == '__main__':
-    data = PlotCom()
+    PlotCom()
