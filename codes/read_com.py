@@ -37,6 +37,7 @@ Update:
 
 
 import pickle
+import typing
 import numpy as np
 import matplotlib
 import matplotlib.pylab as plt
@@ -57,6 +58,61 @@ class GetData:
     def initiate_data(self) -> None:
         """initiate by reading and spliting the data"""
         com_arr: np.ndarray = self.load_pickle()
+        split_arr_dict = self.split_data(com_arr[:, 4:])
+        print(split_arr_dict)
+
+    def split_data(self,
+                   data: np.ndarray  # Loaded data without first 4 columns
+                   ) -> dict[str, np.ndarray]:
+        """
+        Split data based on the type of the residues
+        Return:
+            dict of name of the residues and their data as the vlaues
+        """
+        # Get the last row of the array
+        last_row: np.ndarray = data[-1]
+
+        # Convert the last row to integers
+        last_row_indices: np.ndarray = last_row.astype(int)
+
+        # Determine the unique integer indices from the last row
+        unique_indices: np.ndarray = np.unique(last_row_indices)
+
+        # Create an empty dictionary to store the split arrays
+        result_dict: dict[int, list] = {index: [] for index in unique_indices}
+
+        # Iterate through each column and split based on the indices
+        for col_idx, column in enumerate(data.T):
+            result_dict[last_row_indices[col_idx]].append(column)
+
+        # Convert the dictionary values back to numpy arrays
+        result: list[np.ndarray] = \
+            [np.array(arr_list).T for arr_list in result_dict.values()]
+
+        # Print the result
+        array_dict: dict[str, np.ndarray] = {}
+        for i, arr in enumerate(result):
+            residue_name = self.find_key_by_value(stinfo.reidues_id, i)
+            array_dict[residue_name] = arr
+        return array_dict
+
+    @staticmethod
+    def find_key_by_value(dictionary: dict[typing.Any, typing.Any],
+                          target_value: typing.Any
+                          ) -> typing.Any:
+        """
+        Find the key in the dictionary based on the target value.
+
+        Args:
+            dictionary (dict): The dictionary to search.
+            target_value: The value to search for.
+
+        Returns:
+            str or None: The key associated with the target value, or
+            None if not found.
+        """
+        return next((key for key, value in dictionary.items() if
+                     value == target_value), None)
 
     def load_pickle(self) -> np.ndarray:
         """loading the input file"""
