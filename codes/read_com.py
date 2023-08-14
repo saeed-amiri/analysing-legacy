@@ -351,10 +351,7 @@ class PlotCom(GetData):
                       res: str,  # Name of the residue to get the data,
                       ) -> np.ndarray:
         """return the info for the selected residue"""
-        column_x_indices = np.where(self.com_arr[-1] ==
-                                    stinfo.reidues_id[res])
-        res_arr: np.ndarray = np.squeeze(self.com_arr[:, column_x_indices])
-        return res_arr
+        return self.split_arr_dict[res]
 
     def __plot_odn_com(self,
                        ax_com: matplotlib.axes,  # The center of mass data
