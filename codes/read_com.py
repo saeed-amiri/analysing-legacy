@@ -38,14 +38,15 @@ Update Aug 15 2023:
 """
 
 
-import typing
 import numpy as np
 import matplotlib
 import matplotlib.pylab as plt
+from scipy.signal import savgol_filter  # Import the savgol_filter
 import static_info as stinfo
 import plot_interface_z as plt_z
 import plot_tools
 from get_data import GetData
+
 
 class WrapPlots(GetData):
     """
@@ -109,7 +110,7 @@ class PlotOdnAnalysis(WrapPlots):
         """
         counts: np.ndarray  # Counts of ODN in the annuluses
         radii_distance: np.ndarray  # Real distance from nanoparticle
-        counts, radii_distance = self.count_odn_in_annuluses(odn_arr, dr=5)
+        counts, radii_distance = self.count_odn_in_annuluses(odn_arr, delta_r=5)
         return counts, radii_distance
 
     def _initiate_plotting(self,
@@ -121,11 +122,47 @@ class PlotOdnAnalysis(WrapPlots):
         Make all the plots here
         """
         self.plot_odn(odn_arr)
-        self.plot_annulus_dendity()
+        self.plot_annulus_dendity(counts, radii_distance)
+        self.plot_annulus_dendity_average(counts, radii_distance)
 
-    def plot_annulus_dendity(self) -> None:
+    def plot_annulus_dendity_average(self,
+                                     counts: np.ndarray,  # Counts of ODN
+                                     radii_distance: np.ndarray  # Real distanc
+                                     ) -> None:
         """calculate and plot ODN denisties"""
+        # Create subplots for each frame
+        den_fig, den_ax = plt.subplots()
+        average_counts = np.average(counts[100:], axis=0)
+        den_ax.plot(average_counts, label='Average')
+        den_ax.set_xlabel('Annulus Index')
+        den_ax.set_ylabel('ODN Count')
+        den_ax.set_title('ODN Counts in Annuluses')
+        # den_ax.legend()
+        plt.show()
 
+    def plot_annulus_dendity(self,
+                             counts: np.ndarray,  # Counts of ODN in annulus
+                             radii_distance: np.ndarray  # Real distance of np
+                             ) -> None:
+        # Create subplots for each frame
+        den_fig, den_ax = plt.subplots()
+        for frame in range(100, self.nr_dict['nr_frames'], 10):
+            # Get indices of non-zero counts
+            non_zero_indices = np.nonzero(counts[frame])
+            if len(non_zero_indices[0]) > 0:
+                max_window_length = len(non_zero_indices[0]) // 2
+                smoothed_counts = \
+                    savgol_filter(counts[frame][non_zero_indices],
+                                  window_length=max_window_length,
+                                  polyorder=5)  # Apply Savitzky-Golay smoothin
+                den_ax.plot(non_zero_indices[0],
+                            smoothed_counts,
+                            label=f'Frame {frame}')
+        den_ax.set_xlabel('Annulus Index')
+        den_ax.set_ylabel('ODN Count')
+        den_ax.set_title('ODN Counts in Annuluses')
+        # den_ax.legend()
+        plt.show()
 
     def plot_odn(self,
                  odn_arr: np.ndarray  # ODN array
@@ -138,7 +175,7 @@ class PlotOdnAnalysis(WrapPlots):
             odn_data[axis] = odn_arr[:, axis_idx::3]
         # Find the ODN at the interface
         mask = (odn_data['z'] < self.interface_locz+10) & \
-               (odn_data['z'] > self.interface_locz-10) 
+               (odn_data['z'] > self.interface_locz-10)
         # Get the indices where the mask is True for each row
         indices: list[np.ndarray] = \
             [np.where(row_mask)[0] for row_mask in mask]
@@ -154,18 +191,18 @@ class PlotOdnAnalysis(WrapPlots):
                            alpha=(i_step+1)/self.nr_dict['nr_frames'])
         circ: matplotlib.patches.Circle = \
             plot_tools.mk_circle(radius=self.nanop_radius,
-                               center=(self.mean_nanop_com[0:2]))
+                                 center=self.mean_nanop_com[0:2])
         odn_ax.add_artist(circ)
         plt.axis('equal')
         odn_fig.savefig('test2_odn.png')
-    
+
     def count_odn_in_annuluses(self,
                                odn_arr: np.ndarray,  # ODN array
-                               dr: float  # Size of the annulus (Delta r)
+                               delta_r: float  # Size of the annulus (Delta r)
                                ) -> tuple[np.ndarray, ...]:
         center_x, center_y, center_z = self.mean_nanop_com
-        # Create radii array with steps of dr
-        radii = np.arange(self.nanop_radius, self.box_dims['x_hi'], dr)
+        # Create radii array with steps of delta_r
+        radii = np.arange(self.nanop_radius, self.box_dims['x_hi'], delta_r)
         radii_distance: np.ndarray = \
             np.linspace(self.nanop_radius, self.box_dims['x_hi'], len(radii))
         num_time_frames, num_columns = odn_arr.shape
@@ -193,9 +230,8 @@ class PlotOdnAnalysis(WrapPlots):
 
     def categorize_into_annuluses(self,
                                   distances: np.float64,
-                                  radii: np.arange
+                                  radii: np.ndarray
                                   ) -> np.int64:
-        
         return np.digitize(distances, radii)
 
     @staticmethod
@@ -235,12 +271,6 @@ class PlotCom(GetData):
         y_indices: range  # Range of the indices
         z_indices: range  # Range of the indices
         interface_locz: list[tuple[float, float]] = []  # Z mean & std of water
-        nanop_center: np.ndarray = self.find_mean_of_np_com()
-        nanop_shift: np.ndarray = self.find_np_shift_from_mean(nanop_center)
-        self.plot_annulus_dendity(self.split_arr_dict['ODN'][:-2,:],
-                                  interface_loc=107.7,
-                                  nanop_shift=nanop_shift,
-                                  nanop_center=nanop_center)
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
@@ -265,80 +295,6 @@ class PlotCom(GetData):
                 self.__plot_odn_com(ax_com, res)
         # Plot interface based on the z location
         plt_z.PlotInterfaceZ(interface_locz)
-
-    def plot_annulus_dendity(self,
-                             res_arr: np.ndarray,  # ODN array
-                             interface_loc: float,  # Location of interface
-                             nanop_shift: np.ndarray,  # Shift of np from ave
-                             nanop_center: np.ndarray
-                             ) -> None:
-        """plot density of the odn around np in"""
-        self.calculate_odn_density(res_arr,
-                                   interface_loc,
-                                   nanop_shift,
-                                   nanop_center)
-
-    def calculate_odn_density(self,
-                              res_arr: np.ndarray,  # ODN array
-                              interface_loc: float,  # Location of interface
-                              nanop_shift: np.ndarray,  # Shift of np from ave
-                              nanop_center: np.ndarray
-                              ) -> None:
-        """
-        Define the annulus sections around the nanoparticles and then
-        count the number of ODN in each annulus.
-        """
-        from scipy.signal import savgol_filter  # Import the savgol_filter
-        counts, radii_distance = self.count_odn_in_annuluses(res_arr, nanop_center, nanoparticle_radius=20, dr=5)
-        
-        # Create subplots for each frame
-        den_fig, den_ax = plt.subplots()
-        average_counts = np.average(counts[100:], axis=0)
-        den_ax.plot(average_counts, label=f'Frame')
-        # for frame in range(100, self.nr_dict['nr_frames'], 10):
-            # non_zero_indices = np.nonzero(counts[frame])  # Get indices of non-zero counts
-            # if len(non_zero_indices[0]) > 0:
-                # max_window_length = len(non_zero_indices[0]) // 2
-                # smoothed_counts = savgol_filter(counts[frame][non_zero_indices], window_length=max_window_length, polyorder=5)  # Apply Savitzky-Golay smoothing
-                # print(counts[frame][non_zero_indices])
-                # den_ax.plot(non_zero_indices[0], smoothed_counts, label=f'Frame {frame}')
-        den_ax.set_xlabel('Annulus Index')
-        den_ax.set_ylabel('ODN Count')
-        den_ax.set_title('ODN Counts in Annuluses')
-        # den_ax.legend()
-        plt.show()
-
-    def count_odn_in_annuluses(self, odn_data, nanoparticle_center, nanoparticle_radius, dr):
-        center_x, center_y, center_z = nanoparticle_center
-        radii = np.arange(nanoparticle_radius, self.box_dims['x_hi'], dr)  # Create radii array with steps of dr
-        radii_distance = np.linspace(nanoparticle_radius, self.box_dims['x_hi'], len(radii))
-        num_time_frames, num_columns = odn_data.shape
-        num_residues = num_columns // 3
-
-        counts = np.zeros((num_time_frames, len(radii) - 1), dtype=int)
-
-        for frame in range(num_time_frames):
-            for residue in range(num_residues):
-                x = odn_data[frame, residue*3]
-                y = odn_data[frame, residue*3 + 1]
-                z = odn_data[frame, residue*3 + 2]
-
-                distance = self.calculate_distance(x, y, z, center_x, center_y, center_z)
-                # print(distance)
-                # Ensure the distance is within nanoparticle_radius
-                if distance >= nanoparticle_radius:
-                    annulus_idx = self.categorize_into_annuluses(nanoparticle_radius, distance, radii, dr) - 1
-                    counts[frame, annulus_idx] += 1
-
-        return counts, radii_distance
-
-    def calculate_distance(self, x1, y1, z1, x2, y2, z2):
-        return np.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
-
-    def categorize_into_annuluses(self, R, distances, radii, dr):
-        annuluses = np.digitize(distances, radii)
-        # annuluses = np.minimum(annuluses, int(np.ceil(R / dr)))  # Ensure annulus index doesn't exceed number of annuluses
-        return annuluses
 
     def find_mean_of_np_com(self) -> np.ndarray:
         """find mean of the nanoparticle center of mass"""
