@@ -122,7 +122,7 @@ class PlotOdnAnalysis(WrapPlots):
         Make all the plots here
         """
         self.plot_odn(odn_arr)
-        self.plot_annulus_dendity(counts, radii_distance)
+        self.plot_smoothed_annulus_density(counts, radii_distance)
         self.plot_annulus_dendity_average(counts, radii_distance)
 
     def plot_annulus_dendity_average(self,
@@ -140,10 +140,10 @@ class PlotOdnAnalysis(WrapPlots):
         # den_ax.legend()
         plt.show()
 
-    def plot_annulus_dendity(self,
-                             counts: np.ndarray,  # Counts of ODN in annulus
-                             radii_distance: np.ndarray  # Real distance of np
-                             ) -> None:
+    def plot_smoothed_annulus_density(self,
+                                      counts: np.ndarray,  # Counts of ODN
+                                      radii_distance: np.ndarray  # Real dist
+                                      ) -> None:
         # Create subplots for each frame
         den_fig, den_ax = plt.subplots()
         for frame in range(100, self.nr_dict['nr_frames'], 10):
