@@ -59,8 +59,9 @@ def mk_circle(radius: float,
                         fill=False, alpha=1)
     return circle
 
-def mk_canvas(x_range: tuple[float, ...],
-              num_xticks
+def mk_canvas(x_range: tuple[float, float],
+              num_xticks=5,
+              fsize: float = 0  # Font size
               ) -> tuple[plt.figure, plt.axes]:
     """
     Create a canvas for the plot.
@@ -83,7 +84,7 @@ def mk_canvas(x_range: tuple[float, ...],
     xticks = np.linspace(x_range[0], x_range[-1], num_xticks)
     ax_main.set_xticks(xticks)
     ax_main = set_x2ticks(ax_main)
-    ax_main = set_ax_font_label(ax_main)
+    ax_main = set_ax_font_label(ax_main, fsize=fsize)
     return fig_main, ax_main
 
 def save_close_fig(fig: plt.figure,  # The figure to save,
