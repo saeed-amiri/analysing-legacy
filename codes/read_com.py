@@ -95,7 +95,8 @@ class PlotOdnAnalysis(WrapPlots):
     Analysing ODN data and plot them in files
     """
     
-    fontsize: int = 14  # Fontsize for all in plots
+    fontsize: int = 12  # Fontsize for all in plots
+    transparent: bool = False  # Save fig background
 
     def __init__(self) -> None:
         super().__init__()
@@ -157,28 +158,31 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        den_fig, den_ax = \
-            self._mk_canvas((self.box_dims['x_lo'], self.box_dims['x_hi']))
+        fig_i, ax_i = self._mk_canvas(
+            (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
         average_counts: np.ndarray = np.average(counts[100:], axis=0)
         smoothed_counts = \
                     savgol_filter(average_counts,
                                   window_length=5,
                                   polyorder=3)  # Apply Savitzky-Golay smoothin
-        den_ax.plot(radii_distance[:-1], smoothed_counts, label='Average')
-        den_ax.set_xlabel('Distance from NP')
-        den_ax.set_ylabel('ODN Count')
-        den_ax.set_title('ODN Counts in Annuluses')
+        ax_i.plot(radii_distance[:-1], smoothed_counts, label='Average')
+        ax_i.set_xlabel('Distance from NP')
+        ax_i.set_ylabel('ODN Count')
+        ax_i.set_title('ODN Counts in Annuluses')
         # Plot vertical line at the specified x-coordinate
-        den_ax.axvline(x=self.nanop_radius,
+        ax_i.axvline(x=self.nanop_radius,
                        color='red',
                        linestyle='--',
                        label='Nanoparticle')
-        den_ax.axvline(x=self.interface_locz,
+        ax_i.axvline(x=self.interface_locz,
                        color='b',
                        linestyle='--',
                        label='interface (average)')
-        den_ax.legend()
-        plt.show()
+        self._set_y2ticks(ax_i)
+        ax_i.xaxis.grid(color='gray', linestyle=':')
+        ax_i.yaxis.grid(color='gray', linestyle=':')
+        ax_i.legend()
+        self.save_close_fig(fig_i, ax_i, fname='average_odn')
 
     def plot_smoothed_annulus_density(self,
                                       counts: np.ndarray,  # Counts of ODN
@@ -196,8 +200,8 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        den_fig, den_ax = \
-            self._mk_canvas((self.box_dims['x_lo'], self.box_dims['x_hi']))
+        fig_i, ax_i = self._mk_canvas(
+            (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
         for frame in range(100, self.nr_dict['nr_frames'], 10):
             # Get indices of non-zero counts
             non_zero_indices = np.nonzero(counts[frame])
@@ -207,14 +211,14 @@ class PlotOdnAnalysis(WrapPlots):
                     savgol_filter(counts[frame][non_zero_indices],
                                   window_length=max_window_length,
                                   polyorder=5)  # Apply Savitzky-Golay smoothin
-                den_ax.plot(non_zero_indices[0],
+                ax_i.plot(non_zero_indices[0],
                             smoothed_counts,
                             label=f'Frame {frame}')
-        den_ax.set_xlabel('Annulus Index')
-        den_ax.set_ylabel('ODN Count')
-        den_ax.set_title('ODN Counts in Annuluses')
-        # den_ax.legend()
-        plt.show()
+        ax_i.set_xlabel('Annulus Index')
+        ax_i.set_ylabel('ODN Count')
+        ax_i.set_title('ODN Counts in Annuluses')
+        ax_i.legend()
+        self.save_close_fig(fig_i, ax_i, fname='odn_density')
 
     def plot_odn(self,
                  odn_arr: np.ndarray  # ODN array
@@ -361,19 +365,33 @@ class PlotOdnAnalysis(WrapPlots):
         return np.sqrt((x_2 - x_i)**2 + (y_2 - y_i)**2 + (z_2 - z_i)**2)
 
     def _mk_canvas(self,
-                    x_range: tuple[float, ...],
-                    ) -> tuple[plt.figure, plt.axes]:
-        """make the pallete for the figure"""
+                   x_range: tuple[float, ...],
+                   num_xticks=5
+                   ) -> tuple[plt.figure, plt.axes]:
+        """
+        Create a canvas for the plot.
+
+        This method generates a canvas (figure and axes) for plotting.
+
+        Args:
+            x_range (tuple[float, ...]): Range of x-axis values.
+            num_xticks (int, optional): Number of x-axis ticks.
+            Default is 5.
+
+        Returns:
+            tuple[plt.figure, plt.axes]: A tuple containing the figure
+            and axes objects.
+        """
         width = stinfo.plot['width']
         fig_main, ax_main = \
             plt.subplots(1, figsize=plot_tools.set_sizes(width))
         # Set font for all elements in the plot)
-        num_xticks = 5
         xticks = np.linspace(x_range[0], x_range[-1], num_xticks)
         ax_main.set_xticks(xticks)
-        ax_main = self.__set_x2ticks(ax_main)
-        ax_main = self.__set_ax_font_label(ax_main)
+        ax_main = self._set_x2ticks(ax_main)
+        ax_main = self._set_ax_font_label(ax_main)
         return fig_main, ax_main
+
     @classmethod
     def save_close_fig(cls,
                        fig: plt.figure,  # The figure to save,
@@ -381,7 +399,18 @@ class PlotOdnAnalysis(WrapPlots):
                        fname: str,  # Name of the output for the fig
                        loc: str = 'upper right'  # Location of the legend
                        ) -> None:
-        """to save all the fige"""
+        """
+        Save the figure and close it.
+
+        This method saves the given figure and closes it after saving.
+
+        Args:
+            fig (plt.figure): The figure to save.
+            axs (plt.axes): The axes to plot.
+            fname (str): Name of the output file for the figure.
+            loc (str, optional): Location of the legend. Default is
+            'upper right'.
+        """
         legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
         legend.set_bbox_to_anchor((1.0, 1.0))
         fig.savefig(fname,
@@ -394,9 +423,19 @@ class PlotOdnAnalysis(WrapPlots):
         plt.close(fig)
 
     @staticmethod
-    def __set_x2ticks(ax_main: plt.axes  # The axes to wrok with
-                      ) -> plt.axes:
-        """set tickes"""
+    def _set_x2ticks(ax_main: plt.axes  # The axes to wrok with
+                     ) -> plt.axes:
+        """
+        Set secondary x-axis ticks.
+
+        This method sets secondary x-axis ticks for the given main axes.
+
+        Args:
+            ax_main (plt.axes): The main axes to work with.
+
+        Returns:
+            plt.axes: The modified main axes.
+        """
         ax_main.tick_params(axis='both', direction='in')
         # Set twiny
         ax2 = ax_main.twiny()
@@ -414,9 +453,19 @@ class PlotOdnAnalysis(WrapPlots):
         return ax_main
 
     @staticmethod
-    def __set_y2ticks(ax_main: plt.axes  # The axes to wrok with
-                      ) -> plt.axes:
-        """set tickes"""
+    def _set_y2ticks(ax_main: plt.axes  # The axes to wrok with
+                     ) -> plt.axes:
+        """
+        Set secondary y-axis ticks.
+
+        This method sets secondary y-axis ticks for the given main axes.
+
+        Args:
+            ax_main (plt.axes): The main axes to work with.
+
+        Returns:
+            plt.axes: The modified main axes.
+        """
         # Reset the y-axis ticks and locators
         ax3 = ax_main.twinx()
         ax3.set_ylim(ax_main.get_ylim())
@@ -433,11 +482,23 @@ class PlotOdnAnalysis(WrapPlots):
         return ax_main
 
     @classmethod
-    def __set_ax_font_label(cls,
-                            ax_main: plt.axes,  # Main axis to set parameters
-                            fsize: int = 0  # font size if called with font
-                            ) -> plt.axes:
-        """set parameters on the plot"""
+    def _set_ax_font_label(cls,
+                           ax_main: plt.axes,  # Main axis to set parameters
+                           fsize: int = 0  # font size if called with font
+                           ) -> plt.axes:
+        """
+        Set font and labels for the plot axes.
+
+        This method sets font size and labels for the plot axes.
+
+        Args:
+            ax_main (plt.axes): The main axis to set parameters for.
+            fsize (int, optional): Font size if called with font.
+            Default is 0.
+
+        Returns:
+            plt.axes: The modified main axis.
+        """
         if fsize == 0:
             fontsize = cls.fontsize
             ax_main.set_xlabel('frame index', fontsize=fontsize)
