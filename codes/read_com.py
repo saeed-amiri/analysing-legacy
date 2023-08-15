@@ -183,8 +183,10 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        fig_i, ax_i = plot_tools.mk_canvas(
-            (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
+        fig_i, ax_i = plot_tools.mk_canvas((self.box_dims['x_lo'],
+                                            self.box_dims['x_hi']),
+                                            num_xticks=6,
+                                            fsize=12)
 
         average_counts: np.ndarray = np.average(counts[100:], axis=0)
         smoothed_counts = \
@@ -226,8 +228,10 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        fig_i, ax_i = plot_tools.mk_canvas(
-            (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
+        fig_i, ax_i = plot_tools.mk_canvas((self.box_dims['x_lo'],
+                                            self.box_dims['x_hi']),
+                                            num_xticks=6,
+                                            fsize=12)
 
         for frame in range(100, self.nr_dict['nr_frames'], 10):
             # Get indices of non-zero counts
