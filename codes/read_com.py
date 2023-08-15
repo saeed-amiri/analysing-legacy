@@ -421,7 +421,7 @@ class PlotIonAnalysis(WrapData):
         initiate_ion_plotting(counts: np.ndarray, slab_areas: np.ndarray)
             -> None:
             Initiate ion data plotting.
-        plot_ion_density(counts: np.ndarray, slab_areas: np.ndarray) -> None:
+        plot_smoothed_ion_density(counts: np.ndarray, slab_areas: np.ndarray) -> None:
             Plot ion density in different slabs.
     """
     fontsize: int = 12  # Fontsize for all in plots
@@ -538,12 +538,12 @@ class PlotIonAnalysis(WrapData):
             slab_areas (np.ndarray): Z-coordinates representing slab
             boundaries.
         """
-        self.plot_ion_density(counts, slab_areas)
+        self.plot_smoothed_ion_density(counts, slab_areas)
 
-    def plot_ion_density(self,
-                         counts: np.ndarray,
-                         slab_areas: np.ndarray
-                         ) -> None:
+    def plot_smoothed_ion_density(self,
+                                  counts: np.ndarray,
+                                  slab_areas: np.ndarray
+                                  ) -> None:
         """
         Plot ion density in different slabs.
 
