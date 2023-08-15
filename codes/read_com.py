@@ -397,7 +397,33 @@ class PlotOdnAnalysis(WrapData):
 
 
 class PlotIonAnalysis(WrapData):
+    """
+    A class for analyzing ion data and creating ion density plots.
 
+    This class inherits from the `WrapData` class and provides methods
+    to analyze ion data and generate plots related to ion densities.
+
+    Attributes:
+        fontsize (int): Font size for all plots.
+        transparent (bool): Whether to save fig background as transparent.
+
+    Methods:
+        __init__(): Initialize the PlotIonAnalysis instance.
+        initiate_ion_analysis(ion_arr: np.ndarray, delta_z: float)
+            -> Tuple[np.ndarray, np.ndarray]:
+            Initiate ion data analysis.
+        count_ions_in_slabs(ion_arr: np.ndarray, delta_z: float) ->
+            Tuple[np.ndarray, np.ndarray]:
+            Count the number of ions in different slabs.
+        categorize_into_slabs(z_coord: float, slab_areas: np.ndarray)
+            -> np.int64:
+            Categorize z-coordinate into slabs.
+        initiate_ion_plotting(counts: np.ndarray, slab_areas: np.ndarray)
+            -> None:
+            Initiate ion data plotting.
+        plot_ion_density(counts: np.ndarray, slab_areas: np.ndarray) -> None:
+            Plot ion density in different slabs.
+    """
     fontsize: int = 12  # Fontsize for all in plots
     transparent: bool = False  # Save fig background
 
@@ -411,6 +437,17 @@ class PlotIonAnalysis(WrapData):
                               ion_arr: np.ndarray,
                               delta_z: float
                               ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Initiate ion data analysis.
+
+        Args:
+            ion_arr (np.ndarray): Array containing ion coordinates (x, y, z).
+            delta_z (float): Thickness of each slab.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: A tuple containing ion counts
+            in each slab and corresponding slab areas.
+        """
         counts, slab_areas = self.count_ions_in_slabs(ion_arr, delta_z)
         return counts, slab_areas
 
@@ -418,6 +455,34 @@ class PlotIonAnalysis(WrapData):
                             ion_arr: np.ndarray,
                             delta_z: float
                             ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Count the number of ions in different slabs.
+
+        This method calculates the distribution of ions in slabs along
+        the z-coordinate. It divides the z-range of the simulation box
+        into consecutive slabs of thickness `delta_z` and counts the
+        number of ions that fall within each slab. The resulting counts
+        are returned along with the corresponding z-coordinates of slab
+        boundaries.
+
+        Args:
+            ion_arr (np.ndarray): Array containing ion coordinates
+            (x, y, z).
+            delta_z (float): Thickness of each slab.
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: A tuple containing two arrays:
+                - counts: An array of shape (num_time_frames, num_slabs)
+                  representing the counts of ions in each slab for each
+                  time frame.
+                - slab_areas: An array of z-coordinates representing the
+                  boundaries of each slab.
+
+        Example:
+            If ion_arr is a 2D array with ion coordinates over time
+            frames and delta_z is 5, the function will return counts
+            of ions in each slab and the corresponding slab boundaries.
+        """
         slab_areas = \
             np.arange(self.box_dims['z_lo'], self.box_dims['z_hi'], delta_z)
         num_time_frames, num_ions = ion_arr.shape
@@ -438,18 +503,58 @@ class PlotIonAnalysis(WrapData):
                               z_coord: float,
                               slab_areas: np.ndarray
                               ) -> np.int64:
+        """
+        Categorize z-coordinate into slabs.
+
+        This method categorizes z-coordinates of ions into different
+        slabs based on their value. Each z-coordinate is assigned to
+        a specific slab based on the slab areas provided.
+
+        Args:
+            z_coord (float): Z-coordinate of an ion.
+            slab_areas (np.ndarray): An array of z-coordinates defining
+            the boundaries of slabs.
+
+        Returns:
+            np.int64: Index indicating the slab to which the z-coordinate
+            belongs.
+
+        Example:
+            If slab_areas = [0, 5, 10] and z_coord = 8.2, then the
+            function will return 2, indicating that the z-coordinate
+            falls within the second slab [5, 10).
+        """
         return np.digitize(z_coord, slab_areas)
 
     def initiate_ion_plotting(self,
                               counts: np.ndarray,
                               slab_areas: np.ndarray
                               ) -> None:
+        """
+        Initiate ion data plotting.
+
+        Args:
+            counts (np.ndarray): Ion counts in different slabs.
+            slab_areas (np.ndarray): Z-coordinates representing slab
+            boundaries.
+        """
         self.plot_ion_density(counts, slab_areas)
 
     def plot_ion_density(self,
                          counts: np.ndarray,
                          slab_areas: np.ndarray
                          ) -> None:
+        """
+        Plot ion density in different slabs.
+
+        This method creates a plot showing the ion density distribution
+        in different slabs along the z-coordinate.
+
+        Args:
+            counts (np.ndarray): Ion counts in different slabs.
+            slab_areas (np.ndarray): Z-coordinates representing slab
+            boundaries.
+        """
         fig_i, ax_i = plot_tools.mk_canvas(
             (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
         for frame in range(100, self.nr_dict['nr_frames'], 10):
