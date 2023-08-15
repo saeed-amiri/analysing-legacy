@@ -421,7 +421,8 @@ class PlotIonAnalysis(WrapData):
         initiate_ion_plotting(counts: np.ndarray, slab_areas: np.ndarray)
             -> None:
             Initiate ion data plotting.
-        plot_smoothed_ion_density(counts: np.ndarray, slab_areas: np.ndarray) -> None:
+        plot_smoothed_ion_density(counts: np.ndarray, slab_areas:
+            np.ndarray) -> None:
             Plot ion density in different slabs.
     """
     fontsize: int = 12  # Fontsize for all in plots
@@ -431,7 +432,7 @@ class PlotIonAnalysis(WrapData):
         super().__init__()
         ion_arr: np.ndarray = self.split_arr_dict['CLA'][:-2]
         counts, slab_areas = self.initiate_ion_analysis(ion_arr, delta_z=5)
-        self.initiate_ion_plotting(counts, slab_areas)
+        self.initiate_ion_plotting(ion_arr, counts, slab_areas)
 
     def initiate_ion_analysis(self,
                               ion_arr: np.ndarray,
@@ -527,6 +528,7 @@ class PlotIonAnalysis(WrapData):
         return np.digitize(z_coord, slab_areas)
 
     def initiate_ion_plotting(self,
+                              ion_arr: np.ndarray,
                               counts: np.ndarray,
                               slab_areas: np.ndarray
                               ) -> None:
@@ -538,6 +540,7 @@ class PlotIonAnalysis(WrapData):
             slab_areas (np.ndarray): Z-coordinates representing slab
             boundaries.
         """
+        self.plot_ion_com(ion_arr)
         self.plot_smoothed_ion_density(counts, slab_areas)
 
     def plot_smoothed_ion_density(self,
@@ -566,6 +569,61 @@ class PlotIonAnalysis(WrapData):
         ax_i.set_title('Ion Counts in Slabs')
         ax_i.legend()
         plot_tools.save_close_fig(fig_i, ax_i, fname='ion_density')
+
+    def plot_ion_com(self, ion_arr: np.ndarray) -> None:
+        """
+        Plot the center of mass of ION molecules.
+
+        This method creates scatter plots showing the movement of ION
+        molecules' center of mass in different dimensions.
+
+        Args:
+            ion_arr (np.ndarray): The array of ION data.
+        """
+        # Create a 1x3 grid of subplots
+        ion_fig, ion_axes = plt.subplots(1, 3, figsize=(18, 6))
+        axis_names = ['x', 'y', 'z']
+        ion_data = {
+            axis: ion_arr[:, axis_idx::3] for axis_idx, axis in
+            enumerate(axis_names)
+            }
+
+        for i_step in range(self.nr_dict['nr_frames']):
+            for ax_idx, scatter_axes in enumerate(
+               [('x', 'y'), ('y', 'z'), ('x', 'z')]):
+                scatter_x_axis, scatter_y_axis = scatter_axes
+                shift_x = \
+                    self.shift_nanop_com[i_step][0] if \
+                    scatter_x_axis == 'x' else \
+                    self.shift_nanop_com[i_step][2]
+
+                shift_y = self.shift_nanop_com[i_step][1]
+
+                scatter_x_data = ion_data[scatter_x_axis][i_step] - shift_x
+                scatter_y_data = ion_data[scatter_y_axis][i_step] - shift_y
+
+                ion_axes[ax_idx].scatter(
+                    scatter_x_data,
+                    scatter_y_data,
+                    s=5,
+                    c='black',
+                    alpha=(i_step + 1) / self.nr_dict['nr_frames']
+                )
+                circ = plot_tools.mk_circle(radius=self.nanop_radius,
+                                            center=self.mean_nanop_com[0:2])
+                ion_axes[ax_idx].add_artist(circ)
+                ion_axes[ax_idx].set_aspect('equal')
+                ion_axes[ax_idx].set_title(
+                    f'{scatter_x_axis.upper()}-{scatter_y_axis.upper()} Plane')
+                ion_axes[ax_idx].set_xlabel(
+                    f'{scatter_x_axis.capitalize()} Coordinate')
+                ion_axes[ax_idx].set_ylabel(
+                    f'{scatter_y_axis.capitalize()} Coordinate')
+                ion_axes[ax_idx].grid(True)
+
+        plt.tight_layout()
+        ion_fig.savefig('ion_com_plots.png')
+        plt.close(ion_fig)
 
 
 class PlotCom(GetData):
@@ -848,5 +906,5 @@ class PlotCom(GetData):
 
 if __name__ == '__main__':
     # PlotCom()
-    # PlotOdnAnalysis()
+    PlotOdnAnalysis()
     PlotIonAnalysis()
