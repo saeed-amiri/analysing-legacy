@@ -111,21 +111,6 @@ class PlotOdnAnalysis(WrapPlots):
             Plot smoothed ODN density across annuluses.
         plot_odn(odn_arr: np.ndarray) -> None:
             Plot the center of mass of ODN molecules.
-
-    Private Methods:
-        _mk_canvas(x_range: tuple[float, ...], num_xticks: int) ->
-            tuple[plt.figure, plt.axes]:
-            Create a canvas for the plot.
-        _set_x2ticks(ax_main: plt.axes) -> plt.axes:
-            Set secondary x-axis ticks.
-        _set_y2ticks(ax_main: plt.axes) -> plt.axes:
-            Set secondary y-axis ticks.
-        _set_ax_font_label(ax_main: plt.axes, fsize: int = 0) ->
-            plt.axes: Set font and label parameters for the plot.
-        save_close_fig(fig: plt.figure, axs: plt.axes,
-            fname: str, loc: str = 'upper right') -> None:
-            Save and close a figure.
-
     """
 
     fontsize: int = 12  # Fontsize for all in plots
@@ -198,8 +183,9 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        fig_i, ax_i = self._mk_canvas(
+        fig_i, ax_i = plot_tools.mk_canvas(
             (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
+
         average_counts: np.ndarray = np.average(counts[100:], axis=0)
         smoothed_counts = \
             savgol_filter(average_counts,
@@ -218,11 +204,11 @@ class PlotOdnAnalysis(WrapPlots):
                      color='b',
                      linestyle='--',
                      label='interface (average)')
-        self._set_y2ticks(ax_i)
+        plot_tools.set_y2ticks(ax_i)
         ax_i.xaxis.grid(color='gray', linestyle=':')
         ax_i.yaxis.grid(color='gray', linestyle=':')
         ax_i.legend()
-        self.save_close_fig(fig_i, ax_i, fname='average_odn')
+        plot_tools.save_close_fig(fig_i, ax_i, fname='average_odn')
 
     def plot_smoothed_annulus_density(self,
                                       counts: np.ndarray,  # Counts of ODN
@@ -240,8 +226,9 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        fig_i, ax_i = self._mk_canvas(
+        fig_i, ax_i = plot_tools.mk_canvas(
             (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
+
         for frame in range(100, self.nr_dict['nr_frames'], 10):
             # Get indices of non-zero counts
             non_zero_indices = np.nonzero(counts[frame])
@@ -258,7 +245,7 @@ class PlotOdnAnalysis(WrapPlots):
         ax_i.set_ylabel('ODN Count')
         ax_i.set_title('ODN Counts in Annuluses')
         ax_i.legend()
-        self.save_close_fig(fig_i, ax_i, fname='odn_density')
+        plot_tools.save_close_fig(fig_i, ax_i, fname='odn_density')
 
     def plot_odn(self,
                  odn_arr: np.ndarray  # ODN array
@@ -404,152 +391,6 @@ class PlotOdnAnalysis(WrapPlots):
         """
         return np.sqrt((x_2 - x_i)**2 + (y_2 - y_i)**2 + (z_2 - z_i)**2)
 
-    def _mk_canvas(self,
-                   x_range: tuple[float, ...],
-                   num_xticks=5
-                   ) -> tuple[plt.figure, plt.axes]:
-        """
-        Create a canvas for the plot.
-
-        This method generates a canvas (figure and axes) for plotting.
-
-        Args:
-            x_range (tuple[float, ...]): Range of x-axis values.
-            num_xticks (int, optional): Number of x-axis ticks.
-            Default is 5.
-
-        Returns:
-            tuple[plt.figure, plt.axes]: A tuple containing the figure
-            and axes objects.
-        """
-        width = stinfo.plot['width']
-        fig_main, ax_main = \
-            plt.subplots(1, figsize=plot_tools.set_sizes(width))
-        # Set font for all elements in the plot)
-        xticks = np.linspace(x_range[0], x_range[-1], num_xticks)
-        ax_main.set_xticks(xticks)
-        ax_main = self._set_x2ticks(ax_main)
-        ax_main = self._set_ax_font_label(ax_main)
-        return fig_main, ax_main
-
-    @classmethod
-    def save_close_fig(cls,
-                       fig: plt.figure,  # The figure to save,
-                       axs: plt.axes,  # Axes to plot
-                       fname: str,  # Name of the output for the fig
-                       loc: str = 'upper right'  # Location of the legend
-                       ) -> None:
-        """
-        Save the figure and close it.
-
-        This method saves the given figure and closes it after saving.
-
-        Args:
-            fig (plt.figure): The figure to save.
-            axs (plt.axes): The axes to plot.
-            fname (str): Name of the output file for the figure.
-            loc (str, optional): Location of the legend. Default is
-            'upper right'.
-        """
-        legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
-        legend.set_bbox_to_anchor((1.0, 1.0))
-        fig.savefig(fname,
-                    dpi=300,
-                    pad_inches=0.1,
-                    edgecolor='auto',
-                    bbox_inches='tight',
-                    transparent=cls.transparent
-                    )
-        plt.close(fig)
-
-    @staticmethod
-    def _set_x2ticks(ax_main: plt.axes  # The axes to wrok with
-                     ) -> plt.axes:
-        """
-        Set secondary x-axis ticks.
-
-        This method sets secondary x-axis ticks for the given main axes.
-
-        Args:
-            ax_main (plt.axes): The main axes to work with.
-
-        Returns:
-            plt.axes: The modified main axes.
-        """
-        ax_main.tick_params(axis='both', direction='in')
-        # Set twiny
-        ax2 = ax_main.twiny()
-        ax2.set_xlim(ax_main.get_xlim())
-        # Synchronize x-axis limits and tick positions
-        ax2.xaxis.set_major_locator(ax_main.xaxis.get_major_locator())
-        ax2.xaxis.set_minor_locator(ax_main.xaxis.get_minor_locator())
-        ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
-        ax2.tick_params(axis='x', direction='in')
-        for ax_i in [ax_main, ax2]:
-            ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
-            ax_i.xaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=5))
-            ax_i.tick_params(which='minor', direction='in')
-        return ax_main
-
-    @staticmethod
-    def _set_y2ticks(ax_main: plt.axes  # The axes to wrok with
-                     ) -> plt.axes:
-        """
-        Set secondary y-axis ticks.
-
-        This method sets secondary y-axis ticks for the given main axes.
-
-        Args:
-            ax_main (plt.axes): The main axes to work with.
-
-        Returns:
-            plt.axes: The modified main axes.
-        """
-        # Reset the y-axis ticks and locators
-        ax3 = ax_main.twinx()
-        ax3.set_ylim(ax_main.get_ylim())
-        # Synchronize y-axis limits and tick positions
-        ax3.yaxis.set_major_locator(ax_main.yaxis.get_major_locator())
-        ax3.yaxis.set_minor_locator(ax_main.yaxis.get_minor_locator())
-        ax3.set_yticklabels([])  # Remove the tick labels on the right y-axis
-        ax3.tick_params(axis='y', direction='in')
-        for ax_i in [ax_main, ax3]:
-            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
-            ax_i.yaxis.set_minor_locator(
-                matplotlib.ticker.AutoMinorLocator(n=5))
-            ax_i.tick_params(which='minor', direction='in')
-        return ax_main
-
-    @classmethod
-    def _set_ax_font_label(cls,
-                           ax_main: plt.axes,  # Main axis to set parameters
-                           fsize: int = 0  # font size if called with font
-                           ) -> plt.axes:
-        """
-        Set font and labels for the plot axes.
-
-        This method sets font size and labels for the plot axes.
-
-        Args:
-            ax_main (plt.axes): The main axis to set parameters for.
-            fsize (int, optional): Font size if called with font.
-            Default is 0.
-
-        Returns:
-            plt.axes: The modified main axis.
-        """
-        if fsize == 0:
-            fontsize = cls.fontsize
-            ax_main.set_xlabel('frame index', fontsize=fontsize)
-            ax_main.set_ylabel('z [A]', fontsize=fontsize)
-        else:
-            fontsize = fsize
-        matplotlib.rcParams['font.family'] = 'sans-serif'
-        matplotlib.rcParams['font.size'] = fontsize
-        ax_main.tick_params(axis='x', labelsize=fontsize)
-        ax_main.tick_params(axis='y', labelsize=fontsize)
-        return ax_main
 
 
 class PlotCom(GetData):
