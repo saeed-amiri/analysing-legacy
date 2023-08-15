@@ -274,7 +274,6 @@ class PlotOdnAnalysis(WrapPlots):
             ODN molecules in each annulus and the corresponding real
             distances from the nanoparticle center.
         """
-        center_x, center_y, center_z = self.mean_nanop_com
         # Create radii array with steps of delta_r
         radii = np.arange(self.nanop_radius, self.box_dims['x_hi'], delta_r)
         radii_distance: np.ndarray = \
@@ -292,9 +291,9 @@ class PlotOdnAnalysis(WrapPlots):
                     self.calculate_distance(odn_arr[frame, residue*3],
                                             odn_arr[frame, residue*3 + 1],
                                             odn_arr[frame, residue*3 + 2],
-                                            center_x,
-                                            center_y,
-                                            center_z)
+                                            self.mean_nanop_com[0],
+                                            self.mean_nanop_com[1],
+                                            self.mean_nanop_com[2])
                 # Ensure the distance is within self.nanop_radius
                 if distance >= self.nanop_radius:
                     annulus_idx = \
