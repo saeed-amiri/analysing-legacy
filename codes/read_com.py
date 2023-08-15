@@ -44,6 +44,7 @@ import matplotlib
 import matplotlib.pylab as plt
 import static_info as stinfo
 import plot_interface_z as plt_z
+import plot_tools
 from get_data import GetData
 
 class WrapPlots(GetData):
@@ -55,18 +56,19 @@ class WrapPlots(GetData):
     mean_nanop_com: np.ndarray  # Average of the nanoparticle COM over times
     shift_nanop_com: np.ndarray  # Shift of COM at each time from average
     interface_locz: float  # Z location of the interface
+    nanop_radius: float  # Radius of the nanoparticle
 
     def __init__(self) -> None:
         super().__init__()
         self.set_constants()
         self.initiate_calc()
-        print(self.__dict__)
 
     def set_constants(self) -> None:
         """
         Set the constants for all the uses
         """
         self.interface_locz = 107.7
+        self.nanop_radius = stinfo.np_info['radius']
 
     def initiate_calc(self) -> None:
         """
@@ -93,7 +95,54 @@ class PlotOdnAnalysis(WrapPlots):
     """
     def __init__(self) -> None:
         super().__init__()
+        odn_arr: np.ndarray = self.split_arr_dict['ODN']
+        self._initiate_analyses()
+        self._initiate_plotting(odn_arr)
 
+    def _initiate_analyses(self) -> None:
+        """
+        To do some analysing
+        """
+
+    def _initiate_plotting(self,
+                           odn_arr: np.ndarray  # ODN array
+                           ) -> None:
+        """
+        Make all the plots here
+        """
+        self.plot_odn(odn_arr)
+
+    def plot_odn(self,
+                 odn_arr: np.ndarray  # ODN array
+                 ) -> None:
+        """Plot ODN center of the masses"""
+        odn_fig, odn_ax = plt.subplots()
+        axis_names = ['x', 'y', 'z']
+        odn_data: dict[str, np.ndarray] = {}
+        for axis_idx, axis in enumerate(axis_names):
+            odn_data[axis] = odn_arr[:, axis_idx::3]
+        # Find the ODN at the interface
+        mask = (odn_data['z'] < self.interface_locz+10) & \
+               (odn_data['z'] > self.interface_locz-10) 
+        # Get the indices where the mask is True for each row
+        indices: list[np.ndarray] = \
+            [np.where(row_mask)[0] for row_mask in mask]
+        for i_step in range(self.nr_dict['nr_frames']):
+            x_data = odn_data['x'][i_step][indices[i_step]] - \
+                self.shift_nanop_com[i_step][0]
+            y_data = odn_data['y'][i_step][indices[i_step]] - \
+                self.shift_nanop_com[i_step][1]
+            odn_ax.scatter(x_data,
+                           y_data,
+                           s=5,
+                           c='black',
+                           alpha=(i_step+1)/self.nr_dict['nr_frames'])
+        circ: matplotlib.patches.Circle = \
+            plot_tools.mk_circle(radius=self.nanop_radius,
+                               center=(self.mean_nanop_com[0:2]))
+        odn_ax.add_artist(circ)
+        plt.axis('equal')
+        odn_fig.savefig('test2_odn.png')
 
 class PlotCom(GetData):
     """
@@ -127,10 +176,6 @@ class PlotCom(GetData):
         interface_locz: list[tuple[float, float]] = []  # Z mean & std of water
         nanop_center: np.ndarray = self.find_mean_of_np_com()
         nanop_shift: np.ndarray = self.find_np_shift_from_mean(nanop_center)
-        self.plot_odn(self.split_arr_dict['ODN'],
-                      interface_loc=107.7,
-                      nanop_shift=nanop_shift,
-                      nanop_center=nanop_center)
         self.plot_annulus_dendity(self.split_arr_dict['ODN'][:-2,:],
                                   interface_loc=107.7,
                                   nanop_shift=nanop_shift,
@@ -236,41 +281,6 @@ class PlotCom(GetData):
         annuluses = np.digitize(distances, radii)
         # annuluses = np.minimum(annuluses, int(np.ceil(R / dr)))  # Ensure annulus index doesn't exceed number of annuluses
         return annuluses
-
-
-    def plot_odn(self,
-                 res_arr: np.ndarray,  # ODN array
-                 interface_loc: float,  # Location of the interface
-                 nanop_shift: np.ndarray,  # Shift of the nanoparticle from ave
-                 nanop_center: np.ndarray
-                 ) -> None:
-        """Plot ODN center of the masses"""
-        odn_fig, odn_ax = plt.subplots()
-        axis_names = ['x', 'y', 'z']
-        odn_data: dict[str, np.ndarray] = {}
-        for axis_idx, axis in enumerate(axis_names):
-            odn_data[axis] = res_arr[:, axis_idx::3]
-        # Find the ODN at the interface
-        mask = (odn_data['z'] < interface_loc+10) & \
-               (odn_data['z'] > interface_loc-10) 
-        # Get the indices where the mask is True for each row
-        indices: list[np.ndarray] = \
-            [np.where(row_mask)[0] for row_mask in mask]
-        for i_step in range(self.nr_dict['nr_frames']):
-            x_data = \
-                odn_data['x'][i_step][indices[i_step]] - nanop_shift[i_step][0]
-            y_data = \
-                odn_data['y'][i_step][indices[i_step]] - nanop_shift[i_step][1]
-            odn_ax.scatter(x_data,
-                           y_data,
-                           s=5,
-                           c='black',
-                           alpha=(i_step+1)/self.nr_dict['nr_frames'])
-        circ: matplotlib.patches.Circle = \
-            self.__mk_circle(center=(nanop_center[0], nanop_center[1]))
-        odn_ax.add_artist(circ)
-        plt.axis('equal')
-        odn_fig.savefig('test_odn.png')
 
     def find_mean_of_np_com(self) -> np.ndarray:
         """find mean of the nanoparticle center of mass"""
