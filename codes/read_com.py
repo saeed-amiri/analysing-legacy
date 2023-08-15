@@ -397,27 +397,31 @@ class PlotOdnAnalysis(WrapData):
 
 
 class PlotIonAnalysis(WrapData):
+
+    fontsize: int = 12  # Fontsize for all in plots
+    transparent: bool = False  # Save fig background
+
     def __init__(self) -> None:
         super().__init__()
         ion_arr: np.ndarray = self.split_arr_dict['CLA'][:-2]
-        counts, slab_centers = self.initiate_ion_analysis(ion_arr, delta_z=5)
-        self.initiate_ion_plotting(counts, slab_centers)
+        counts, slab_areas = self.initiate_ion_analysis(ion_arr, delta_z=5)
+        self.initiate_ion_plotting(counts, slab_areas)
 
     def initiate_ion_analysis(self,
                               ion_arr: np.ndarray,
                               delta_z: float
                               ) -> tuple[np.ndarray, np.ndarray]:
-        counts, slab_centers = self.count_ions_in_slabs(ion_arr, delta_z)
-        return counts, slab_centers
+        counts, slab_areas = self.count_ions_in_slabs(ion_arr, delta_z)
+        return counts, slab_areas
 
     def count_ions_in_slabs(self,
                             ion_arr: np.ndarray,
                             delta_z: float
                             ) -> tuple[np.ndarray, np.ndarray]:
-        slab_centers = \
+        slab_areas = \
             np.arange(self.box_dims['z_lo'], self.box_dims['z_hi'], delta_z)
         num_time_frames, num_ions = ion_arr.shape
-        num_slabs = len(slab_centers)
+        num_slabs = len(slab_areas)
 
         counts = np.zeros((num_time_frames, num_slabs), dtype=int)
 
@@ -425,33 +429,33 @@ class PlotIonAnalysis(WrapData):
             for ion in range(num_ions//3):
                 z_coord = ion_arr[frame, ion*3 + 2]
                 slab_idx = \
-                    self.categorize_into_slabs(z_coord, slab_centers) - 1
+                    self.categorize_into_slabs(z_coord, slab_areas) - 1
                 counts[frame, slab_idx] += 1
 
-        return counts, slab_centers
+        return counts, slab_areas
 
     def categorize_into_slabs(self,
                               z_coord: float,
-                              slab_centers: np.ndarray
+                              slab_areas: np.ndarray
                               ) -> np.int64:
-        return np.digitize(z_coord, slab_centers)
+        return np.digitize(z_coord, slab_areas)
 
     def initiate_ion_plotting(self,
                               counts: np.ndarray,
-                              slab_centers: np.ndarray
+                              slab_areas: np.ndarray
                               ) -> None:
-        self.plot_ion_density(counts, slab_centers)
+        self.plot_ion_density(counts, slab_areas)
 
     def plot_ion_density(self,
                          counts: np.ndarray,
-                         slab_centers: np.ndarray
+                         slab_areas: np.ndarray
                          ) -> None:
         fig_i, ax_i = plot_tools.mk_canvas(
             (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
         for frame in range(100, self.nr_dict['nr_frames'], 10):
             smoothed_counts = \
                 savgol_filter(counts[frame], window_length=5, polyorder=3)
-            ax_i.plot(slab_centers, smoothed_counts, label=f'Frame {frame}')
+            ax_i.plot(slab_areas, smoothed_counts, label=f'Frame {frame}')
         ax_i.set_xlabel('Z Coordinate')
         ax_i.set_ylabel('Ion Count')
         ax_i.set_title('Ion Counts in Slabs')
