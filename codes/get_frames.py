@@ -28,6 +28,7 @@ import multiprocessing
 import concurrent.futures
 import pickle
 import numpy as np
+import itertools
 import logger
 import MDAnalysis as mda
 import static_info as stinfo
@@ -44,7 +45,7 @@ class ResiduePositions:
     def __init__(self,
                  log: logger.logging.Logger  # Name of the log file
                  ):
-        self.parra_sty = 'serial'
+        self.parra_sty = 'split'
         self.top = topo.ReadTop(log)
         self.trr_info = GetInfo(sys.argv[1], log=log)
         self.get_center_of_mass(log)
@@ -217,7 +218,23 @@ class ResiduePositions:
         all_steps = {}
         for tstep in self.trr_info.u_traj.trajectory:
             all_steps[tstep.frame] = np.copy(tstep.positions)
-
+        # All the H locations wtih index
+        results: list[tuple[dict[int, np.ndarray], dict[int, np.ndarray]]]
+        num_processes: int = multiprocessing.cpu_count() // 2
+        chunk_size: int = len(all_steps) // num_processes
+        chunks = [dict(itertools.islice(all_steps.items(), i, i+chunk_size))
+                  for i in range(0, len(all_steps), chunk_size)]
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            results = \
+                pool.starmap(self.process_dict, [(chunk,) for chunk in chunks])
+        sizes_list = [len(i.keys()) for i in chunks]
+        print(sizes_list)
+    
+    def process_dict(self,
+                     chunk: dict[int, np.ndarray]
+                     ):
+        print(f'HERE! {chunk.keys()}', end='\n')
+        
 
     @staticmethod
     def wrap_position(pos: np.ndarray,  # The center of mass
@@ -271,7 +288,7 @@ class ResiduePositions:
         i_com: list[np.ndarray] = []  # Arrays contains center of masses
         total_mass: float = 0  # Total mass of each residue in the NP
         for i in np_res_ind:
-            com: np.ndarray  # Conter of mass of the residue i
+            com: np.ndarray  # Center of mass of the residue i
             tmp_mass: float  # Mass of the residue
             com, tmp_mass = self.get_np_com_tstep(i, all_atoms)
             total_mass += tmp_mass
