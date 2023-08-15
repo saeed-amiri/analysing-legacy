@@ -48,7 +48,7 @@ import plot_tools
 from get_data import GetData
 
 
-class WrapPlots(GetData):
+class WrapData(GetData):
     """
     Get data and call other classes to analysis and plot them.
     Before that, some calculateion must be done
@@ -90,11 +90,11 @@ class WrapPlots(GetData):
         return self.split_arr_dict['APT_COR'] - self.mean_nanop_com
 
 
-class PlotOdnAnalysis(WrapPlots):
+class PlotOdnAnalysis(WrapData):
     """
     A class for analyzing ODN data and creating various plots.
 
-    This class inherits from the `WrapPlots` class and provides methods
+    This class inherits from the `WrapData` class and provides methods
     to analyze ODN data and generate plots related to ODN densities,
     center of mass, and more.
 
@@ -121,7 +121,7 @@ class PlotOdnAnalysis(WrapPlots):
         Initialize the PlotOdnAnalysis instance.
 
         This constructor initializes the PlotOdnAnalysis instance by
-        calling the constructor of its parent class `WrapPlots` and
+        calling the constructor of its parent class `WrapData` and
         performing necessary calculations and analyses.
         """
         super().__init__()
@@ -396,7 +396,7 @@ class PlotOdnAnalysis(WrapPlots):
         return np.sqrt((x_2 - x_i)**2 + (y_2 - y_i)**2 + (z_2 - z_i)**2)
 
 
-class PlotIonAnalysis(WrapPlots):
+class PlotIonAnalysis(WrapData):
     def __init__(self) -> None:
         super().__init__()
         ion_arr: np.ndarray = self.split_arr_dict['CLA'][:-2]
