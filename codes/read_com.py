@@ -95,22 +95,37 @@ class PlotOdnAnalysis(WrapPlots):
     """
     def __init__(self) -> None:
         super().__init__()
-        odn_arr: np.ndarray = self.split_arr_dict['ODN']
-        self._initiate_analyses()
-        self._initiate_plotting(odn_arr)
+        odn_arr: np.ndarray = self.split_arr_dict['ODN'][:-2]
+        counts: np.ndarray  # Counts of ODN in the annuluses
+        radii_distance: np.ndarray  # Real distance from nanoparticle
+        counts, radii_distance = self._initiate_analyses(odn_arr)
+        self._initiate_plotting(odn_arr, counts, radii_distance)
 
-    def _initiate_analyses(self) -> None:
+    def _initiate_analyses(self,
+                           odn_arr: np.ndarray  # ODN array
+                           ) -> tuple[np.ndarray, np.ndarray]:
         """
         To do some analysing
         """
+        counts: np.ndarray  # Counts of ODN in the annuluses
+        radii_distance: np.ndarray  # Real distance from nanoparticle
+        counts, radii_distance = self.count_odn_in_annuluses(odn_arr, dr=5)
+        return counts, radii_distance
 
     def _initiate_plotting(self,
-                           odn_arr: np.ndarray  # ODN array
+                           odn_arr: np.ndarray,  # ODN array
+                           counts: np.ndarray,  # Counts of ODN in the annulus
+                           radii_distance: np.ndarray  # Real distance from np
                            ) -> None:
         """
         Make all the plots here
         """
         self.plot_odn(odn_arr)
+        self.plot_annulus_dendity()
+
+    def plot_annulus_dendity(self) -> None:
+        """calculate and plot ODN denisties"""
+
 
     def plot_odn(self,
                  odn_arr: np.ndarray  # ODN array
@@ -143,6 +158,52 @@ class PlotOdnAnalysis(WrapPlots):
         odn_ax.add_artist(circ)
         plt.axis('equal')
         odn_fig.savefig('test2_odn.png')
+    
+    def count_odn_in_annuluses(self,
+                               odn_arr: np.ndarray,  # ODN array
+                               dr: float  # Size of the annulus (Delta r)
+                               ) -> tuple[np.ndarray, ...]:
+        center_x, center_y, center_z = self.mean_nanop_com
+        # Create radii array with steps of dr
+        radii = np.arange(self.nanop_radius, self.box_dims['x_hi'], dr)
+        radii_distance: np.ndarray = \
+            np.linspace(self.nanop_radius, self.box_dims['x_hi'], len(radii))
+        num_time_frames, num_columns = odn_arr.shape
+        num_residues = num_columns // 3
+
+        counts: np.ndarray = \
+            np.zeros((num_time_frames, len(radii) - 1), dtype=int)
+
+        for frame in range(num_time_frames):
+
+            for residue in range(num_residues):
+                distance: np.float64 = \
+                    self.calculate_distance(odn_arr[frame, residue*3],
+                                            odn_arr[frame, residue*3 + 1],
+                                            odn_arr[frame, residue*3 + 2],
+                                            center_x,
+                                            center_y,
+                                            center_z)
+                # Ensure the distance is within self.nanop_radius
+                if distance >= self.nanop_radius:
+                    annulus_idx = \
+                        self.categorize_into_annuluses(distance, radii) - 1
+                    counts[frame, annulus_idx] += 1
+        return counts, radii_distance
+
+    def categorize_into_annuluses(self,
+                                  distances: np.float64,
+                                  radii: np.arange
+                                  ) -> np.int64:
+        
+        return np.digitize(distances, radii)
+
+    @staticmethod
+    def calculate_distance(x_i: float, y_i: float, z_i: float,  # First point
+                           x_2: float, y_2: float, z_2: float   # Second point
+                           ) -> np.float64:
+        return np.sqrt((x_2 - x_i)**2 + (y_2 - y_i)**2 + (z_2 - z_i)**2)
+
 
 class PlotCom(GetData):
     """
@@ -246,9 +307,6 @@ class PlotCom(GetData):
         den_ax.set_title('ODN Counts in Annuluses')
         # den_ax.legend()
         plt.show()
-
-
-
 
     def count_odn_in_annuluses(self, odn_data, nanoparticle_center, nanoparticle_radius, dr):
         center_x, center_y, center_z = nanoparticle_center
