@@ -94,6 +94,9 @@ class PlotOdnAnalysis(WrapPlots):
     """
     Analysing ODN data and plot them in files
     """
+    
+    fontsize: int = 14  # Fontsize for all in plots
+
     def __init__(self) -> None:
         super().__init__()
         odn_arr: np.ndarray = self.split_arr_dict['ODN'][:-2]
@@ -154,13 +157,27 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        den_fig, den_ax = plt.subplots()
-        average_counts = np.average(counts, axis=0)
-        den_ax.plot(average_counts, label='Average')
-        den_ax.set_xlabel('Annulus Index')
+        den_fig, den_ax = \
+            self._mk_canvas((self.box_dims['x_lo'], self.box_dims['x_hi']))
+        average_counts: np.ndarray = np.average(counts[100:], axis=0)
+        smoothed_counts = \
+                    savgol_filter(average_counts,
+                                  window_length=5,
+                                  polyorder=3)  # Apply Savitzky-Golay smoothin
+        den_ax.plot(radii_distance[:-1], smoothed_counts, label='Average')
+        den_ax.set_xlabel('Distance from NP')
         den_ax.set_ylabel('ODN Count')
         den_ax.set_title('ODN Counts in Annuluses')
-        # den_ax.legend()
+        # Plot vertical line at the specified x-coordinate
+        den_ax.axvline(x=self.nanop_radius,
+                       color='red',
+                       linestyle='--',
+                       label='Nanoparticle')
+        den_ax.axvline(x=self.interface_locz,
+                       color='b',
+                       linestyle='--',
+                       label='interface (average)')
+        den_ax.legend()
         plt.show()
 
     def plot_smoothed_annulus_density(self,
@@ -179,7 +196,8 @@ class PlotOdnAnalysis(WrapPlots):
             from the nanoparticle.
         """
         # Create subplots for each frame
-        den_fig, den_ax = plt.subplots()
+        den_fig, den_ax = \
+            self._mk_canvas((self.box_dims['x_lo'], self.box_dims['x_hi']))
         for frame in range(100, self.nr_dict['nr_frames'], 10):
             # Get indices of non-zero counts
             non_zero_indices = np.nonzero(counts[frame])
@@ -301,8 +319,8 @@ class PlotOdnAnalysis(WrapPlots):
                     counts[frame, annulus_idx] += 1
         return counts, radii_distance
 
-    def categorize_into_annuluses(self,
-                                  distances: np.float64,
+    @staticmethod
+    def categorize_into_annuluses(distances: np.float64,
                                   radii: np.ndarray
                                   ) -> np.int64:
         """
@@ -341,6 +359,96 @@ class PlotOdnAnalysis(WrapPlots):
         Calculate Euclidean distance between two points.
         """
         return np.sqrt((x_2 - x_i)**2 + (y_2 - y_i)**2 + (z_2 - z_i)**2)
+
+    def _mk_canvas(self,
+                    x_range: tuple[float, ...],
+                    ) -> tuple[plt.figure, plt.axes]:
+        """make the pallete for the figure"""
+        width = stinfo.plot['width']
+        fig_main, ax_main = \
+            plt.subplots(1, figsize=plot_tools.set_sizes(width))
+        # Set font for all elements in the plot)
+        num_xticks = 5
+        xticks = np.linspace(x_range[0], x_range[-1], num_xticks)
+        ax_main.set_xticks(xticks)
+        ax_main = self.__set_x2ticks(ax_main)
+        ax_main = self.__set_ax_font_label(ax_main)
+        return fig_main, ax_main
+    @classmethod
+    def save_close_fig(cls,
+                       fig: plt.figure,  # The figure to save,
+                       axs: plt.axes,  # Axes to plot
+                       fname: str,  # Name of the output for the fig
+                       loc: str = 'upper right'  # Location of the legend
+                       ) -> None:
+        """to save all the fige"""
+        legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
+        legend.set_bbox_to_anchor((1.0, 1.0))
+        fig.savefig(fname,
+                    dpi=300,
+                    pad_inches=0.1,
+                    edgecolor='auto',
+                    bbox_inches='tight',
+                    transparent=cls.transparent
+                    )
+        plt.close(fig)
+
+    @staticmethod
+    def __set_x2ticks(ax_main: plt.axes  # The axes to wrok with
+                      ) -> plt.axes:
+        """set tickes"""
+        ax_main.tick_params(axis='both', direction='in')
+        # Set twiny
+        ax2 = ax_main.twiny()
+        ax2.set_xlim(ax_main.get_xlim())
+        # Synchronize x-axis limits and tick positions
+        ax2.xaxis.set_major_locator(ax_main.xaxis.get_major_locator())
+        ax2.xaxis.set_minor_locator(ax_main.xaxis.get_minor_locator())
+        ax2.set_xticklabels([])  # Remove the tick labels on the top x-axis
+        ax2.tick_params(axis='x', direction='in')
+        for ax_i in [ax_main, ax2]:
+            ax_i.xaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.xaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=5))
+            ax_i.tick_params(which='minor', direction='in')
+        return ax_main
+
+    @staticmethod
+    def __set_y2ticks(ax_main: plt.axes  # The axes to wrok with
+                      ) -> plt.axes:
+        """set tickes"""
+        # Reset the y-axis ticks and locators
+        ax3 = ax_main.twinx()
+        ax3.set_ylim(ax_main.get_ylim())
+        # Synchronize y-axis limits and tick positions
+        ax3.yaxis.set_major_locator(ax_main.yaxis.get_major_locator())
+        ax3.yaxis.set_minor_locator(ax_main.yaxis.get_minor_locator())
+        ax3.set_yticklabels([])  # Remove the tick labels on the right y-axis
+        ax3.tick_params(axis='y', direction='in')
+        for ax_i in [ax_main, ax3]:
+            ax_i.yaxis.set_major_locator(matplotlib.ticker.AutoLocator())
+            ax_i.yaxis.set_minor_locator(
+                matplotlib.ticker.AutoMinorLocator(n=5))
+            ax_i.tick_params(which='minor', direction='in')
+        return ax_main
+
+    @classmethod
+    def __set_ax_font_label(cls,
+                            ax_main: plt.axes,  # Main axis to set parameters
+                            fsize: int = 0  # font size if called with font
+                            ) -> plt.axes:
+        """set parameters on the plot"""
+        if fsize == 0:
+            fontsize = cls.fontsize
+            ax_main.set_xlabel('frame index', fontsize=fontsize)
+            ax_main.set_ylabel('z [A]', fontsize=fontsize)
+        else:
+            fontsize = fsize
+        matplotlib.rcParams['font.family'] = 'sans-serif'
+        matplotlib.rcParams['font.size'] = fontsize
+        ax_main.tick_params(axis='x', labelsize=fontsize)
+        ax_main.tick_params(axis='y', labelsize=fontsize)
+        return ax_main
 
 
 class PlotCom(GetData):
