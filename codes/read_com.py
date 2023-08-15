@@ -542,6 +542,57 @@ class PlotIonAnalysis(WrapData):
         """
         self.plot_ion_com(ion_arr)
         self.plot_smoothed_ion_density(counts, slab_areas)
+        self.plot_average_slabs_density(counts, slab_areas)
+
+    def plot_average_slabs_density(self,
+                                   counts: np.ndarray,  # Counts of ION
+                                   radii_distance: np.ndarray  # Real distanc
+                                   ) -> None:
+        """
+        Plot the average ION density across annuluses.
+
+        This method creates a plot showing the average ION density in
+        different annuluses.
+
+        Args:
+            counts (np.ndarray): The ION counts in annuluses.
+            radii_distance (np.ndarray): The corresponding real distances
+            from the nanoparticle.
+        """
+        # Create subplots for each frame
+        fig_i, ax_i = plot_tools.mk_canvas((self.box_dims['x_lo'],
+                                            self.box_dims['x_hi']),
+                                           num_xticks=6,
+                                           fsize=12)
+
+        average_counts: np.ndarray = np.average(counts[100:], axis=0)
+        smoothed_counts = \
+            savgol_filter(average_counts,
+                          window_length=5,
+                          polyorder=3)  # Apply Savitzky-Golay smoothin
+        ax_i.plot(radii_distance, smoothed_counts, label='Average')
+        ax_i.axvspan(self.mean_nanop_com[2] - self.nanop_radius,
+                     self.mean_nanop_com[2] + self.nanop_radius,
+                     color='gray',
+                     edgecolor=None,
+                     alpha=0.2)
+        ax_i.set_xlabel('distance in z-direction')
+        ax_i.set_ylabel('ION Count')
+        ax_i.set_title('ION Counts in slabs')
+        # Plot vertical line at the specified x-coordinate
+        ax_i.axvline(x=self.mean_nanop_com[2],
+                     color='red',
+                     linestyle='--',
+                     label='NP z of average COM')
+        ax_i.axvline(x=self.interface_locz,
+                     color='b',
+                     linestyle='--',
+                     label='interface (average)')
+        plot_tools.set_y2ticks(ax_i)
+        ax_i.xaxis.grid(color='gray', linestyle=':')
+        ax_i.yaxis.grid(color='gray', linestyle=':')
+        ax_i.legend()
+        plot_tools.save_close_fig(fig_i, ax_i, fname='average_ion')
 
     def plot_smoothed_ion_density(self,
                                   counts: np.ndarray,
