@@ -92,13 +92,53 @@ class WrapPlots(GetData):
 
 class PlotOdnAnalysis(WrapPlots):
     """
-    Analysing ODN data and plot them in files
+    A class for analyzing ODN data and creating various plots.
+
+    This class inherits from the `WrapPlots` class and provides methods
+    to analyze ODN data and generate plots related to ODN densities,
+    center of mass, and more.
+
+    Attributes:
+        None
+
+    Methods:
+        __init__(): Initialize the PlotOdnAnalysis instance.
+        plot_average_annulus_density(counts: np.ndarray, radii_distance:
+            np.ndarray) -> None:
+            Plot the average ODN density across annuluses.
+        plot_smoothed_annulus_density(counts: np.ndarray, radii_distance:
+            np.ndarray) -> None:
+            Plot smoothed ODN density across annuluses.
+        plot_odn(odn_arr: np.ndarray) -> None:
+            Plot the center of mass of ODN molecules.
+
+    Private Methods:
+        _mk_canvas(x_range: tuple[float, ...], num_xticks: int) ->
+            tuple[plt.figure, plt.axes]:
+            Create a canvas for the plot.
+        _set_x2ticks(ax_main: plt.axes) -> plt.axes:
+            Set secondary x-axis ticks.
+        _set_y2ticks(ax_main: plt.axes) -> plt.axes:
+            Set secondary y-axis ticks.
+        _set_ax_font_label(ax_main: plt.axes, fsize: int = 0) ->
+            plt.axes: Set font and label parameters for the plot.
+        save_close_fig(fig: plt.figure, axs: plt.axes,
+            fname: str, loc: str = 'upper right') -> None:
+            Save and close a figure.
+
     """
-    
+
     fontsize: int = 12  # Fontsize for all in plots
     transparent: bool = False  # Save fig background
 
     def __init__(self) -> None:
+        """
+        Initialize the PlotOdnAnalysis instance.
+
+        This constructor initializes the PlotOdnAnalysis instance by
+        calling the constructor of its parent class `WrapPlots` and
+        performing necessary calculations and analyses.
+        """
         super().__init__()
         odn_arr: np.ndarray = self.split_arr_dict['ODN'][:-2]
         counts: np.ndarray  # Counts of ODN in the annuluses
@@ -162,22 +202,22 @@ class PlotOdnAnalysis(WrapPlots):
             (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
         average_counts: np.ndarray = np.average(counts[100:], axis=0)
         smoothed_counts = \
-                    savgol_filter(average_counts,
-                                  window_length=5,
-                                  polyorder=3)  # Apply Savitzky-Golay smoothin
+            savgol_filter(average_counts,
+                          window_length=5,
+                          polyorder=3)  # Apply Savitzky-Golay smoothin
         ax_i.plot(radii_distance[:-1], smoothed_counts, label='Average')
         ax_i.set_xlabel('Distance from NP')
         ax_i.set_ylabel('ODN Count')
         ax_i.set_title('ODN Counts in Annuluses')
         # Plot vertical line at the specified x-coordinate
         ax_i.axvline(x=self.nanop_radius,
-                       color='red',
-                       linestyle='--',
-                       label='Nanoparticle')
+                     color='red',
+                     linestyle='--',
+                     label='Nanoparticle')
         ax_i.axvline(x=self.interface_locz,
-                       color='b',
-                       linestyle='--',
-                       label='interface (average)')
+                     color='b',
+                     linestyle='--',
+                     label='interface (average)')
         self._set_y2ticks(ax_i)
         ax_i.xaxis.grid(color='gray', linestyle=':')
         ax_i.yaxis.grid(color='gray', linestyle=':')
@@ -212,8 +252,8 @@ class PlotOdnAnalysis(WrapPlots):
                                   window_length=max_window_length,
                                   polyorder=5)  # Apply Savitzky-Golay smoothin
                 ax_i.plot(non_zero_indices[0],
-                            smoothed_counts,
-                            label=f'Frame {frame}')
+                          smoothed_counts,
+                          label=f'Frame {frame}')
         ax_i.set_xlabel('Annulus Index')
         ax_i.set_ylabel('ODN Count')
         ax_i.set_title('ODN Counts in Annuluses')
