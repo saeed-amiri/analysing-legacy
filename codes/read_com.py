@@ -106,11 +106,19 @@ class PlotOdnAnalysis(WrapPlots):
                            odn_arr: np.ndarray  # ODN array
                            ) -> tuple[np.ndarray, np.ndarray]:
         """
-        To do some analysing
+        Initiate ODN data analysis.
+
+        Args:
+            odn_arr (np.ndarray): The array containing ODN data.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: A tuple containing counts
+            of ODN in annuluses and corresponding radii distances.
         """
         counts: np.ndarray  # Counts of ODN in the annuluses
         radii_distance: np.ndarray  # Real distance from nanoparticle
-        counts, radii_distance = self.count_odn_in_annuluses(odn_arr, delta_r=5)
+        counts, radii_distance = \
+            self.count_odn_in_annuluses(odn_arr, delta_r=5)
         return counts, radii_distance
 
     def _initiate_plotting(self,
@@ -119,7 +127,12 @@ class PlotOdnAnalysis(WrapPlots):
                            radii_distance: np.ndarray  # Real distance from np
                            ) -> None:
         """
-        Make all the plots here
+        Initiate ODN data plotting.
+
+        Args:
+            odn_arr (np.ndarray): The array containing ODN data.
+            counts (np.ndarray): Counts of ODN in annuluses.
+            radii_distance (np.ndarray): Corresponding radii distances.
         """
         self.plot_odn(odn_arr)
         self.plot_smoothed_annulus_density(counts, radii_distance)
@@ -129,7 +142,17 @@ class PlotOdnAnalysis(WrapPlots):
                                      counts: np.ndarray,  # Counts of ODN
                                      radii_distance: np.ndarray  # Real distanc
                                      ) -> None:
-        """calculate and plot ODN denisties"""
+        """
+        Plot the average ODN density across annuluses.
+
+        This method creates a plot showing the average ODN density in
+        different annuluses.
+
+        Args:
+            counts (np.ndarray): The ODN counts in annuluses.
+            radii_distance (np.ndarray): The corresponding real distances
+            from the nanoparticle.
+        """
         # Create subplots for each frame
         den_fig, den_ax = plt.subplots()
         average_counts = np.average(counts[100:], axis=0)
@@ -144,6 +167,17 @@ class PlotOdnAnalysis(WrapPlots):
                                       counts: np.ndarray,  # Counts of ODN
                                       radii_distance: np.ndarray  # Real dist
                                       ) -> None:
+        """
+        Plot smoothed ODN density across annuluses.
+
+        This method creates a plot showing the smoothed ODN density in
+        different annuluses.
+
+        Args:
+            counts (np.ndarray): The ODN counts in annuluses.
+            radii_distance (np.ndarray): The corresponding real distances
+            from the nanoparticle.
+        """
         # Create subplots for each frame
         den_fig, den_ax = plt.subplots()
         for frame in range(100, self.nr_dict['nr_frames'], 10):
@@ -167,7 +201,15 @@ class PlotOdnAnalysis(WrapPlots):
     def plot_odn(self,
                  odn_arr: np.ndarray  # ODN array
                  ) -> None:
-        """Plot ODN center of the masses"""
+        """
+        Plot the center of mass of ODN molecules.
+
+        This method creates a plot showing the movement of ODN
+        molecules' center of mass.
+
+        Args:
+            odn_arr (np.ndarray): The array of ODN data.
+        """
         odn_fig, odn_ax = plt.subplots()
         axis_names = ['x', 'y', 'z']
         odn_data: dict[str, np.ndarray] = {}
@@ -200,6 +242,38 @@ class PlotOdnAnalysis(WrapPlots):
                                odn_arr: np.ndarray,  # ODN array
                                delta_r: float  # Size of the annulus (Delta r)
                                ) -> tuple[np.ndarray, ...]:
+        """
+        Count the number of ODN molecules in different annuluses around
+        the nanoparticle.
+
+        This method calculates the distribution of ODN molecules in
+        annuluses around the nanoparticle.
+        It divides the space around the nanoparticle into concentric
+        annuluses, each with a width of Δr, and counts the number of
+        ODN molecules that fall within each annulus. The resulting
+        counts are returned along with the real distances from the
+        nanoparticle center corresponding to each annulus.
+
+        Args:
+            odn_arr (np.ndarray): An array of ODN coordinates (x, y, z)
+            over time frames.
+            delta_r (float): The width of each annulus.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: A tuple containing two arrays:
+                - counts: An array of shape (num_time_frames,
+                  num_annuluses) representing the counts of ODN
+                  molecules in each annulus for each time frame.
+                - radii_distance: An array of real distances from the
+                  nanoparticle center corresponding to the boundaries
+                  of each annulus.
+
+        Example:
+            If odn_arr is a 2D array with ODN coordinates over time
+            rames and delta_r is 5, the function will return counts of
+            ODN molecules in each annulus and the corresponding real
+            distances from the nanoparticle center.
+        """
         center_x, center_y, center_z = self.mean_nanop_com
         # Create radii array with steps of delta_r
         radii = np.arange(self.nanop_radius, self.box_dims['x_hi'], delta_r)
@@ -232,12 +306,41 @@ class PlotOdnAnalysis(WrapPlots):
                                   distances: np.float64,
                                   radii: np.ndarray
                                   ) -> np.int64:
+        """
+        Categorize distances into annuluses based on their magnitude.
+
+        This method categorizes distances from the nanoparticle center
+        into different annuluses based on their magnitude. Each distance
+        is assigned to an annulus based on the defined radii intervals.
+        Distances falling within a particular interval [r_i, r_{i+1})
+        are assigned to the i-th annulus.
+
+        Args:
+            distances (np.float64): An array of distances to be
+            categorized.
+            radii (np.ndarray): An array of radii defining the boundaries
+            of annuluses.
+
+        Returns:
+            np.int64: An array of indices indicating the annulus to
+            which each distance belongs.
+
+        Example:
+            If radii = [2, 5, 7, 10] and distances = [3.5, 8.2, 4.0],
+            then the function will return [1, 3, 2], indicating that
+            the first distance falls within the interval [2, 5), the
+            second distance falls within the interval [7, 10), and the
+            third distance falls within the interval [5, 7).
+        """
         return np.digitize(distances, radii)
 
     @staticmethod
     def calculate_distance(x_i: float, y_i: float, z_i: float,  # First point
                            x_2: float, y_2: float, z_2: float   # Second point
                            ) -> np.float64:
+        """
+        Calculate Euclidean distance between two points.
+        """
         return np.sqrt((x_2 - x_i)**2 + (y_2 - y_i)**2 + (z_2 - z_i)**2)
 
 
