@@ -32,199 +32,67 @@ Update:
     of the ODN heads is either 0 or the index of ODN defined in the
     stinfo. If they are zero, it is straightforward forward. If not,
     the data of the ODN should be split in half.
-
+Update Aug 15 2023:
+    split the module
+    GetData class is moved to another file: get_data.py
 """
 
 
-import pickle
 import typing
 import numpy as np
 import matplotlib
 import matplotlib.pylab as plt
 import static_info as stinfo
 import plot_interface_z as plt_z
+from get_data import GetData
 
-
-class GetData:
+class WrapPlots(GetData):
     """
-    A data processing class for splitting and organizing data based on
-    residue types.
-
-    This class reads input data from a pickle file and splits it based
-    on the residue types indicated by the last row indices. Each split
-    data is organized and stored separately for further analysis.
-
-    Attributes:
-        f_name (str): The filename of the input pickle file.
-        split_arr_dict (dict[str, np.ndarray]): A dictionary containing
-            split data arrays organized by residue types.
-        nr_dict (dict[str, int]): A dictionary containing numerical
-            information about the data, including the number of time
-            frames and the number of residues for each type.
-        box_dims (dict[str, float]): A dictionary containing the
-            the dimensions of the box
-    Methods:
-        __init__(): Initialize the GetData instance.
-        initiate_data(): Read and split the data from the pickle file.
-        get_numbers(data: dict[str, np.ndarray]) -> dict[str, int]:
-            Get the number of time frames and the number of residues
-            for each type.
-        split_data(data: np.ndarray) -> dict[str, np.ndarray]:
-            Split data based on residue types.
-        find_key_by_value(dictionary: dict[typing.Any, typing.Any], \
-            target_value: typing.Any) -> typing.Any:
-            Find a key in a dictionary based on a target value.
-        load_pickle() -> np.ndarray: Load data from the input pickle
-        file.
+    Get data and call other classes to analysis and plot them.
+    Before that, some calculateion must be done
     """
+
+    mean_nanop_com: np.ndarray  # Average of the nanoparticle COM over times
+    shift_nanop_com: np.ndarray  # Shift of COM at each time from average
+    interface_locz: float  # Z location of the interface
 
     def __init__(self) -> None:
+        super().__init__()
+        self.set_constants()
+        self.initiate_calc()
+        print(self.__dict__)
+
+    def set_constants(self) -> None:
         """
-        Initialize the GetData instance.
-
-        The filename of the input pickle file is set based on the
-        stinfo module.
-        The data is read, split, and relevant numbers are calculated
-        during initialization.
+        Set the constants for all the uses
         """
-        self.f_name: str = stinfo.files['com_pickle']
-        self.split_arr_dict: dict[str, np.ndarray] = self.initiate_data()
-        self.nr_dict: dict[str, int] = self.get_numbers(self.split_arr_dict)
-        self.box_dims: dict[str, float] = self.get_box_dimensions()
+        self.interface_locz = 107.7
 
-    def initiate_data(self) -> dict[str, np.ndarray]:
+    def initiate_calc(self) -> None:
         """
-        Read and split the data from the pickle file.
-
-        The data is loaded from the pickle file and split based on
-        residue types.
-        The split data is printed as a dictionary of residue names and
-        corresponding arrays.
+        Initiate calculation and some analysis which are needed for
+        all other classes
         """
-        com_arr: np.ndarray = self.load_pickle()
-        split_arr_dict: dict[str, np.ndarray] = self.split_data(com_arr[:, 4:])
-        split_arr_dict['APT_COR'] = com_arr[:-2, 1:4]
-        return split_arr_dict
+        self.mean_nanop_com = self.find_mean_of_np_com()
+        self.shift_nanop_com = self.find_np_shift_from_mean()
 
-    def get_box_dimensions(self) -> dict[str, float]:
-        """
-        Calculate the maximum and minimum values for x, y, and z axes
-        of each residue.
+    def find_mean_of_np_com(self) -> np.ndarray:
+        """find mean of the nanoparticle center of mass"""
+        return np.mean(self.split_arr_dict['APT_COR'], axis=0)
 
-        Returns:
-            dict[str, np.float64]: A dictionary where keys are axis
-            names ('xlo', 'xhi', etc.)
-            and values are the corresponding minimum and maximum values.
-        """
-        box_dims: dict[str, float] = {}
-        box_residues = ['SOL', 'D10']
-        axis_names = ['x', 'y', 'z']
+    def find_np_shift_from_mean(self,
+                                ) -> np.ndarray:
+        """frind the shift of com of nanoparticle from mean value at
+        each time step"""
+        return self.split_arr_dict['APT_COR'] - self.mean_nanop_com
 
-        # Initialize dictionaries for min and max values of each axis
-        min_values = {axis: np.inf for axis in axis_names}
-        max_values = {axis: -np.inf for axis in axis_names}
 
-        for res in box_residues:
-            arr = self.split_arr_dict[res]
-
-            # Iterate through each axis (x, y, z)
-            for axis_idx, axis in enumerate(axis_names):
-                axis_values = arr[:-2, axis_idx::3]
-                axis_min = np.min(axis_values)
-                axis_max = np.max(axis_values)
-
-                # Update min and max values for the axis
-                min_values[axis] = min(min_values[axis], axis_min)
-                max_values[axis] = max(max_values[axis], axis_max)
-        box_dims = {
-            f'{axis}_lo': min_values[axis] for axis in axis_names
-        }
-
-        box_dims.update({
-            f'{axis}_hi': max_values[axis] for axis in axis_names
-        })
-
-        return box_dims
-
-    @staticmethod
-    def get_numbers(data: dict[str, np.ndarray]  # Splitted np.arrays
-                    ) -> dict[str, int]:
-        """
-        Get the number of time frames and the number of residues for
-        each type.
-
-        Args:
-            data (dict[str, np.ndarray]): The split data dictionary.
-
-        Returns:
-            dict[str, int]: A dictionary containing the number of time
-            frames and the number of residues for each type.
-        """
-        nr_dict: dict[str, int] = {}
-        nr_dict['nr_frames'] = np.shape(data['SOL'])[0] - 2
-        for item, arr in data.items():
-            nr_dict[item] = np.shape(arr)[1] // 3
-        return nr_dict
-
-    def split_data(self,
-                   data: np.ndarray  # Loaded data without first 4 columns
-                   ) -> dict[str, np.ndarray]:
-        """
-        Split data based on the type of the residues.
-
-        Args:
-            data (np.ndarray): The data to be split, excluding the
-            first 4 columns.
-
-        Returns:
-            dict[str, np.ndarray]: A dictionary of residue names and
-            their associated arrays.
-        """
-        # Get the last row of the array
-        last_row: np.ndarray = data[-1]
-        last_row_indices: np.ndarray = last_row.astype(int)
-        unique_indices: np.ndarray = np.unique(last_row_indices)
-
-        # Create an empty dictionary to store the split arrays
-        result_dict: dict[int, list] = {index: [] for index in unique_indices}
-
-        # Iterate through each column and split based on the indices
-        for col_idx, column in enumerate(data.T):
-            result_dict[last_row_indices[col_idx]].append(column)
-
-        # Convert the dictionary values back to numpy arrays
-        result: list[np.ndarray] = \
-            [np.array(arr_list).T for arr_list in result_dict.values()]
-
-        array_dict: dict[str, np.ndarray] = {}
-        for i, arr in enumerate(result):
-            residue_name = self.find_key_by_value(stinfo.reidues_id, i)
-            array_dict[residue_name] = arr
-        return array_dict
-
-    @staticmethod
-    def find_key_by_value(dictionary: dict[typing.Any, typing.Any],
-                          target_value: typing.Any
-                          ) -> typing.Any:
-        """
-        Find the key in the dictionary based on the target value.
-
-        Args:
-            dictionary (dict): The dictionary to search.
-            target_value: The value to search for.
-
-        Returns:
-            str or None: The key associated with the target value, or
-            None if not found.
-        """
-        return next((key for key, value in dictionary.items() if
-                     value == target_value), None)
-
-    def load_pickle(self) -> np.ndarray:
-        """loading the input file"""
-        with open(self.f_name, 'rb') as f_rb:
-            com_arr = pickle.load(f_rb)
-        return com_arr
+class PlotOdnAnalysis(WrapPlots):
+    """
+    Analysing ODN data and plot them in files
+    """
+    def __init__(self) -> None:
+        super().__init__()
 
 
 class PlotCom(GetData):
@@ -263,7 +131,10 @@ class PlotCom(GetData):
                       interface_loc=107.7,
                       nanop_shift=nanop_shift,
                       nanop_center=nanop_center)
-
+        self.plot_annulus_dendity(self.split_arr_dict['ODN'][:-2,:],
+                                  interface_loc=107.7,
+                                  nanop_shift=nanop_shift,
+                                  nanop_center=nanop_center)
         for res in ['ODN', 'CLA', 'SOL']:
             res_arr: np.ndarray = self.__get_residue(res)
             x_indices, y_indices, z_indices = self.__get_res_xyz(res_arr)
@@ -288,6 +159,84 @@ class PlotCom(GetData):
                 self.__plot_odn_com(ax_com, res)
         # Plot interface based on the z location
         plt_z.PlotInterfaceZ(interface_locz)
+
+    def plot_annulus_dendity(self,
+                             res_arr: np.ndarray,  # ODN array
+                             interface_loc: float,  # Location of interface
+                             nanop_shift: np.ndarray,  # Shift of np from ave
+                             nanop_center: np.ndarray
+                             ) -> None:
+        """plot density of the odn around np in"""
+        self.calculate_odn_density(res_arr,
+                                   interface_loc,
+                                   nanop_shift,
+                                   nanop_center)
+
+    def calculate_odn_density(self,
+                              res_arr: np.ndarray,  # ODN array
+                              interface_loc: float,  # Location of interface
+                              nanop_shift: np.ndarray,  # Shift of np from ave
+                              nanop_center: np.ndarray
+                              ) -> None:
+        """
+        Define the annulus sections around the nanoparticles and then
+        count the number of ODN in each annulus.
+        """
+        from scipy.signal import savgol_filter  # Import the savgol_filter
+        counts, radii_distance = self.count_odn_in_annuluses(res_arr, nanop_center, nanoparticle_radius=20, dr=5)
+        
+        # Create subplots for each frame
+        den_fig, den_ax = plt.subplots()
+        average_counts = np.average(counts[100:], axis=0)
+        den_ax.plot(average_counts, label=f'Frame')
+        # for frame in range(100, self.nr_dict['nr_frames'], 10):
+            # non_zero_indices = np.nonzero(counts[frame])  # Get indices of non-zero counts
+            # if len(non_zero_indices[0]) > 0:
+                # max_window_length = len(non_zero_indices[0]) // 2
+                # smoothed_counts = savgol_filter(counts[frame][non_zero_indices], window_length=max_window_length, polyorder=5)  # Apply Savitzky-Golay smoothing
+                # print(counts[frame][non_zero_indices])
+                # den_ax.plot(non_zero_indices[0], smoothed_counts, label=f'Frame {frame}')
+        den_ax.set_xlabel('Annulus Index')
+        den_ax.set_ylabel('ODN Count')
+        den_ax.set_title('ODN Counts in Annuluses')
+        # den_ax.legend()
+        plt.show()
+
+
+
+
+    def count_odn_in_annuluses(self, odn_data, nanoparticle_center, nanoparticle_radius, dr):
+        center_x, center_y, center_z = nanoparticle_center
+        radii = np.arange(nanoparticle_radius, self.box_dims['x_hi'], dr)  # Create radii array with steps of dr
+        radii_distance = np.linspace(nanoparticle_radius, self.box_dims['x_hi'], len(radii))
+        num_time_frames, num_columns = odn_data.shape
+        num_residues = num_columns // 3
+
+        counts = np.zeros((num_time_frames, len(radii) - 1), dtype=int)
+
+        for frame in range(num_time_frames):
+            for residue in range(num_residues):
+                x = odn_data[frame, residue*3]
+                y = odn_data[frame, residue*3 + 1]
+                z = odn_data[frame, residue*3 + 2]
+
+                distance = self.calculate_distance(x, y, z, center_x, center_y, center_z)
+                # print(distance)
+                # Ensure the distance is within nanoparticle_radius
+                if distance >= nanoparticle_radius:
+                    annulus_idx = self.categorize_into_annuluses(nanoparticle_radius, distance, radii, dr) - 1
+                    counts[frame, annulus_idx] += 1
+
+        return counts, radii_distance
+
+    def calculate_distance(self, x1, y1, z1, x2, y2, z2):
+        return np.sqrt((x2 - x1)**2 + (y2 - y1)**2 + (z2 - z1)**2)
+
+    def categorize_into_annuluses(self, R, distances, radii, dr):
+        annuluses = np.digitize(distances, radii)
+        # annuluses = np.minimum(annuluses, int(np.ceil(R / dr)))  # Ensure annulus index doesn't exceed number of annuluses
+        return annuluses
+
 
     def plot_odn(self,
                  res_arr: np.ndarray,  # ODN array
@@ -547,4 +496,5 @@ class PlotCom(GetData):
 
 
 if __name__ == '__main__':
-    PlotCom()
+    # PlotCom()
+    PlotOdnAnalysis()
