@@ -68,7 +68,7 @@ class WrapData(GetData):
         """
         Set the constants for all the uses
         """
-        self.interface_locz = 107.7
+        self.interface_locz = 113.9
         self.nanop_radius = stinfo.np_info['radius']
 
     def initiate_calc(self) -> None:
