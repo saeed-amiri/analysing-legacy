@@ -689,7 +689,29 @@ class PlotIonAnalysis(WrapData):
 
 class PlotNpAnalysis(WrapData):
     """
-    Analyzing the behavior of nanoparticles.
+    Analyzes and plots the behavior of nanoparticles.
+
+    This class inherits from WrapData and provides methods for
+    analyzing and plotting the behavior of nanoparticles' center of
+    mass (COM) data. It creates visualizations with shaded regions and
+    insets for detailed information.
+
+    Attributes:
+        fontsize (int): Font size for all plots.
+        transparent (bool): Option to save the figure with a
+        transparent background.
+
+    Methods:
+        __init__(): Constructor to initialize the class and initiate
+                    plotting.
+        _initiate_plotting(): Initiate nanoparticle center of mass
+                              plotting.
+        _add_background_shading(): Add background shading to the main
+                                   plot.
+        _add_radius_shading(): Add radius shading to the main plot.
+        _plot_inset(): Plot an inset showing center of mass details.
+        _finalize_plot(): Finalize the nanoparticle center of mass
+                          plot.
     """
 
     fontsize: int = 12
@@ -703,7 +725,13 @@ class PlotNpAnalysis(WrapData):
     def _initiate_plotting(self,
                            nanop_arr: np.ndarray
                            ) -> None:
-        """Plot nanoparticle center of mass."""
+        """
+        Initiate the nanoparticle center of mass plotting.
+
+        This method sets up the figure, axes, and plots the nanoparticle
+        center of mass data along with shading for background and radius
+        information. It also calls the method to add an inset plot.
+        """
         fig_i, ax_i = plot_tools.mk_canvas(
             (self.box_dims['x_lo'], self.box_dims['x_hi']),
             num_xticks=6,
@@ -718,6 +746,18 @@ class PlotNpAnalysis(WrapData):
     def _add_background_shading(self,
                                 ax_i: plt.axes
                                 ) -> None:
+        """
+        Add background shading to the plot.
+
+        This method adds shading to the background of the main plot
+        representing different regions.
+
+        Args:
+            ax_i (plt.axes): The main axes of the plot.
+
+        Returns:
+            None
+        """
         ax_i.axhspan(
             ymin=self.box_dims['z_lo'],
             ymax=self.interface_locz,
@@ -738,6 +778,18 @@ class PlotNpAnalysis(WrapData):
     def _add_radius_shading(self,
                             ax_i: plt.axes
                             ) -> None:
+        """
+        Add radius shading to the plot.
+
+        This method adds shading to the plot representing the radius
+        of the nanoparticle center of mass.
+
+        Args:
+            ax_i (plt.axes): The main axes of the plot.
+
+        Returns:
+            None
+        """
         ax_i.axhspan(
             ymin=self.mean_nanop_com[2] - self.nanop_radius,
             ymax=self.mean_nanop_com[2] + self.nanop_radius,
@@ -750,6 +802,18 @@ class PlotNpAnalysis(WrapData):
     def _plot_inset(self,
                     nanop_arr: np.ndarray
                     ) -> plt.axes:
+        """
+        Plot an inset showing center of mass details.
+
+        This method adds an inset plot to the main plot, showing
+        details of the nanoparticle center of mass data.
+
+        Args:
+            nanop_arr (np.ndarray): Nanoparticle center of mass data.
+
+        Returns:
+            plt.axes: The axes of the inset plot.
+        """
         left, bottom, width, height = [0.23, 0.62, 0.65, 0.23]
         inset_ax = plt.axes([left, bottom, width, height])
         inset_ax.plot(nanop_arr[:, 2], c='k')
@@ -769,6 +833,21 @@ class PlotNpAnalysis(WrapData):
                        legend: typing.Optional[bool] = True,
                        loc: typing.Optional[str] = 'lower left'
                        ) -> None:
+        """
+        Finalize the nanoparticle center of mass plot.
+
+        This method adds final touches to the main plot, including labels,
+        legend, and saves the figure.
+
+        Args:
+            fig (plt.figure): The main figure.
+            ax_i (plt.axes): The main axes of the plot.
+            legend (Optional[bool]): Whether to show the legend.
+            loc (Optional[str]): Location of the legend.
+
+        Returns:
+            None
+        """
         ax_i.set_xlabel('Time Frame Index (*0.1 [ns])')
         ax_i.set_ylabel('Z Coordinate [A]')
         plot_tools.save_close_fig(
