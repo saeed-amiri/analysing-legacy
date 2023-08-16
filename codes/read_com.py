@@ -728,9 +728,10 @@ class PlotNpAnalysis(WrapData):
         """
         Initiate the nanoparticle center of mass plotting.
 
-        This method sets up the figure, axes, and plots the nanoparticle
-        center of mass data along with shading for background and radius
-        information. It also calls the method to add an inset plot.
+        This method sets up the figure, axes, and plots the
+        nanoparticle center of mass data along with shading for
+        background and radius information. It also calls the method to
+        add an inset plot.
         """
         fig_i, ax_i = plot_tools.mk_canvas(
             (self.box_dims['x_lo'], self.box_dims['x_hi']),
@@ -836,8 +837,8 @@ class PlotNpAnalysis(WrapData):
         """
         Finalize the nanoparticle center of mass plot.
 
-        This method adds final touches to the main plot, including labels,
-        legend, and saves the figure.
+        This method adds final touches to the main plot, including
+        labels, legend, and saves the figure.
 
         Args:
             fig (plt.figure): The main figure.
@@ -855,6 +856,6 @@ class PlotNpAnalysis(WrapData):
 
 
 if __name__ == '__main__':
-    # PlotOdnAnalysis()
-    # PlotIonAnalysis()
+    PlotOdnAnalysis()
+    PlotIonAnalysis()
     PlotNpAnalysis()
