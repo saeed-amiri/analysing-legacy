@@ -193,7 +193,7 @@ class PlotOdnAnalysis(WrapData):
             savgol_filter(average_counts,
                           window_length=5,
                           polyorder=3)  # Apply Savitzky-Golay smoothin
-        ax_i.plot(radii_distance[:-1], smoothed_counts, label='Average')
+        ax_i.plot(radii_distance[:-1], smoothed_counts, label='Average', c='k')
         ax_i.set_xlabel('Distance from NP')
         ax_i.set_ylabel('ODN Count')
         ax_i.set_title('ODN Counts in Annuluses')
