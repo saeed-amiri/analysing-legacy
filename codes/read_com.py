@@ -687,6 +687,89 @@ class PlotIonAnalysis(WrapData):
         plt.close(ion_fig)
 
 
+class PlotNpAnalysis(WrapData):
+    """
+    Analysing of the behavior of the nanoparticles
+    In com_pickel there are information about the center of mass of the NP
+    """
+
+    fontsize: int = 12  # Fontsize for all in plots
+    transparent: bool = False  # Save fig background
+
+    def __init__(self) -> None:
+        super().__init__()
+        nanop_arr: np.ndarray = self.split_arr_dict['APT_COR'][:-2]
+        self._initiate_analyses(nanop_arr)
+        self._initiate_plotting(nanop_arr)
+
+    def _initiate_analyses(self,
+                           nanop_arr: np.ndarray  # NP COM infos
+                           ) -> None:
+        """make some analysis if needed"""
+
+    def _initiate_plotting(self,
+                           nanop_arr: np.ndarray  # NP COM info
+                           ) -> None:
+        """plots"""
+        self.plot_nanop_com(nanop_arr)
+
+    def plot_nanop_com(self,
+                       nanop_arr: np.ndarray
+                       ) -> None:
+        """plot the center of mass of the nanoparticle"""
+        ax_i: plt.axes
+        fig_i, ax_i = plot_tools.mk_canvas((self.box_dims['x_lo'],
+                                            self.box_dims['x_hi']),
+                                           num_xticks=6,
+                                           fsize=12)
+        ax_i.plot(nanop_arr[:, 2], c='k', label='COM of NP')
+        ax_i.axhspan(ymin=self.box_dims['z_lo'],
+                     ymax=self.interface_locz,
+                     xmin=0,
+                     xmax=200,
+                     linestyle='',
+                     color='blue',
+                     alpha=0.05)
+        ax_i.axhspan(ymin=self.interface_locz,
+                     ymax=self.box_dims['z_hi'],
+                     xmin=0,
+                     xmax=200,
+                     linestyle='',
+                     color='yellow',
+                     alpha=0.05)
+        ax_i.axhspan(ymin=self.mean_nanop_com[2] - self.nanop_radius,
+                     ymax=self.mean_nanop_com[2] + self.nanop_radius,
+                     color='red',
+                     edgecolor=None,
+                     linestyle='',
+                     zorder=1,
+                     alpha=0.15)
+        self.plot_inset(nanop_arr)
+        ax_i.set_xlabel('time frame index (*0.1 [ns])')
+        ax_i.set_ylabel('z coordinate [A]')
+        plot_tools.save_close_fig(
+            fig_i, ax_i, fname='nanop_com', legend=True, loc='lower center')
+
+    def plot_inset(self,
+                   nanop_arr: np.ndarray
+                   ) -> plt.axes:
+        """Create an inset plot"""
+        # Position and size of the inset plot
+        left, bottom, width, height = [0.23, 0.62, 0.66, 0.23]
+        inset_ax = plt.axes([left, bottom, width, height])
+        # Plot the inset curve
+        inset_ax.plot(nanop_arr[:, 2], c='k')
+        inset_ax.axhline(self.mean_nanop_com[2],
+                         color='r',
+                         ls='--',
+                         lw=1,
+                         zorder=2,
+                         label=f'mean of data: {self.mean_nanop_com[2]:.2f}')
+        inset_ax = plot_tools.set_ax_font_label(inset_ax, fsize=10)
+        inset_ax.legend()
+        return inset_ax
+
+
 class PlotCom(GetData):
     """
     Reading the center of mass file, the name is set static_info.py
@@ -967,5 +1050,6 @@ class PlotCom(GetData):
 
 if __name__ == '__main__':
     # PlotCom()
-    PlotOdnAnalysis()
-    PlotIonAnalysis()
+    # PlotOdnAnalysis()
+    # PlotIonAnalysis()
+    PlotNpAnalysis()
