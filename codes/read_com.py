@@ -163,7 +163,7 @@ class PlotOdnAnalysis(WrapData):
             counts (np.ndarray): Counts of ODN in annuluses.
             radii_distance (np.ndarray): Corresponding radii distances.
         """
-        self.plot_odn(odn_arr)
+        self.plot_odn_com(odn_arr)
         self.plot_smoothed_annulus_density(counts, radii_distance)
         self.plot_average_annulus_density(counts, radii_distance)
 
@@ -250,45 +250,60 @@ class PlotOdnAnalysis(WrapData):
         ax_i.legend()
         plot_tools.save_close_fig(fig_i, ax_i, fname='odn_density')
 
-    def plot_odn(self,
-                 odn_arr: np.ndarray  # ODN array
-                 ) -> None:
+    def plot_odn_com(self, odn_arr: np.ndarray) -> None:
         """
-        Plot the center of mass of ODN molecules.
+        Plot the center of mass of ION molecules.
 
-        This method creates a plot showing the movement of ODN
-        molecules' center of mass.
+        This method creates scatter plots showing the movement of ION
+        molecules' center of mass in different dimensions.
 
         Args:
-            odn_arr (np.ndarray): The array of ODN data.
+            ion_arr (np.ndarray): The array of ION data.
         """
-        odn_fig, odn_ax = plt.subplots()
+        # Create a 1x3 grid of subplots
+        odn_fig, odn_axes = plt.subplots(1, 3, figsize=(18, 6))
         axis_names = ['x', 'y', 'z']
-        odn_data: dict[str, np.ndarray] = {}
-        for axis_idx, axis in enumerate(axis_names):
-            odn_data[axis] = odn_arr[:, axis_idx::3]
-        # Find the ODN at the interface
-        mask = (odn_data['z'] < self.interface_locz+10) & \
-               (odn_data['z'] > self.interface_locz-10)
-        # Get the indices where the mask is True for each row
-        indices: list[np.ndarray] = \
-            [np.where(row_mask)[0] for row_mask in mask]
+        odn_data = {
+            axis: odn_arr[:, axis_idx::3] for axis_idx, axis in
+            enumerate(axis_names)
+            }
+
         for i_step in range(self.nr_dict['nr_frames']):
-            x_data = odn_data['x'][i_step][indices[i_step]] - \
-                self.shift_nanop_com[i_step][0]
-            y_data = odn_data['y'][i_step][indices[i_step]] - \
-                self.shift_nanop_com[i_step][1]
-            odn_ax.scatter(x_data,
-                           y_data,
-                           s=5,
-                           c='black',
-                           alpha=(i_step+1)/self.nr_dict['nr_frames'])
-        circ: matplotlib.patches.Circle = \
-            plot_tools.mk_circle(radius=self.nanop_radius,
-                                 center=self.mean_nanop_com[0:2])
-        odn_ax.add_artist(circ)
-        plt.axis('equal')
-        odn_fig.savefig('test2_odn.png')
+            for ax_idx, scatter_axes in enumerate(
+               [('x', 'y'), ('y', 'z'), ('x', 'z')]):
+                scatter_x_axis, scatter_y_axis = scatter_axes
+                shift_x = \
+                    self.shift_nanop_com[i_step][0] if \
+                    scatter_x_axis == 'x' else \
+                    self.shift_nanop_com[i_step][2]
+
+                shift_y = self.shift_nanop_com[i_step][1]
+
+                scatter_x_data = odn_data[scatter_x_axis][i_step] - shift_x
+                scatter_y_data = odn_data[scatter_y_axis][i_step] - shift_y
+
+                odn_axes[ax_idx].scatter(
+                    scatter_x_data,
+                    scatter_y_data,
+                    s=5,
+                    c='black',
+                    alpha=(i_step + 1) / self.nr_dict['nr_frames']
+                )
+                circ = plot_tools.mk_circle(radius=self.nanop_radius,
+                                            center=self.mean_nanop_com[0:2])
+                odn_axes[ax_idx].add_artist(circ)
+                odn_axes[ax_idx].set_aspect('equal')
+                odn_axes[ax_idx].set_title(
+                    f'{scatter_x_axis.upper()}-{scatter_y_axis.upper()} Plane')
+                odn_axes[ax_idx].set_xlabel(
+                    f'{scatter_x_axis.capitalize()} Coordinate')
+                odn_axes[ax_idx].set_ylabel(
+                    f'{scatter_y_axis.capitalize()} Coordinate')
+                odn_axes[ax_idx].grid(True)
+
+        plt.tight_layout()
+        odn_fig.savefig('odn_com_plots.png')
+        plt.close(odn_fig)
 
     def count_odn_in_annuluses(self,
                                odn_arr: np.ndarray,  # ODN array
@@ -794,9 +809,11 @@ class PlotNpAnalysis(WrapData):
         ax_i.axhspan(
             ymin=self.mean_nanop_com[2] - self.nanop_radius,
             ymax=self.mean_nanop_com[2] + self.nanop_radius,
-            color='red',
+            edgecolor='red',  # Color of the hatch lines
+            facecolor='none',
+            hatch='////',  # Set the hatch patter
             linestyle='',
-            alpha=0.15,
+            alpha=0.3,
             label='Nanoparticle Radius'
         )
 
@@ -865,7 +882,40 @@ class PlotWaterAnalysis(WrapData):
     def __init__(self) -> None:
         super().__init__()
         sol_arr: np.ndarray = self.split_arr_dict['SOL'][:-2]
-        self.initiate_sol_plotting(sol_arr)
+        clean_arr = self.initiate_sol_analysis(sol_arr)
+        self.initiate_sol_plotting(clean_arr)
+
+    def initiate_sol_analysis(self,
+                              sol_arr: np.ndarray
+                              ) -> np.ndarray:
+        """do some stuff"""
+        return self.clean_sol_data(sol_arr)
+
+    def clean_sol_data(self,
+                       sol_arr: np.ndarray
+                       ) -> np.ndarray:
+        """clean data by removing water at the edge of the box"""
+        treshhold: float = 10
+        x_min: float = self.box_dims['x_lo'] + treshhold
+        x_max: float = self.box_dims['x_hi'] - treshhold
+        y_min: float = self.box_dims['y_lo'] + treshhold
+        y_max: float = self.box_dims['y_hi']
+        z_min: float = self.box_dims['z_lo'] + treshhold
+        z_max: float =  150
+        # Create boolean masks for each condition
+        x_mask = (sol_arr[:, 0] >= x_min) & (sol_arr[:, 0] <= x_max)
+        y_mask = (sol_arr[:, 1] >= y_min) & (sol_arr[:, 1] <= y_max)
+        z_mask = (sol_arr[:, 2] >= z_min) & (sol_arr[:, 2] <= z_max)
+
+        # Combine the masks to get the final mask
+        final_mask = x_mask & y_mask & z_mask
+
+
+        # Set values outside the threshold to zero
+        clean_arr = sol_arr.copy()
+        clean_arr[final_mask] = 0
+        
+        return clean_arr
 
     def initiate_sol_plotting(self,
                               sol_arr: np.ndarray
@@ -903,9 +953,8 @@ class PlotWaterAnalysis(WrapData):
 
                 shift_y = self.shift_nanop_com[i_step][1]
 
-                scatter_x_data = sol_data[scatter_x_axis][i_step] - shift_x
-                scatter_y_data = sol_data[scatter_y_axis][i_step] - shift_y
-
+                scatter_x_data = sol_data[scatter_x_axis][i_step] #- shift_x
+                scatter_y_data = sol_data[scatter_y_axis][i_step] #- shift_y
                 sol_axes[ax_idx].scatter(
                     scatter_x_data,
                     scatter_y_data,
@@ -931,7 +980,7 @@ class PlotWaterAnalysis(WrapData):
 
 
 if __name__ == '__main__':
-    # PlotOdnAnalysis()
+    PlotOdnAnalysis()
     # PlotIonAnalysis()
     # PlotNpAnalysis()
-    PlotWaterAnalysis()
+    # PlotWaterAnalysis()
