@@ -91,7 +91,8 @@ def save_close_fig(fig: plt.figure,  # The figure to save,
                    axs: plt.axes,  # Axes to plot
                    fname: str,  # Name of the output for the fig
                    loc: str = 'upper right',  # Location of the legend
-                   transparent=False
+                   transparent=False,
+                   legend=True
                    ) -> None:
     """
     Save the figure and close it.
@@ -105,8 +106,11 @@ def save_close_fig(fig: plt.figure,  # The figure to save,
         loc (str, optional): Location of the legend. Default is
         'upper right'.
     """
-    legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
-    legend.set_bbox_to_anchor((1.0, 1.0))
+    if not legend:
+        legend = axs.legend(loc=loc, bbox_to_anchor=(1.0, 1.0))
+        legend.set_bbox_to_anchor((1.0, 1.0))
+    else:
+        legend = axs.legend(loc=loc)
     fig.savefig(fname,
                 dpi=300,
                 pad_inches=0.1,
