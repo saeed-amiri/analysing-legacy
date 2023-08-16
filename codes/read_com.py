@@ -209,7 +209,6 @@ class PlotOdnAnalysis(WrapData):
         plot_tools.set_y2ticks(ax_i)
         ax_i.xaxis.grid(color='gray', linestyle=':')
         ax_i.yaxis.grid(color='gray', linestyle=':')
-        ax_i.legend()
         plot_tools.save_close_fig(fig_i, ax_i, fname='average_odn')
 
     def plot_smoothed_annulus_density(self,
@@ -570,28 +569,8 @@ class PlotIonAnalysis(WrapData):
             savgol_filter(average_counts,
                           window_length=5,
                           polyorder=3)  # Apply Savitzky-Golay smoothin
-        ax_i.plot(radii_distance, smoothed_counts, label='Average')
-        ax_i.axvspan(self.mean_nanop_com[2] - self.nanop_radius,
-                     self.mean_nanop_com[2] + self.nanop_radius,
-                     color='gray',
-                     edgecolor=None,
-                     alpha=0.2)
-        ax_i.set_xlabel('distance in z-direction')
-        ax_i.set_ylabel('ION Count')
-        ax_i.set_title('ION Counts in slabs')
-        # Plot vertical line at the specified x-coordinate
-        ax_i.axvline(x=self.mean_nanop_com[2],
-                     color='red',
-                     linestyle='--',
-                     label='NP z of average COM')
-        ax_i.axvline(x=self.interface_locz,
-                     color='b',
-                     linestyle='--',
-                     label='interface (average)')
-        plot_tools.set_y2ticks(ax_i)
-        ax_i.xaxis.grid(color='gray', linestyle=':')
-        ax_i.yaxis.grid(color='gray', linestyle=':')
-        ax_i.legend()
+        ax_i.plot(radii_distance, smoothed_counts, label='Average', c='k')
+        ax_i = self.append_vlines_span_to_density(ax_i)
         plot_tools.save_close_fig(fig_i, ax_i, fname='average_ion')
 
     def plot_smoothed_ion_density(self,
@@ -609,17 +588,48 @@ class PlotIonAnalysis(WrapData):
             slab_areas (np.ndarray): Z-coordinates representing slab
             boundaries.
         """
-        fig_i, ax_i = plot_tools.mk_canvas(
-            (self.box_dims['x_lo'], self.box_dims['x_hi']), num_xticks=6)
-        for frame in range(100, self.nr_dict['nr_frames'], 10):
+        fig_i, ax_i = plot_tools.mk_canvas((self.box_dims['x_lo'],
+                                            self.box_dims['x_hi']),
+                                           num_xticks=6,
+                                           fsize=12)
+        for frame in range(100, self.nr_dict['nr_frames'], 1):
             smoothed_counts = \
                 savgol_filter(counts[frame], window_length=5, polyorder=3)
-            ax_i.plot(slab_areas, smoothed_counts, label=f'Frame {frame}')
-        ax_i.set_xlabel('Z Coordinate')
-        ax_i.set_ylabel('Ion Count')
-        ax_i.set_title('Ion Counts in Slabs')
-        ax_i.legend()
-        plot_tools.save_close_fig(fig_i, ax_i, fname='ion_density')
+            ax_i.plot(slab_areas,
+                      smoothed_counts,
+                      lw=0.2,
+                      color='k',
+                      alpha=(frame-99)/(self.nr_dict['nr_frames']-100))
+        ax_i = self.append_vlines_span_to_density(ax_i)
+        plot_tools.save_close_fig(
+            fig_i, ax_i, fname='ion_density', legend=False)
+
+    def append_vlines_span_to_density(self,
+                                      ax_i: plt.axes
+                                      ) -> plt.axes:
+        """append vlines and stuff to the axis and retrun it"""
+        ax_i.axvspan(self.mean_nanop_com[2] - self.nanop_radius,
+                     self.mean_nanop_com[2] + self.nanop_radius,
+                     color='red',
+                     edgecolor=None,
+                     linestyle='',
+                     alpha=0.15)
+        # Plot vertical line at the specified x-coordinate
+        ax_i.axvline(x=self.mean_nanop_com[2],
+                     color='red',
+                     linestyle='--',
+                     label='NP z of average COM')
+        ax_i.axvline(x=self.interface_locz,
+                     color='b',
+                     linestyle='--',
+                     label='interface (average)')
+        ax_i.set_xlabel('distance in z-direction')
+        ax_i.set_ylabel('ION Count')
+        ax_i.set_title('ION Counts in slabs')
+        plot_tools.set_y2ticks(ax_i)
+        ax_i.xaxis.grid(color='gray', linestyle=':')
+        ax_i.yaxis.grid(color='gray', linestyle=':')
+        return ax_i
 
     def plot_ion_com(self, ion_arr: np.ndarray) -> None:
         """
