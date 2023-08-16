@@ -855,7 +855,83 @@ class PlotNpAnalysis(WrapData):
             fig, ax_i, fname='nanop_com', legend=legend, loc=loc)
 
 
+class PlotWaterAnalysis(WrapData):
+    """
+    To analysis water
+    """
+    fontsize: int = 12  # Fontsize for all in plots
+    transparent: bool = False  # Save fig background
+
+    def __init__(self) -> None:
+        super().__init__()
+        sol_arr: np.ndarray = self.split_arr_dict['SOL'][:-2]
+        self.initiate_sol_plotting(sol_arr)
+
+    def initiate_sol_plotting(self,
+                              sol_arr: np.ndarray
+                              ) -> None:
+        """plot sol"""
+        self.plot_sol_com(sol_arr)
+
+    def plot_sol_com(self,
+                     sol_arr: np.ndarray) -> None:
+        """
+        Plot the center of mass of SOL molecules.
+
+        This method creates scatter plots showing the movement of SOL
+        molecules' center of mass in different dimensions.
+
+        Args:
+            sol_arr (np.ndarray): The array of SOL data.
+        """
+        # Create a 1x3 grid of subplots
+        sol_fig, sol_axes = plt.subplots(1, 3, figsize=(18, 6))
+        axis_names = ['x', 'y', 'z']
+        sol_data = {
+            axis: sol_arr[:, axis_idx::3] for axis_idx, axis in
+            enumerate(axis_names)
+            }
+
+        for i_step in range(self.nr_dict['nr_frames']):
+            for ax_idx, scatter_axes in enumerate(
+               [('x', 'y'), ('y', 'z'), ('x', 'z')]):
+                scatter_x_axis, scatter_y_axis = scatter_axes
+                shift_x = \
+                    self.shift_nanop_com[i_step][0] if \
+                    scatter_x_axis == 'x' else \
+                    self.shift_nanop_com[i_step][2]
+
+                shift_y = self.shift_nanop_com[i_step][1]
+
+                scatter_x_data = sol_data[scatter_x_axis][i_step] - shift_x
+                scatter_y_data = sol_data[scatter_y_axis][i_step] - shift_y
+
+                sol_axes[ax_idx].scatter(
+                    scatter_x_data,
+                    scatter_y_data,
+                    s=5,
+                    c='black',
+                    alpha=(i_step + 1) / self.nr_dict['nr_frames']
+                )
+                circ = plot_tools.mk_circle(radius=self.nanop_radius,
+                                            center=self.mean_nanop_com[0:2])
+                sol_axes[ax_idx].add_artist(circ)
+                sol_axes[ax_idx].set_aspect('equal')
+                sol_axes[ax_idx].set_title(
+                    f'{scatter_x_axis.upper()}-{scatter_y_axis.upper()} Plane')
+                sol_axes[ax_idx].set_xlabel(
+                    f'{scatter_x_axis.capitalize()} Coordinate')
+                sol_axes[ax_idx].set_ylabel(
+                    f'{scatter_y_axis.capitalize()} Coordinate')
+                sol_axes[ax_idx].grid(True)
+
+        plt.tight_layout()
+        sol_fig.savefig('sol_com_plots.png')
+        plt.close(sol_fig)
+
+
 if __name__ == '__main__':
-    PlotOdnAnalysis()
-    PlotIonAnalysis()
-    PlotNpAnalysis()
+    # PlotOdnAnalysis()
+    # PlotIonAnalysis()
+    # PlotNpAnalysis()
+    PlotWaterAnalysis()
