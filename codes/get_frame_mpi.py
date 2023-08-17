@@ -582,9 +582,11 @@ class CalculateCom:
            ):
             for row, i in enumerate(chunk_tstep):
                 ind = int(i)
+                print(f"time step: {ind}")
                 frame = u_traj.trajectory[ind]
                 atoms_position: np.ndarray = frame.positions
                 for k, val in sol_residues.items():
+                    print(f'\tgetting residues: {k}')
                     for item in val:
                         com = self.get_com_all(atoms_position, item)
                         if com is None:
