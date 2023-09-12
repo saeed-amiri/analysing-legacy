@@ -25,6 +25,7 @@ topo = {
 reidues_num: dict[str, int]
 reidues_num = {
     'CLA': 1,
+    'POT': 2,
     'SOL': 3,
     'ODN': 59,
     'D10': 32,
@@ -36,10 +37,11 @@ reidues_id: dict[str, int]
 reidues_id = {
     'SOL': 1,
     'CLA': 2,
-    'ODN': 3,
-    'D10': 4,
-    'APT': 5,
-    'COR': 6,
+    'POT': 3,
+    'ODN': 4,
+    'D10': 5,
+    'APT': 6,
+    'COR': 7,
     'AMINO_ODN': 0
 }
 
