@@ -102,8 +102,8 @@ class CalculateCom:
         u_traj = self.get_residues.trr_info.u_traj
         com_arr: np.ndarray = \
             self.mk_allocation(self.n_frames,
-                                self.get_residues.nr_sol_res,
-                                self.get_residues.top.mols_num['ODN'])
+                               self.get_residues.nr_sol_res,
+                               self.get_residues.top.mols_num['ODN'])
         _, com_col = np.shape(com_arr)
         amino_odn_index: dict[int, int] = \
             self.set_amino_odn_index(com_arr, sol_residues['ODN'])
