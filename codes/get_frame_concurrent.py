@@ -99,19 +99,16 @@ class CalculateCom:
             self.get_solution_residues(stinfo.np_info['solution_residues'])
         residues_index_dict: dict[int, int] = \
             self.mk_residues_dict(sol_residues)
-        if self.get_residues is not None:
-            u_traj = self.get_residues.trr_info.u_traj
-            com_arr: np.ndarray = \
-                self.mk_allocation(self.n_frames,
-                                   self.get_residues.nr_sol_res,
-                                   self.get_residues.top.mols_num['ODN'])
-            if com_arr is not None and sol_residues is not None:
-                _, com_col = np.shape(com_arr)
-                amino_odn_index: dict[int, int] = \
-                    self.set_amino_odn_index(com_arr, sol_residues['ODN'])
+        u_traj = self.get_residues.trr_info.u_traj
+        com_arr: np.ndarray = \
+            self.mk_allocation(self.n_frames,
+                                self.get_residues.nr_sol_res,
+                                self.get_residues.top.mols_num['ODN'])
+        _, com_col = np.shape(com_arr)
+        amino_odn_index: dict[int, int] = \
+            self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
-        if chunk_tstep is not None:
-            chunk_size = len(chunk_tstep)
+        chunk_size = len(chunk_tstep)
 
         my_data = np.empty((chunk_size, com_col))
 
