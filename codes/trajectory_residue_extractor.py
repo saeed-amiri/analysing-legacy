@@ -53,7 +53,7 @@ class GetResidues:
 
     def __init__(self,
                  fname: str,  # Name of the trajectory file
-                 log: typing.Union[logger.logging.Logger, None]
+                 log: logger.logging.Logger
                  ) -> None:
         """
         Initialize GetResidues class.
@@ -68,7 +68,7 @@ class GetResidues:
 
     def _initiate_reading(self,
                           fname: str,  # Name of the trajectory file
-                          log: typing.Union[logger.logging.Logger, None]
+                          log: logger.logging.Logger
                           ) -> None:
         """
         Call the other modules and read the files
@@ -173,7 +173,7 @@ class GetResidues:
         return False
 
     def __write_msg(self,
-                    log: typing.Union[logger.logging.Logger, None]  # To log
+                    log: logger.logging.Logger  # To log
                     ) -> None:
         """write and log messages"""
         print(f'{bcolors.OKCYAN}{GetResidues.__name__}:\n'
