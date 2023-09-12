@@ -136,7 +136,7 @@ class CalculateCom:
                     ) -> np.ndarray:
         """Get atoms in the timestep"""
         for row, i in enumerate(chunk_tstep):
-            ind = int(i)
+            ind = int(i[0])
             print(f"time step: {ind}")
             frame = u_traj.trajectory[ind]
             atoms_position: np.ndarray = frame.positions
@@ -425,5 +425,5 @@ class CalculateCom:
 
 
 if __name__ == '__main__':
-    GetResidues(fname=sys.argv[1], log=logger.setup_logger('concurrent.log'))
     SIZE = 96
+    CalculateCom(fname=sys.argv[1], log=logger.setup_logger('concurrent.log'))
