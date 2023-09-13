@@ -291,6 +291,19 @@ class CalculateCom:
                 self.get_residues.trr_info.residues_indx[item])
         return np_res_ind
 
+    def get_solution_residues(self,
+                              res_group: list[str]
+                              ) -> dict[str, list[int]]:
+        """
+        Return the dict of the residues in the solution with
+        dropping the NP residues
+        """
+        sol_dict: dict[str, list[int]] = {}  # All the residues in solution
+        for k, val in self.get_residues.trr_info.residues_indx.items():
+            if k in res_group:
+                sol_dict[k] = val
+        return sol_dict
+
     def get_np_com_tstep(self,
                          res_ind: int,  # index of the residue
                          all_atoms: np.ndarray,  # Atoms positions
@@ -308,19 +321,6 @@ class CalculateCom:
         com = np.average(atom_positions, weights=atom_masses,
                          axis=0) * tmp_mass
         return com, tmp_mass
-
-    def get_solution_residues(self,
-                              res_group: list[str]
-                              ) -> dict[str, list[int]]:
-        """
-        Return the dict of the residues in the solution with
-        dropping the NP residues
-        """
-        sol_dict: dict[str, list[int]] = {}  # All the residues in solution
-        for k, val in self.get_residues.trr_info.residues_indx.items():
-            if k in res_group:
-                sol_dict[k] = val
-        return sol_dict
 
     @staticmethod
     def set_amino_odn_index(com_arr,  # The array to set all com in it
