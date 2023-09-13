@@ -5,8 +5,8 @@ Using multiprocessing to get the COM of the residues!
 
 import sys
 import pickle
-import numpy as np
 import multiprocessing
+import numpy as np
 
 import logger
 import my_tools
@@ -111,7 +111,7 @@ class CalculateCom:
             - chunk_tsteps: list[np.ndarray]]
         """
         data: np.ndarray = np.arange(self.n_frames)
-        chunk_tsteps: np.ndarray = self.get_chunk_lists(data)
+        chunk_tsteps: list[np.ndarray] = self.get_chunk_lists(data)
         np_res_ind: list[int] = self.get_np_residues()
         sol_residues: dict[str, list[int]] = \
             self.get_solution_residues(stinfo.np_info['solution_residues'])
@@ -127,13 +127,12 @@ class CalculateCom:
             self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
         args = \
-            [(chunk, u_traj, np_res_ind, com_col, sol_residues, amino_odn_index,
-            residues_index_dict) for chunk in chunk_tsteps]
+            [(chunk, u_traj, np_res_ind, com_col, sol_residues,
+              amino_odn_index, residues_index_dict) for chunk in chunk_tsteps]
         with multiprocessing.Pool(processes=self.n_cores) as pool:
-             results = pool.starmap(self.process_trj, args)
-             print(results)
+            results = pool.starmap(self.process_trj, args)
         # Merge the results
-        my_data = np.vstack(results)                         
+        my_data = np.vstack(results)
         self.pickle_arr(my_data, log)
 
     def pickle_arr(self,
@@ -279,7 +278,7 @@ class CalculateCom:
 
     def get_chunk_lists(self,
                         data: np.ndarray  # Range of the time steps
-                        ) -> np.ndarray:
+                        ) -> list[np.ndarray]:
         """prepare chunk_tstep based on the numbers of frames"""
         # determine the size of each sub-task
         ave, res = divmod(data.size, self.n_cores)
