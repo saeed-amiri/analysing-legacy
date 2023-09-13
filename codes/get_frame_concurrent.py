@@ -4,7 +4,6 @@ Using multiprocessing to get the COM of the residues!
 """
 
 import sys
-import typing
 import numpy as np
 import logger
 import static_info as stinfo
@@ -326,22 +325,24 @@ class CalculateCom:
             odn_amino_indices[odn] = int(last_column - (i+1) * 3)
         return odn_amino_indices
 
-    @staticmethod
-    def get_chunk_lists(data: np.ndarray  # Range of the time steps
-                        ) -> typing.Any:
+    def get_chunk_lists(self,
+                        data: np.ndarray  # Range of the time steps
+                        ) -> np.ndarray:
         """prepare chunk_tstep based on the numbers of frames"""
         # determine the size of each sub-task
-        ave, res = divmod(data.size, SIZE)
+        ave, res = divmod(data.size, self.n_cores)
         counts: list[int]  # Length of each array in the list
-        counts = [ave + 1 if p < res else ave for p in range(SIZE)]
+        counts = [ave + 1 if p < res else ave for p in range(self.n_cores)]
+
         # determine the starting and ending indices of each sub-task
         starts: list[int]  # Start of each list of ranges
         ends: list[int]  # Ends of each list of ranges
-        starts = [sum(counts[: p]) for p in range(SIZE)]
-        ends = [sum(counts[: p+1]) for p in range(SIZE)]
+        starts = [sum(counts[: p]) for p in range(self.n_cores)]
+        ends = [sum(counts[: p+1]) for p in range(self.n_cores)]
+
         # converts data into a list of arrays
         chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
-                       for p in range(SIZE)]
+                       for p in range(self.n_cores)]
         return chunk_tstep
 
     @staticmethod
