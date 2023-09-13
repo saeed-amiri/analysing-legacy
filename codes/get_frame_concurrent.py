@@ -351,42 +351,6 @@ class CalculateCom:
         return residues_index_dict
 
     @staticmethod
-    def set_amino_odn_index(com_arr,  # The array to set all com in it
-                            odn_residues: list[int]  # Indices of ODN residues
-                            ) -> dict[int, int]:
-        """
-        Set (or find!) the indices for the COM of ODN amino group in
-        the com_arr
-        In the alocation of com_arr, nr_odn columns are added for the
-        com of the amino groups of the ODN. Since the COM of all ODN
-        are also set in the com_arr the extra indices should carefuly
-        be setted.
-        The indices of the ODN could be not sequal!
-        Returns:
-            key: 0 - nr_odn
-            value: the column in the com_arr (the final arry)
-        """
-        sorted_odn_residues: list[int] = sorted(odn_residues, reverse=True)
-        last_column: int = np.shape(com_arr)[1]
-        odn_amino_indices: dict[int, int] = {}
-        for i, odn in enumerate(sorted_odn_residues):
-            odn_amino_indices[odn] = int(last_column - (i+1) * 3)
-        return odn_amino_indices
-
-    @staticmethod
-    def wrap_position(pos: np.ndarray,  # The center of mass
-                      vec: np.ndarray  # Box vectors
-                      ) -> np.ndarray:
-        """
-        Wraped the position to the box for unwraped trr.
-        """
-        if pos is not None:
-            for i in range(3):
-                pos[i] -= np.floor(pos[i]/vec[i])*vec[i]
-            return pos
-        return np.zeros(3)
-
-    @staticmethod
     def mk_allocation(n_frames: int,  # Number of frames
                       nr_residues: int,  # Numbers of residues' indices
                       n_oda: int  # Number of ODA in the system
@@ -425,6 +389,42 @@ class CalculateCom:
         rows: int = n_frames + 2  # Number of rows, 2 for name and index of res
         columns: int = 1 + 3 + nr_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
+
+    @staticmethod
+    def set_amino_odn_index(com_arr,  # The array to set all com in it
+                            odn_residues: list[int]  # Indices of ODN residues
+                            ) -> dict[int, int]:
+        """
+        Set (or find!) the indices for the COM of ODN amino group in
+        the com_arr
+        In the alocation of com_arr, nr_odn columns are added for the
+        com of the amino groups of the ODN. Since the COM of all ODN
+        are also set in the com_arr the extra indices should carefuly
+        be setted.
+        The indices of the ODN could be not sequal!
+        Returns:
+            key: 0 - nr_odn
+            value: the column in the com_arr (the final arry)
+        """
+        sorted_odn_residues: list[int] = sorted(odn_residues, reverse=True)
+        last_column: int = np.shape(com_arr)[1]
+        odn_amino_indices: dict[int, int] = {}
+        for i, odn in enumerate(sorted_odn_residues):
+            odn_amino_indices[odn] = int(last_column - (i+1) * 3)
+        return odn_amino_indices
+
+    @staticmethod
+    def wrap_position(pos: np.ndarray,  # The center of mass
+                      vec: np.ndarray  # Box vectors
+                      ) -> np.ndarray:
+        """
+        Wraped the position to the box for unwraped trr.
+        """
+        if pos is not None:
+            for i in range(3):
+                pos[i] -= np.floor(pos[i]/vec[i])*vec[i]
+            return pos
+        return np.zeros(3)
 
     def _write_msg(self,
                    log: logger.logging.Logger  # To log
