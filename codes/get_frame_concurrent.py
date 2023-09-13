@@ -102,10 +102,10 @@ class CalculateCom:
             - The `n_frames` should be equal or bigger than n_process,
               otherwise it will reduced to n_frames
             - u_traj: <class 'MDAnalysis.coordinates.TRR.TRRReader'>
-            - chunk_tstep: typing.Union[list[list[np.ndarray]], None]
+            - chunk_tsteps: list[np.ndarray]]
         """
         data: np.ndarray = np.arange(self.n_frames)
-        chunk_tstep: np.ndarray = self.get_chunk_lists(data)
+        chunk_tsteps: np.ndarray = self.get_chunk_lists(data)
         np_res_ind: list[int] = self.get_np_residues()
         sol_residues: dict[str, list[int]] = \
             self.get_solution_residues(stinfo.np_info['solution_residues'])
@@ -120,12 +120,12 @@ class CalculateCom:
         amino_odn_index: dict[int, int] = \
             self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
-        chunk_size = len(chunk_tstep)
+        chunk_size: int = len(chunk_tsteps)
 
-        my_data = np.empty((chunk_size, com_col))
+        my_data: np.ndarray = np.empty((chunk_size, com_col))
 
         my_data = self.process_trj(
-                                   chunk_tstep,
+                                   chunk_tsteps,
                                    u_traj,
                                    np_res_ind,
                                    my_data,
@@ -135,7 +135,7 @@ class CalculateCom:
                                    )
 
     def process_trj(self,
-                    chunk_tstep,  # Frames' ind
+                    chunk_tsteps,  # Frames' ind
                     u_traj,  # Trajectory
                     np_res_ind: list[int],  # NP residue id
                     my_data: np.ndarray,  # To save COMs
@@ -144,7 +144,7 @@ class CalculateCom:
                     residues_index_dict: dict[int, int]
                     ) -> np.ndarray:
         """Get atoms in the timestep"""
-        for row, i in enumerate(chunk_tstep):
+        for row, i in enumerate(chunk_tsteps):
             ind = int(i[0])
             print(f"time step: {ind}")
             frame = u_traj.trajectory[ind]
