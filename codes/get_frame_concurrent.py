@@ -323,6 +323,34 @@ class CalculateCom:
         return com, tmp_mass
 
     @staticmethod
+    def mk_residues_dict(sol_residues: dict[str, list[int]]
+                         ) -> dict[int, int]:
+        """
+        Make a dict for indexing all the residues. Not always residues
+        indexed from zero and/or are numberd sequently.
+
+        Args:
+            sol_residues of index for each residue in the solution
+        Return:
+            new indexing for each residues
+            Since in the recived method of this return, the result could
+            be None, the type is Union
+            Key: The residue index in the main data (traj from MDAnalysis)
+            Value: The new orderd indices
+        Notes:
+            Since we already have 4 elements before the these resideus,
+            numbering will start from 4
+        """
+        all_residues: list[int] = \
+            [item for sublist in sol_residues.values() for item in sublist]
+        sorted_residues: list[int] = sorted(all_residues)
+        residues_index_dict: dict[int, int] = {}
+        if residues_index_dict is not None:
+            for i, res in enumerate(sorted_residues):
+                residues_index_dict[res] = i * 3 + 4
+        return residues_index_dict
+
+    @staticmethod
     def set_amino_odn_index(com_arr,  # The array to set all com in it
                             odn_residues: list[int]  # Indices of ODN residues
                             ) -> dict[int, int]:
@@ -397,34 +425,6 @@ class CalculateCom:
         rows: int = n_frames + 2  # Number of rows, 2 for name and index of res
         columns: int = 1 + 3 + nr_residues * 3 + n_oda * 3
         return np.zeros((rows, columns))
-
-    @staticmethod
-    def mk_residues_dict(sol_residues: dict[str, list[int]]
-                         ) -> dict[int, int]:
-        """
-        Make a dict for indexing all the residues. Not always residues
-        indexed from zero and/or are numberd sequently.
-
-        Args:
-            sol_residues of index for each residue in the solution
-        Return:
-            new indexing for each residues
-            Since in the recived method of this return, the result could
-            be None, the type is Union
-            Key: The residue index in the main data (traj from MDAnalysis)
-            Value: The new orderd indices
-        Notes:
-            Since we already have 4 elements before the these resideus,
-            numbering will start from 4
-        """
-        all_residues: list[int] = \
-            [item for sublist in sol_residues.values() for item in sublist]
-        sorted_residues: list[int] = sorted(all_residues)
-        residues_index_dict: dict[int, int] = {}
-        if residues_index_dict is not None:
-            for i, res in enumerate(sorted_residues):
-                residues_index_dict[res] = i * 3 + 4
-        return residues_index_dict
 
     def _write_msg(self,
                    log: logger.logging.Logger  # To log
