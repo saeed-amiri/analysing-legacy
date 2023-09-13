@@ -4,8 +4,12 @@ Using multiprocessing to get the COM of the residues!
 """
 
 import sys
+import pickle
 import numpy as np
+import multiprocessing
+
 import logger
+import my_tools
 import static_info as stinfo
 from cpuconfig import ConfigCpuNr
 from colors_text import TextColor as bcolors
@@ -61,7 +65,7 @@ class CalculateCom:
         """
         self._initiate_data(fname, log)
         self._initiate_cpu(log)
-        self._initiate_calc()
+        self._initiate_calc(log)
         self._write_msg(log)
 
     def _initiate_data(self,
@@ -84,7 +88,9 @@ class CalculateCom:
         self.n_cores: int = min(cpu_info.cores_nr, self.n_frames)
         self.info_msg += f'\tThe numbers of using cores: {self.n_cores}\n'
 
-    def _initiate_calc(self) -> None:
+    def _initiate_calc(self,
+                       log: logger.logging.Logger
+                       ) -> None:
         """
         First divide the list, than brodcast between processes.
         Get the lists the list contains timesteps.
@@ -120,38 +126,47 @@ class CalculateCom:
         amino_odn_index: dict[int, int] = \
             self.set_amino_odn_index(com_arr, sol_residues['ODN'])
 
-        chunk_size: int = len(chunk_tsteps)
+        args = \
+            [(chunk, u_traj, np_res_ind, com_col, sol_residues, amino_odn_index,
+            residues_index_dict) for chunk in chunk_tsteps]
+        with multiprocessing.Pool(processes=self.n_cores) as pool:
+             results = pool.starmap(self.process_trj, args)
+             print(results)
+        # Merge the results
+        my_data = np.vstack(results)                         
+        self.pickle_arr(my_data, log)
 
-        my_data: np.ndarray = np.empty((chunk_size, com_col))
-
-        for chunk in chunk_tsteps:
-            my_data = self.process_trj(
-                                       chunk,
-                                       u_traj,
-                                       np_res_ind,
-                                       my_data,
-                                       sol_residues,
-                                       amino_odn_index,
-                                       residues_index_dict
-                                       )
+    def pickle_arr(self,
+                   com_arr: np.ndarray,  # Array of the center of mass
+                   log: logger.logging.Logger  # Name of the log file
+                   ) -> None:
+        """
+        check the if the previus similar file exsitance the pickle
+        data into a file
+        """
+        fname: str  # Name of the file to pickle to
+        fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
+        with open(fname, 'wb') as f_arr:
+            pickle.dump(com_arr, f_arr)
 
     def process_trj(self,
-                    chunk_tsteps,  # Frames' ind
+                    tsteps: np.ndarray,  # Frames' indices
                     u_traj,  # Trajectory
                     np_res_ind: list[int],  # NP residue id
-                    my_data: np.ndarray,  # To save COMs
+                    com_col: int,  # Number of the columns
                     sol_residues: dict[str, list[int]],
                     amino_odn_index: dict[int, int],
                     residues_index_dict: dict[int, int]
                     ) -> np.ndarray:
         """Get atoms in the timestep"""
-        for row, i in enumerate(chunk_tsteps):
+        chunk_size: int = len(tsteps)
+        my_data: np.ndarray = np.empty((chunk_size, com_col))
+        for row, i in enumerate(tsteps):
             ind = int(i)
-            print(f"time step: {ind}")
             frame = u_traj.trajectory[ind]
             atoms_position: np.ndarray = frame.positions
             for k, val in sol_residues.items():
-                print(f'\tgetting residues: {k}')
+                print(f'\ttimestep {ind}  -> getting residues: {k}')
                 for item in val:
                     com = self.get_com_all(atoms_position, item)
                     if com is None:
@@ -438,4 +453,4 @@ class CalculateCom:
 
 if __name__ == '__main__':
     SIZE = 96
-    CalculateCom(fname=sys.argv[1], log=logger.setup_logger('concurrent.log'))
+    CalculateCom(fname=sys.argv[1], log=logger.setup_logger('get_frames.log'))
