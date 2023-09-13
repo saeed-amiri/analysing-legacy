@@ -124,15 +124,16 @@ class CalculateCom:
 
         my_data: np.ndarray = np.empty((chunk_size, com_col))
 
-        my_data = self.process_trj(
-                                   chunk_tsteps,
-                                   u_traj,
-                                   np_res_ind,
-                                   my_data,
-                                   sol_residues,
-                                   amino_odn_index,
-                                   residues_index_dict
-                                   )
+        for chunk in chunk_tsteps:
+            my_data = self.process_trj(
+                                       chunk,
+                                       u_traj,
+                                       np_res_ind,
+                                       my_data,
+                                       sol_residues,
+                                       amino_odn_index,
+                                       residues_index_dict
+                                       )
 
     def process_trj(self,
                     chunk_tsteps,  # Frames' ind
@@ -145,7 +146,7 @@ class CalculateCom:
                     ) -> np.ndarray:
         """Get atoms in the timestep"""
         for row, i in enumerate(chunk_tsteps):
-            ind = int(i[0])
+            ind = int(i)
             print(f"time step: {ind}")
             frame = u_traj.trajectory[ind]
             atoms_position: np.ndarray = frame.positions
