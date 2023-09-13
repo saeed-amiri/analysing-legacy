@@ -106,7 +106,7 @@ class CalculateCom:
         """
         data: np.ndarray = np.arange(self.n_frames)
         chunk_tstep: np.ndarray = self.get_chunk_lists(data)
-        np_res_ind = self.get_np_residues()
+        np_res_ind: list[int] = self.get_np_residues()
         sol_residues: dict[str, list[int]] = \
             self.get_solution_residues(stinfo.np_info['solution_residues'])
         residues_index_dict: dict[int, int] = \
@@ -281,6 +281,16 @@ class CalculateCom:
                        for p in range(self.n_cores)]
         return chunk_tstep
 
+    def get_np_residues(self) -> list[int]:
+        """
+        return list of the integer of the residues in the NP
+        """
+        np_res_ind: list[int] = []  # All the index in the NP
+        for item in stinfo.np_info['np_residues']:
+            np_res_ind.extend(
+                self.get_residues.trr_info.residues_indx[item])
+        return np_res_ind
+
     def get_np_com_tstep(self,
                          res_ind: int,  # index of the residue
                          all_atoms: np.ndarray,  # Atoms positions
@@ -311,16 +321,6 @@ class CalculateCom:
             if k in res_group:
                 sol_dict[k] = val
         return sol_dict
-
-    def get_np_residues(self) -> list[int]:
-        """
-        return list of the integer of the residues in the NP
-        """
-        np_res_ind: list[int] = []  # All the index in the NP
-        for item in stinfo.np_info['np_residues']:
-            np_res_ind.extend(
-                self.get_residues.trr_info.residues_indx[item])
-        return np_res_ind
 
     @staticmethod
     def set_amino_odn_index(com_arr,  # The array to set all com in it
