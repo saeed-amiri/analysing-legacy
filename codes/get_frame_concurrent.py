@@ -105,7 +105,7 @@ class CalculateCom:
             - chunk_tstep: typing.Union[list[list[np.ndarray]], None]
         """
         data: np.ndarray = np.arange(self.n_frames)
-        chunk_tstep = self.get_chunk_lists(data)
+        chunk_tstep: np.ndarray = self.get_chunk_lists(data)
         np_res_ind = self.get_np_residues()
         sol_residues: dict[str, list[int]] = \
             self.get_solution_residues(stinfo.np_info['solution_residues'])
@@ -261,6 +261,26 @@ class CalculateCom:
             step_com = np.vstack(i_com)
         return np.sum(step_com, axis=0) / total_mass
 
+    def get_chunk_lists(self,
+                        data: np.ndarray  # Range of the time steps
+                        ) -> np.ndarray:
+        """prepare chunk_tstep based on the numbers of frames"""
+        # determine the size of each sub-task
+        ave, res = divmod(data.size, self.n_cores)
+        counts: list[int]  # Length of each array in the list
+        counts = [ave + 1 if p < res else ave for p in range(self.n_cores)]
+
+        # determine the starting and ending indices of each sub-task
+        starts: list[int]  # Start of each list of ranges
+        ends: list[int]  # Ends of each list of ranges
+        starts = [sum(counts[: p]) for p in range(self.n_cores)]
+        ends = [sum(counts[: p+1]) for p in range(self.n_cores)]
+
+        # converts data into a list of arrays
+        chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
+                       for p in range(self.n_cores)]
+        return chunk_tstep
+
     def get_np_com_tstep(self,
                          res_ind: int,  # index of the residue
                          all_atoms: np.ndarray,  # Atoms positions
@@ -324,26 +344,6 @@ class CalculateCom:
         for i, odn in enumerate(sorted_odn_residues):
             odn_amino_indices[odn] = int(last_column - (i+1) * 3)
         return odn_amino_indices
-
-    def get_chunk_lists(self,
-                        data: np.ndarray  # Range of the time steps
-                        ) -> np.ndarray:
-        """prepare chunk_tstep based on the numbers of frames"""
-        # determine the size of each sub-task
-        ave, res = divmod(data.size, self.n_cores)
-        counts: list[int]  # Length of each array in the list
-        counts = [ave + 1 if p < res else ave for p in range(self.n_cores)]
-
-        # determine the starting and ending indices of each sub-task
-        starts: list[int]  # Start of each list of ranges
-        ends: list[int]  # Ends of each list of ranges
-        starts = [sum(counts[: p]) for p in range(self.n_cores)]
-        ends = [sum(counts[: p+1]) for p in range(self.n_cores)]
-
-        # converts data into a list of arrays
-        chunk_tstep = [data[starts[p]: ends[p]].astype(np.int32)
-                       for p in range(self.n_cores)]
-        return chunk_tstep
 
     @staticmethod
     def wrap_position(pos: np.ndarray,  # The center of mass
