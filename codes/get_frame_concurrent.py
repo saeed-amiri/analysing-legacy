@@ -8,6 +8,7 @@ import typing
 import numpy as np
 import logger
 import static_info as stinfo
+from cpuconfig import ConfigCpuNr
 from colors_text import TextColor as bcolors
 from trajectory_residue_extractor import GetResidues
 
@@ -59,6 +60,7 @@ class CalculateCom:
             messages.
         """
         self._initiate_data(fname, log)
+        self._initiate_cpu(log)
         self._initiate_calc()
         self._write_msg(log)
 
@@ -71,6 +73,17 @@ class CalculateCom:
         """
         self.get_residues = GetResidues(fname, log)
         self.n_frames = self.get_residues.trr_info.num_dict['n_frames']
+
+    def _initiate_cpu(self,
+                      log: logger.logging.Logger
+                      ) -> int:
+        """
+        Return the number of core for run based on the data and the machine
+        """
+        cpu_info = ConfigCpuNr(log)
+        cores_nr: int = min(cpu_info.cores_nr, self.n_frames)
+        self.info_msg += f'\tThe numbers of using cores: {cores_nr}\n'
+        return cores_nr
 
     def _initiate_calc(self) -> None:
         """
