@@ -46,6 +46,7 @@ class CalculateCom:
     info_msg: str = 'Messages from CalculateCom:\n'  # To log
     get_residues: GetResidues  # Type of the info
     n_frames: int  # Number of the frame in the trajectory
+    n_cores: int  # Number of the cores which system will run with it
 
     def __init__(self,
                  fname: str,  # Name of the trajectory files
@@ -76,14 +77,13 @@ class CalculateCom:
 
     def _initiate_cpu(self,
                       log: logger.logging.Logger
-                      ) -> int:
+                      ) -> None:
         """
         Return the number of core for run based on the data and the machine
         """
         cpu_info = ConfigCpuNr(log)
-        cores_nr: int = min(cpu_info.cores_nr, self.n_frames)
-        self.info_msg += f'\tThe numbers of using cores: {cores_nr}\n'
-        return cores_nr
+        self.n_cores: int = min(cpu_info.cores_nr, self.n_frames)
+        self.info_msg += f'\tThe numbers of using cores: {self.n_cores}\n'
 
     def _initiate_calc(self) -> None:
         """
