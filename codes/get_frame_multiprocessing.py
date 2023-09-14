@@ -7,7 +7,6 @@ import sys
 import pickle
 import multiprocessing
 from datetime import datetime
-import numba
 import numpy as np
 
 import logger
@@ -196,7 +195,6 @@ class CalculateCom:
             my_data[row, 1:4] = np_com
         return my_data
 
-    @numba.jit
     def get_com_all(self,
                     all_atoms: np.ndarray,  # All the atoms position
                     ind: int  # Index of the residue
