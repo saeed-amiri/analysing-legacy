@@ -6,6 +6,8 @@ Using multiprocessing to get the COM of the residues!
 import sys
 import pickle
 import multiprocessing
+from datetime import datetime
+import numba
 import numpy as np
 
 import logger
@@ -63,6 +65,8 @@ class CalculateCom:
             log (logging.Logger or None, optional): Logger for logging
             messages.
         """
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(current_time)
         self._initiate_data(fname, log)
         self._initiate_cpu(log)
         self._initiate_calc(log)
@@ -134,6 +138,8 @@ class CalculateCom:
         # Merge the results
         my_data = np.vstack(results)
         self.pickle_arr(my_data, log)
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(current_time)
 
     def pickle_arr(self,
                    com_arr: np.ndarray,  # Array of the center of mass
@@ -190,6 +196,7 @@ class CalculateCom:
             my_data[row, 1:4] = np_com
         return my_data
 
+    @numba.jit
     def get_com_all(self,
                     all_atoms: np.ndarray,  # All the atoms position
                     ind: int  # Index of the residue
