@@ -138,6 +138,10 @@ class CalculateCom:
         tmp_arr: np.ndarray = np.vstack(results)
         com_arr = self.set_residue_type(tmp_arr, sol_residues).copy()
         self.pickle_arr(com_arr, log)
+        print('tmp_arr[-1]: ', tmp_arr[-1])
+        print('tmp_arr[-2]: ', tmp_arr[-2])
+        print('com_arr[-1]: ', com_arr[-1])
+        print('com_arr[-2]: ', com_arr[-2])
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(current_time)
 
