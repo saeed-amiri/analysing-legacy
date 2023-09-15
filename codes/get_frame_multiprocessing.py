@@ -136,16 +136,11 @@ class CalculateCom:
             results = pool.starmap(self.process_trj, args)
         # Merge the results
         recvdata: np.ndarray = np.vstack(results)
-        tmp_arr = \
+        tmp_arr: np.ndarray = \
                 self.set_residue_ind(com_arr, recvdata, residues_index_dict)
         com_arr = self.set_residue_type(tmp_arr, sol_residues).copy()
 
         self.pickle_arr(com_arr, log)
-        print('tmp_arr[-1]: ', tmp_arr[-1])
-        print('tmp_arr[-2]: ', tmp_arr[-2])
-        print('com_arr[-1]: ', com_arr[-1])
-        print('com_arr[-2]: ', com_arr[-2])
-        print('tmp_arr.shape ')
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(current_time)
 
@@ -212,8 +207,6 @@ class CalculateCom:
                 com_arr[-1, ind] = stinfo.reidues_id[res_name]
             except KeyError:
                 pass
-        print(com_arr[-2])
-        print(com_arr[-1])
         return com_arr
 
     def process_trj(self,
