@@ -135,8 +135,9 @@ class CalculateCom:
         with multiprocessing.Pool(processes=self.n_cores) as pool:
             results = pool.starmap(self.process_trj, args)
         # Merge the results
-        my_data = np.vstack(results)
-        self.pickle_arr(my_data, log)
+        tmp_arr: np.ndarray = np.vstack(results)
+        com_arr = self.set_residue_type(tmp_arr, sol_residues).copy()
+        self.pickle_arr(com_arr, log)
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(current_time)
 
@@ -152,6 +153,35 @@ class CalculateCom:
         fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
         with open(fname, 'wb') as f_arr:
             pickle.dump(com_arr, f_arr)
+
+    def set_residue_type(self,
+                         com_arr: np.ndarray,  # Updated array to set the type
+                         sol_residues: dict[str, list[int]]
+                         ) -> np.ndarray:
+        """
+        I need to assign types to all residues and place them in the
+        final row of the array.
+        Args:
+            com_arr: Filled array with information about COM and real
+                     index
+            sol_residues: key: Name of the residue
+                          Value: Residues belongs to the Key
+        Return:
+            Updated com_arr with type of each residue in the row below
+            them.
+        """
+        reverse_mapping = {}
+        for key, value_list in sol_residues.items():
+            for num in value_list:
+                reverse_mapping[num] = key
+        for ind in range(com_arr.shape[1]):
+            try:
+                res_ind = int(com_arr[-2, ind])
+                res_name = reverse_mapping.get(res_ind)
+                com_arr[-1, ind] = stinfo.reidues_id[res_name]
+            except KeyError:
+                pass
+        return com_arr
 
     def process_trj(self,
                     tsteps: np.ndarray,  # Frames' indices
