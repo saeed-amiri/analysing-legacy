@@ -99,9 +99,6 @@ class GetData:
         corresponding arrays.
         """
         com_arr: np.ndarray = self.load_pickle()
-        print(com_arr[:,0])
-        print(com_arr[-1])
-        print(com_arr[-2])
         split_arr_dict: dict[str, np.ndarray] = self.split_data(com_arr[:, 4:])
         split_arr_dict['APT_COR'] = com_arr[:-2, 1:4]
         return split_arr_dict
