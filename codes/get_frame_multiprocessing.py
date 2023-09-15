@@ -135,13 +135,17 @@ class CalculateCom:
         with multiprocessing.Pool(processes=self.n_cores) as pool:
             results = pool.starmap(self.process_trj, args)
         # Merge the results
-        tmp_arr: np.ndarray = np.vstack(results)
+        recvdata: np.ndarray = np.vstack(results)
+        tmp_arr = \
+                self.set_residue_ind(com_arr, recvdata, residues_index_dict)
         com_arr = self.set_residue_type(tmp_arr, sol_residues).copy()
+
         self.pickle_arr(com_arr, log)
         print('tmp_arr[-1]: ', tmp_arr[-1])
         print('tmp_arr[-2]: ', tmp_arr[-2])
         print('com_arr[-1]: ', com_arr[-1])
         print('com_arr[-2]: ', com_arr[-2])
+        print('tmp_arr.shape ')
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print(current_time)
 
@@ -157,6 +161,29 @@ class CalculateCom:
         fname = my_tools.check_file_reanme(stinfo.files['com_pickle'], log)
         with open(fname, 'wb') as f_arr:
             pickle.dump(com_arr, f_arr)
+
+    @staticmethod
+    def set_residue_ind(com_arr: np.ndarray,  # The final array
+                        recvdata: np.ndarray,  # Info about time frames
+                        residues_index_dict: dict[int, int]
+                        ) -> np.ndarray:
+        """
+        Set the original residues' indices to the com_arr[-2]
+        Set the type of residues' indices to the com_arr[-1]
+        """
+        # Copy data to the final array
+        for row in recvdata:
+            tstep = int(row[0])
+            com_arr[tstep] = row.copy()
+
+        # setting the index of NP and ODA Amino heads
+        com_arr[-2, 1:4] = [-1, -1, -1]
+        com_arr[-2, -50:] = np.arange(-1, -51, -1)
+        for res_ind, col_in_arr in residues_index_dict.items():
+            ind = int(res_ind)
+            com_arr[-2][col_in_arr:col_in_arr+3] = \
+                np.array([ind, ind, ind]).copy()
+        return com_arr
 
     def set_residue_type(self,
                          com_arr: np.ndarray,  # Updated array to set the type
@@ -185,6 +212,8 @@ class CalculateCom:
                 com_arr[-1, ind] = stinfo.reidues_id[res_name]
             except KeyError:
                 pass
+        print(com_arr[-2])
+        print(com_arr[-1])
         return com_arr
 
     def process_trj(self,
