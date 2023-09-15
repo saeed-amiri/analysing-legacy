@@ -120,7 +120,7 @@ class GetData:
         # Initialize dictionaries for min and max values of each axis
         min_values = {axis: np.inf for axis in axis_names}
         max_values = {axis: -np.inf for axis in axis_names}
-
+    
         for res in box_residues:
             arr = self.split_arr_dict[res]
 
