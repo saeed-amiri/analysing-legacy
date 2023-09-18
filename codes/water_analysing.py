@@ -3,8 +3,10 @@ Analysing water residues
 1- Finding the surface position of the water at the interface
 """
 
+import typing
 import numpy as np
 import pandas as pd
+import multiprocessing
 import matplotlib.pylab as plt
 
 import logger
@@ -82,68 +84,77 @@ class GetSurface:
     def __init__(self,
                  ) -> None:
         all_data = WrapData()
-        all_water_surfaces: np.ndarray = self.get_interface(all_data)
-        print(all_water_surfaces)
+        all_water_surfaces: list[np.ndarray] = self.get_interface(all_data)
         # self.__write_msg(log)
         # self.info_msg = ''  # Empety the msg
 
     def get_interface(self,
                       all_data: WrapData
-                      ) -> np.ndarray:
+                      ) -> list[np.ndarray]:
         """get the water surface"""
         np_radius: float = all_data.nanop_radius
         residues_atoms: dict[str, pd.DataFrame]  # All atoms in ress
         residues_atoms = all_data.split_arr_dict
         water_residues: np.ndarray = residues_atoms['SOL'][:-2]
+        all_water_surfaces: list[np.ndarray] = []
+        nanop_coms: np.ndarray = \
+            all_data.split_arr_dict['APT_COR']
+        args: list[typing.Any] = \
+            [(frame, water_residues, np_radius, nanop_coms[frame]) for
+             frame in range(water_residues.shape[0])[:1]]
+
+        # Use Pool to parallelize over frames
+        with multiprocessing.Pool() as pool:
+            all_water_surfaces = pool.map(self.process_frame, args)
+        return all_water_surfaces
+
+    def process_frame(self,
+                      args: list[typing.Any]) -> np.ndarray:
         x_mesh: np.ndarray  # Mesh grid in x and y
         y_mesh: np.ndarray  # Mesh grid in x and y
         mesh_size: np.float64
         selected_residues: list[tuple[float, ...]] = []
-        all_water_surfaces: list[np.ndarray] = []
-        for frame in range(water_residues.shape[0])[:1]:
-            x_data: np.ndarray = water_residues[frame, ::3]
-            y_data: np.ndarray = water_residues[frame, 1::3]
-            z_data: np.ndarray = water_residues[frame, 2::3]
-            nanop_com: np.ndarray = \
-                all_data.split_arr_dict['APT_COR'][frame]
-            x_mesh, y_mesh, mesh_size = self._get_grid_xy(x_data, y_data)
-            threshold_z: float = nanop_com[2] + np_radius
-            for i in range(x_mesh.shape[0]):
-                for j in range(x_mesh.shape[1]):
-                    # Boundaries of the current cell
-                    x_min: float = x_mesh[i, j] - mesh_size / 2
-                    x_max: float = x_mesh[i, j] + mesh_size / 2
-                    y_min: float = y_mesh[i, j] - mesh_size / 2
-                    y_max: float = y_mesh[i, j] + mesh_size / 2
+        frame, water_residues, np_radius, nanop_com = args
+        x_data: np.ndarray = water_residues[frame, ::3]
+        y_data: np.ndarray = water_residues[frame, 1::3]
+        z_data: np.ndarray = water_residues[frame, 2::3]
+        x_mesh, y_mesh, mesh_size = self._get_grid_xy(x_data, y_data)
+        threshold_z: float = nanop_com[2] + np_radius
+        for i in range(x_mesh.shape[0]):
+            for j in range(x_mesh.shape[1]):
+                # Boundaries of the current cell
+                x_min: float = x_mesh[i, j] - mesh_size / 2
+                x_max: float = x_mesh[i, j] + mesh_size / 2
+                y_min: float = y_mesh[i, j] - mesh_size / 2
+                y_max: float = y_mesh[i, j] + mesh_size / 2
 
-                    # 1st filter within this cell and are below the threshold
-                    mask: np.ndarray = (x_data >= x_min) & \
-                                       (x_data < x_max) & \
-                                       (y_data >= y_min) & \
-                                       (y_data < y_max) & \
-                                       (z_data < threshold_z)
-                    # Get the Z-values of these COMs
-                    z_values_in_cell: np.ndarray = z_data[mask]
-                    x_values_in_cell: np.ndarray = x_data[mask]
-                    y_values_in_cell: np.ndarray = y_data[mask]
-                    distance_squared_from_np: np.ndarray = \
-                        (x_values_in_cell - nanop_com[0])**2 + \
-                        (y_values_in_cell - nanop_com[1])**2
-                    mask = distance_squared_from_np <= np_radius**2
+                # 1st filter within this cell and are below the threshold
+                mask: np.ndarray = (x_data >= x_min) & \
+                                   (x_data < x_max) & \
+                                   (y_data >= y_min) & \
+                                   (y_data < y_max) & \
+                                   (z_data < threshold_z)
+                # Get the Z-values of these COMs
+                z_values_in_cell: np.ndarray = z_data[mask]
+                x_values_in_cell: np.ndarray = x_data[mask]
+                y_values_in_cell: np.ndarray = y_data[mask]
+                distance_squared_from_np: np.ndarray = \
+                    (x_values_in_cell - nanop_com[0])**2 + \
+                    (y_values_in_cell - nanop_com[1])**2
+                mask = distance_squared_from_np <= np_radius**2
 
-                    # 2nd filter mask to exclude waters beneath the NP
-                    z_values_byond_np: np.ndarray = z_values_in_cell[~mask]
-                    x_values_byond_np: np.ndarray = x_values_in_cell[~mask]
-                    y_values_byond_np: np.ndarray = y_values_in_cell[~mask]
-                    if z_values_in_cell.size > 0:
-                        selected_residues.extend(
-                            zip(x_values_byond_np,
-                                y_values_byond_np,
-                                z_values_byond_np))
-                    else:
-                        pass
-                all_water_surfaces.append(selected_residues)
-        return all_water_surfaces
+                # 2nd filter mask to exclude waters beneath the NP
+                z_values_byond_np: np.ndarray = z_values_in_cell[~mask]
+                x_values_byond_np: np.ndarray = x_values_in_cell[~mask]
+                y_values_byond_np: np.ndarray = y_values_in_cell[~mask]
+                if z_values_in_cell.size > 0:
+                    selected_residues.extend(
+                        zip(x_values_byond_np,
+                            y_values_byond_np,
+                            z_values_byond_np))
+                else:
+                    pass
+        return np.array(selected_residues)
 
     @staticmethod
     def _get_grid_xy(x_data: np.ndarray,  # x component of the coms
