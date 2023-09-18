@@ -2,7 +2,9 @@
 To analysing the behavior of ODA at the interface
 """
 
+import typing
 import numpy as np
+import matplotlib.pylab as plt
 
 import logger
 from get_data import GetData
@@ -93,6 +95,55 @@ class OdaAnalysis(WrapData):
         adjusted_oda: np.ndarray = \
             self.shift_residues_from_np(self.oda_data,
                                         self.nanoparticle_disp_from_avg_com)
+        self.distribution_around_avg_np(adjusted_oda, self.mean_nanop_com, 1)
+
+    @staticmethod
+    def distribution_around_avg_np(com_aligned_residues: np.ndarray,
+                                   mean_nanop_com: np.ndarray,
+                                   delta_r: float,
+                                   max_radius: typing.Union[float, None] = None
+                                   ) -> tuple:
+        """
+        Calculate the distribution of ODN molecules around the
+        nanoparticle's average COM.
+
+        Parameters:
+        - com_aligned_residues: Residues where their coordinates are
+        relative to the nanoparticle's COM for each frame.
+        - mean_nanop_com: Average COM of the nanoparticle over all frames.
+        - delta_r: Width of each annulus.
+        - max_radius: Maximum distance to consider. If None, will be
+          calculated based on data.
+
+        Returns:
+        - bins: A list of radii corresponding to each annulus.
+        - counts: A list of counts of ODN molecules in each annulus.
+        """
+
+        # Calculate squared distances from each ODN to the mean_nanop_com
+        distances_squared = np.sum(
+            (com_aligned_residues.reshape(
+             -1,
+             com_aligned_residues.shape[1]//3, 3) - mean_nanop_com) ** 2,
+            axis=2)
+
+        # Get actual distances
+        distances = np.sqrt(distances_squared)
+
+        # Determine max radius if not given
+        if max_radius is None:
+            max_radius = np.max(distances)
+
+        # Create bins based on delta_r
+        bins = np.arange(0, max_radius + delta_r, delta_r)
+
+        # Histogram counts for each frame and then sum over frames
+        all_counts, _ = np.histogram(distances, bins=bins)
+        counts = np.sum(all_counts, axis=0)
+
+        # Return bin centers (i.e., actual radii) and counts
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        return bin_centers, counts
 
     @staticmethod
     def shift_residues_from_np(residues: np.ndarray,
