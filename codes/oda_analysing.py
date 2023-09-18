@@ -16,14 +16,15 @@ class WrapData(GetData):
     """
 
     mean_nanop_com: np.ndarray  # Average of the nanoparticle COM over times
-    shift_nanop_com: np.ndarray  # Shift of COM at each time from average
+    # Shift of COM at each time from average
+    nanoparticle_disp_from_avg_com: np.ndarray
     interface_locz: float  # Z location of the interface
     nanop_radius: float  # Radius of the nanoparticle
 
     def __init__(self) -> None:
         super().__init__()
         self.set_constants()
-        self.initiate_calc()
+        self._initiate_calc()
 
     def set_constants(self) -> None:
         """
@@ -32,13 +33,13 @@ class WrapData(GetData):
         self.interface_locz = 113.9
         self.nanop_radius = stinfo.np_info['radius']
 
-    def initiate_calc(self) -> None:
+    def _initiate_calc(self) -> None:
         """
         Initiate calculation and some analysis which are needed for
         all other classes
         """
         self.mean_nanop_com = self.find_mean_of_np_com()
-        self.shift_nanop_com = self.find_np_shift_from_mean()
+        self.nanoparticle_disp_from_avg_com = self.find_np_shift_from_mean()
 
     def find_mean_of_np_com(self) -> np.ndarray:
         """find mean of the nanoparticle center of mass"""
@@ -78,7 +79,43 @@ class OdaAnalysis(WrapData):
                  log: logger.logging.Logger
                  ) -> None:
         super().__init__()
+        self.oda_data: np.ndarray = self.split_arr_dict['ODN'][:-2]
+        self.initiate(log)
+
+    def initiate(self,
+                 log: logger.logging.Logger
+                 ) -> None:
+        """
+        initiate analysing of ODA behavior
+        """
+
+        # Shift data toward the average COM of the NP
+        adjusted_oda: np.ndarray = \
+            self.shift_residues_from_np(self.oda_data,
+                                        self.nanoparticle_disp_from_avg_com)
+
+    @staticmethod
+    def shift_residues_from_np(residues: np.ndarray,
+                               np_displacement: np.ndarray
+                               ) -> np.ndarray:
+        """
+        shift coordinates of the residues relative to the displament of
+        the shift of NP from averg NP com at each frame
+        """
+        # Determine the number of residues
+        num_residues: int = residues.shape[1] // 3
+
+        # Reshape the displacement data
+        displacement_reshaped: np.ndarray = np_displacement[:, np.newaxis, :]
+
+        # Tile the reshaped data to match the residues shape and reshape
+        displacement_tiled: np.ndarray = \
+            np.tile(displacement_reshaped,
+                    (1, num_residues, 1)).reshape(residues.shape)
+
+        # Subtract
+        return residues - displacement_tiled
 
 
 if __name__ == "__main__":
-    OdaAnalysis(log='oda_analysis.log')
+    OdaAnalysis(log=logger.setup_logger('oda_analysis.log'))
