@@ -5,6 +5,7 @@ Analysing water residues
 
 import numpy as np
 import pandas as pd
+import matplotlib.pylab as plt
 
 import logger
 import static_info as stinfo
@@ -87,19 +88,59 @@ class GetSurface:
 
     def get_interface(self,
                       all_data: WrapData
-                      ) -> None:
+                      ) -> np.ndarray:
         """get the water surface"""
-
+        np_radius: float = all_data.nanop_radius
         residues_atoms: dict[str, pd.DataFrame]  # All atoms in ress
         residues_atoms = all_data.split_arr_dict
         water_residues: np.ndarray = residues_atoms['SOL'][:-2]
         x_mesh: np.ndarray  # Mesh grid in x and y
         y_mesh: np.ndarray  # Mesh grid in x and y
         mesh_size: np.float64
-        for frame in range(water_residues.shape[0]):
-            x_mesh, y_mesh, mesh_size = \
-                self._get_grid_xy(
-                    water_residues[frame, ::3], water_residues[frame, 1::3])
+        selected_residues: list[tuple[float, ...]] = []
+        for frame in range(water_residues.shape[0])[:1]:
+            x_data: np.ndarray = water_residues[frame, ::3]
+            y_data: np.ndarray = water_residues[frame, 1::3]
+            z_data: np.ndarray = water_residues[frame, 2::3]
+            nanop_com: np.ndarray = \
+                all_data.split_arr_dict['APT_COR'][frame]
+            x_mesh, y_mesh, mesh_size = self._get_grid_xy(x_data, y_data)
+            threshold_z: float = nanop_com[2] + np_radius
+            for i in range(x_mesh.shape[0]):
+                for j in range(x_mesh.shape[1]):
+                    # Boundaries of the current cell
+                    x_min: float = x_mesh[i, j] - mesh_size / 2
+                    x_max: float = x_mesh[i, j] + mesh_size / 2
+                    y_min: float = y_mesh[i, j] - mesh_size / 2
+                    y_max: float = y_mesh[i, j] + mesh_size / 2
+
+                    # 1st filter within this cell and are below the threshold
+                    mask: np.ndarray = (x_data >= x_min) & \
+                                       (x_data < x_max) & \
+                                       (y_data >= y_min) & \
+                                       (y_data < y_max) & \
+                                       (z_data < threshold_z)
+                    # Get the Z-values of these COMs
+                    z_values_in_cell: np.ndarray = z_data[mask]
+                    x_values_in_cell: np.ndarray = x_data[mask]
+                    y_values_in_cell: np.ndarray = y_data[mask]
+                    distance_squared_from_np: np.ndarray = \
+                        (x_values_in_cell - nanop_com[0])**2 + \
+                        (y_values_in_cell - nanop_com[1])**2
+                    mask = distance_squared_from_np <= np_radius**2
+
+                    # 2nd filter mask to exclude waters beneath the NP
+                    z_values_byond_np: np.ndarray = z_values_in_cell[~mask]
+                    x_values_byond_np: np.ndarray = x_values_in_cell[~mask]
+                    y_values_byond_np: np.ndarray = y_values_in_cell[~mask]
+                    if z_values_in_cell.size > 0:
+                        selected_residues.extend(
+                            zip(x_values_byond_np,
+                                y_values_byond_np,
+                                z_values_byond_np))
+                    else:
+                        pass
+        return np.array(selected_residues)
 
     @staticmethod
     def _get_grid_xy(x_data: np.ndarray,  # x component of the coms
