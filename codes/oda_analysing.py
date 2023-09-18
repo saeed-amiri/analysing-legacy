@@ -81,7 +81,7 @@ class OdaAnalysis(WrapData):
                  log: logger.logging.Logger
                  ) -> None:
         super().__init__()
-        self.oda_data: np.ndarray = self.split_arr_dict['ODN'][:-2]
+        self.oda_data: np.ndarray = self.split_arr_dict['AMINO_ODN'][:-2]
         self.initiate(log)
 
     def initiate(self,
@@ -95,12 +95,16 @@ class OdaAnalysis(WrapData):
         adjusted_oda: np.ndarray = \
             self.shift_residues_from_np(self.oda_data,
                                         self.nanoparticle_disp_from_avg_com)
-        self.distribution_around_avg_np(adjusted_oda, self.mean_nanop_com, 1)
+        radii, molecule_counts, _ = \
+            self.distribution_around_avg_np(
+                adjusted_oda, self.mean_nanop_com, 1, orginated=True)
+        print(radii, molecule_counts)
 
     @staticmethod
     def distribution_around_avg_np(com_aligned_residues: np.ndarray,
                                    mean_nanop_com: np.ndarray,
                                    delta_r: float,
+                                   orginated: bool = False,
                                    max_radius: typing.Union[float, None] = None
                                    ) -> tuple:
         """
@@ -120,16 +124,20 @@ class OdaAnalysis(WrapData):
         - counts: A list of counts of ODN molecules in each annulus.
         """
 
-        # Calculate squared distances from each ODN to the mean_nanop_com
-        distances_squared = np.sum(
-            (com_aligned_residues.reshape(
-             -1,
-             com_aligned_residues.shape[1]//3, 3) - mean_nanop_com) ** 2,
-            axis=2)
+        if not orginated:
+            distances = OdaAnalysis._get_adjusted_distance(
+                com_aligned_residues, mean_nanop_com)
+        else:
+            # Reshaping mean_np_com to broadcast-compatible with adjusted_res
+            mean_nanop_com_reshaped = \
+                mean_nanop_com[np.newaxis, :].repeat(
+                    com_aligned_residues.shape[1]//3, axis=0).reshape(1, -1)
 
-        # Get actual distances
-        distances = np.sqrt(distances_squared)
-
+            # Subtracting mean_np_com from every frame of com_aligned_residues
+            origin_aligned_residues = \
+                com_aligned_residues - mean_nanop_com_reshaped
+            distances = \
+                OdaAnalysis._get_orginated_distance(origin_aligned_residues)
         # Determine max radius if not given
         if max_radius is None:
             max_radius = np.max(distances)
@@ -143,7 +151,34 @@ class OdaAnalysis(WrapData):
 
         # Return bin centers (i.e., actual radii) and counts
         bin_centers = (bins[:-1] + bins[1:]) / 2
-        return bin_centers, counts
+        return bin_centers, all_counts, counts
+
+    @staticmethod
+    def _get_adjusted_distance(com_aligned_residues: np.ndarray,
+                               mean_nanop_com: np.ndarray
+                               ) -> np.ndarray:
+        """
+        calculate the distance from NP if COM of NP is not at [0,0,0]
+        """
+        # Calculate squared distances from each ODN to the mean_nanop_com
+        distances_squared = np.sum(
+            (com_aligned_residues.reshape(
+             -1,
+             com_aligned_residues.shape[1]//3, 3) - mean_nanop_com) ** 2,
+            axis=2)
+
+        # Get actual distances
+        return np.sqrt(distances_squared)
+
+    @staticmethod
+    def _get_orginated_distance(origin_aligned_residues: np.ndarray,
+                                ) -> np.ndarray:
+        """
+        calculate the distance if the data is orginated to [0,0,0]
+        """
+        distances_squared = np.sum(origin_aligned_residues.reshape(
+            -1, origin_aligned_residues.shape[1]//3, 3) ** 2, axis=2)
+        return np.sqrt(distances_squared)
 
     @staticmethod
     def shift_residues_from_np(residues: np.ndarray,
