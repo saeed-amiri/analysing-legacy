@@ -4,6 +4,7 @@ To analysing the behavior of ODA at the interface
 
 import numpy as np
 
+import logger
 from get_data import GetData
 import static_info as stinfo
 
@@ -50,7 +51,7 @@ class WrapData(GetData):
         return self.split_arr_dict['APT_COR'] - self.mean_nanop_com
 
 
-class PlotOdnAnalysis(WrapData):
+class OdaAnalysis(WrapData):
     """
     A class for analyzing ODN data and creating various plots.
 
@@ -72,3 +73,12 @@ class PlotOdnAnalysis(WrapData):
         plot_odn(odn_arr: np.ndarray) -> None:
             Plot the center of mass of ODN molecules.
     """
+
+    def __init__(self,
+                 log: logger.logging.Logger
+                 ) -> None:
+        super().__init__()
+
+
+if __name__ == "__main__":
+    OdaAnalysis(log='oda_analysis.log')
