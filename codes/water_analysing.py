@@ -82,7 +82,8 @@ class GetSurface:
     def __init__(self,
                  ) -> None:
         all_data = WrapData()
-        self.get_interface(all_data)
+        all_water_surfaces: np.ndarray = self.get_interface(all_data)
+        print(all_water_surfaces)
         # self.__write_msg(log)
         # self.info_msg = ''  # Empety the msg
 
@@ -98,6 +99,7 @@ class GetSurface:
         y_mesh: np.ndarray  # Mesh grid in x and y
         mesh_size: np.float64
         selected_residues: list[tuple[float, ...]] = []
+        all_water_surfaces: list[np.ndarray] = []
         for frame in range(water_residues.shape[0])[:1]:
             x_data: np.ndarray = water_residues[frame, ::3]
             y_data: np.ndarray = water_residues[frame, 1::3]
@@ -140,7 +142,8 @@ class GetSurface:
                                 z_values_byond_np))
                     else:
                         pass
-        return np.array(selected_residues)
+                all_water_surfaces.append(selected_residues)
+        return all_water_surfaces
 
     @staticmethod
     def _get_grid_xy(x_data: np.ndarray,  # x component of the coms
