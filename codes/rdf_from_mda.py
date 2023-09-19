@@ -73,5 +73,27 @@ class GetTraj:
         return bins_rdfs
 
 
+class PlotRdf:
+    """
+    Plot RDF
+    """
+    def __init__(self,
+                 residues: list[str],  # To get their rdf
+                 box_range: tuple[float, float]  # Where of the box to look
+                 ) -> None:
+        traj = GetTraj(residues, box_range)
+        self.plot_rdf(traj.bins_rdfs)
+
+    @staticmethod
+    def plot_rdf(bins_rdfs: list[tuple[np.ndarray, np.ndarray]]
+                 ) -> None:
+        """
+        plot!
+        """
+        for item in bins_rdfs:
+            plt.plot(item[0], item[1])
+            plt.show()
+
+
 if __name__ == "__main__":
-    GetTraj(["ODN", "CLA"], (106, 150))
+    PlotRdf(["ODN", "CLA"], (106, 150))
