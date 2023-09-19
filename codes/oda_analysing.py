@@ -30,7 +30,8 @@ class WrapData(GetData):
 
     def set_constants(self) -> None:
         """
-        Set the constants for all the uses
+        The interface location could also be caluclated dynamicly from 
+        water residues
         """
         self.interface_locz = 113.9
         self.nanop_radius = stinfo.np_info['radius']
@@ -95,10 +96,22 @@ class OdaAnalysis(WrapData):
         adjusted_oda: np.ndarray = \
             self.shift_residues_from_np(self.oda_data,
                                         self.nanoparticle_disp_from_avg_com)
+        self.filtter_oda_non_interface(adjusted_oda,
+                                       self.nanoparticle_disp_from_avg_com)
         radii, molecule_counts, _ = \
             self.distribution_around_avg_np(
                 adjusted_oda, self.mean_nanop_com, 1, orginated=True)
         print(radii, molecule_counts)
+
+    @staticmethod
+    def filtter_oda_non_interface(adjusted_residue: np.ndarray,
+                                  np_displacement: np.ndarray
+                                  ) -> np.ndarray:
+        """
+        filtter out non-interface oda
+        the oda which their head are at interface will be selected only
+        the interface is the average water residues at the interface
+        """
 
     @staticmethod
     def distribution_around_avg_np(com_aligned_residues: np.ndarray,
