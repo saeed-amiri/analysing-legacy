@@ -19,34 +19,37 @@ class GetTraj:
     """
 
     def __init__(self,
-                 residue: str,  # To get its rdf
+                 residues: list[str],  # To get their rdf
                  box_range: tuple[float, float]  # Where of the box to look
                  ) -> None:
-        self.residue = residue
+        self.residues = residues
         self.box_range = box_range
         self.uinverse = mda.Universe(sys.argv[1], sys.argv[2])
-        self.initiate()
+        self.bins_rdfs: list[tuple[np.ndarray, np.ndarray]] = \
+            self.initiate()
 
     def initiate(self) -> None:
         """
         get bins and rdf!
         """
         nanoparticle: "AtomGroup" = self.get_nanoparticle()
-        target_atoms: "AtomGroup" = self.get_atoms()
-        bins: np.ndarray
-        rdf:  np.ndarray
-        bins, rdf = \
-            self.get_rdf(reference=nanoparticle, target=target_atoms)
-        self.plot_rdf(bins, rdf)
+        target_atoms: list["AtomGroup"] = self.get_atoms()
+        bins_rdfs: list[tuple[np.ndarray, np.ndarray]]
+        bins_rdfs = \
+            self.get_rdf(reference=nanoparticle, targets=target_atoms)
+        return bins_rdfs
 
-    def get_atoms(self) -> "AtomGroup":
+    def get_atoms(self) -> list["AtomGroup"]:
         """
         find target atoms
         """
-        args: str = f"resname {self.residue} and "
-        args += f"prop z > {self.box_range[0]} and "
-        args += f"prop z < {self.box_range[1]}"
-        return self.uinverse.select_atoms(args)
+        atoms_groups: list["AtomGroup"] = []
+        for residue in self.residues:
+            args: str = f"resname {residue} and "
+            args += f"prop z > {self.box_range[0]} and "
+            args += f"prop z < {self.box_range[1]}"
+            atoms_groups.append(self.uinverse.select_atoms(args))
+        return atoms_groups
 
     def get_nanoparticle(self) -> "AtomGroup":
         """
@@ -56,25 +59,19 @@ class GetTraj:
 
     @staticmethod
     def get_rdf(reference: "AtomGroup",
-                target: "AtomGroup"
-                ) -> tuple[np.ndarray, np.ndarray]:
+                targets: list["AtomGroup"]
+                ) -> list[tuple[np.ndarray, np.ndarray]]:
         """
         return bins and rdf
         """
-        rdf = MDAnalysis.analysis.rdf.InterRDF(reference.atoms, target.atoms)
-        rdf.run()
-        return rdf.results.bins, rdf.results.rdf
-
-    @staticmethod
-    def plot_rdf(bins: np.ndarray,
-                 rdf: np.ndarray
-                 ) -> None:
-        """
-        plot!
-        """
-        plt.plot(bins, rdf)
-        plt.show()
+        bins_rdfs: list[tuple[np.ndarray, np.ndarray]] = []
+        for target in targets:
+            rdf = \
+                MDAnalysis.analysis.rdf.InterRDF(reference.atoms, target.atoms)
+            rdf.run()
+            bins_rdfs.append((rdf.results.bins, rdf.results.rdf))
+        return bins_rdfs
 
 
 if __name__ == "__main__":
-    GetTraj("ODN", (106, 150))
+    GetTraj(["ODN", "CLA"], (106, 150))
