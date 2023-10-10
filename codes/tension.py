@@ -61,6 +61,7 @@ class GetLog:
         self.filename: str = filename
         raw_tesnsion: pd.DataFrame = self.read_data()
         self.tensions: pd.DataFrame = self.proccess_tensions(raw_tesnsion)
+        self.tensions.to_csv('tesnions.converted', sep=' ')
 
     def read_data(self) -> pd.DataFrame:
         """check and read lines and data"""
@@ -108,7 +109,27 @@ class PlotTension(GetLog):
     
     def initiate_plots(self) -> None:
         """set canvas and plot tension in different fasions"""
-
+        fig_i, ax_i = plot_tools.mk_canvas((0, 200),
+                                           num_xticks=6,
+                                           fsize=12,
+                                           add_xtwin=False)
+        ax_i.set_xscale('log')  # Set x-axis to logarithmic scale
+        ax_i.plot(self.tensions['sigma'],
+                  self.tensions['delta_NoWP'],
+                  '^:',
+                  label='without NP')
+        ax_i.plot(self.tensions['sigma'],
+                  self.tensions['delta_WP'],
+                  "o-",
+                  label='with NP')
+        ax_i.set_xlabel(r'surfactant at interface [1/nm$^2$]')
+        ax_i.set_ylabel(r'$\Delta\gamma$ [mN/m$^2$]')
+        plt.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
+        plot_tools.save_close_fig(fig=fig_i,
+                                  axs=ax_i,
+                                  fname='delta_gamma.png',
+                                  legend=True,
+                                  transparent=True)
 
 if __name__ == "__main__":
     PlotTension(sys.argv[1])
