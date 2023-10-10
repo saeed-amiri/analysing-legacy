@@ -8,7 +8,6 @@ In Gromacs the surface tension unit is (bar.nm).
 """
 
 
-import re
 import sys
 import typing
 import numpy as np
@@ -17,7 +16,6 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pylab as plt
 
-import logger
 import plot_tools
 import static_info as stinfo
 from colors_text import TextColor as bcolors
@@ -52,12 +50,17 @@ plt.tick_params(direction='in')
 
 class GetLog:
     """read log file contains tesnsion"""
+
+    tesnsion_unit: str = 'mN/m2'
+    tesnsion_ratio: float = 2 * 10
+    interface_are: float = 21.7 * 21.7
+
     def __init__(self,
                  filename: str
                  ) -> None:
         self.filename: str = filename
-        print(self.read_data())
-        print(type(self.read_data()))
+        raw_tesnsion: pd.DataFrame = self.read_data()
+        print(self.proccess_tensions(raw_tesnsion))
 
     def read_data(self) -> pd.DataFrame:
         """check and read lines and data"""
@@ -70,7 +73,7 @@ class GetLog:
                         parts = line.split()
                         if len(parts) == 4:
                             name = parts[0]
-                            oda_nr = float(parts[1])
+                            oda_nr = int(parts[1])
                             no_nanop = float(parts[2])
                             with_nanop = float(parts[3])
                             data.append({"Name": name,
@@ -82,6 +85,18 @@ class GetLog:
             return pd.DataFrame(data)
         except FileNotFoundError:
             sys.exit(f"File '{self.filename}' not found.")
+
+    def proccess_tensions(self,
+                          raw_tension: pd.DataFrame
+                          ) -> pd.DataFrame:
+        """convert the tension and add them as extera columns"""
+        df_c: pd.DataFrame = raw_tension.copy()
+        df_c['sigma'] = raw_tension['Oda'] / self.interface_are
+        df_c['NoWP_mN'] = raw_tension['NoWP'] / self.tesnsion_ratio
+        df_c['WP_mN'] = raw_tension['WP'] / self.tesnsion_ratio
+        df_c['delta_NoWP'] = df_c['NoWP_mN'] - df_c['NoWP_mN'][0]
+        df_c['delta_WP'] = df_c['WP_mN'] - df_c['NoWP_mN'][0]
+        return df_c
 
 
 if __name__ == "__main__":
