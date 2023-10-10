@@ -60,7 +60,7 @@ class GetLog:
                  ) -> None:
         self.filename: str = filename
         raw_tesnsion: pd.DataFrame = self.read_data()
-        print(self.proccess_tensions(raw_tesnsion))
+        self.tensions: pd.DataFrame = self.proccess_tensions(raw_tesnsion)
 
     def read_data(self) -> pd.DataFrame:
         """check and read lines and data"""
@@ -98,6 +98,17 @@ class GetLog:
         df_c['delta_WP'] = df_c['WP_mN'] - df_c['NoWP_mN'][0]
         return df_c
 
+class PlotTension(GetLog):
+    """plot tension"""
+    def __init__(self,
+                 filename: str
+                 ) -> None:
+        super().__init__(filename)
+        self.initiate_plots()
+    
+    def initiate_plots(self) -> None:
+        """set canvas and plot tension in different fasions"""
+
 
 if __name__ == "__main__":
-    data_processor = GetLog(sys.argv[1])
+    PlotTension(sys.argv[1])
