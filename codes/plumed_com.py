@@ -45,6 +45,9 @@ class GetData:
 
 class PlotCom:
     """plot tension"""
+
+    selected_oda: list[int] = [0, 10, 15, 200]
+
     def __init__(self,
                  filenames: list[str]
                  ) -> None:
@@ -99,6 +102,23 @@ class PlotCom:
             ax_i.set_ylabel(f'{df_name} [nm]')
             plot_tools.save_close_fig(
                 fig=fig_i, axs=ax_i, fname=f'com{df_name}.png')
+        self.plot_xyz()
+
+    def plot_xyz(self) -> None:
+        """plot xyz in one graph"""
+        for oda in self.selected_oda:
+            com_f: str = f'npCom{oda}.dat'
+            df_i: pd.DataFrame = GetData(com_f).com_df
+            fig_i, ax_i = plot_tools.mk_canvas((0, 200),
+                                               num_xticks=6,
+                                               fsize=12,
+                                               add_xtwin=False)
+            ax_i.set_ylabel(f'COM [nm]')
+            ax_i.plot(df_i['x'], label='x')
+            ax_i.plot(df_i['y'], label='y')
+            ax_i.plot(df_i['z'], label='z')
+            plot_tools.save_close_fig(
+                fig=fig_i, axs=ax_i, fname=f'com{oda}.png')
 
     def _plot_df_i(self,
                    df_i: pd.DataFrame,
@@ -106,9 +126,7 @@ class PlotCom:
                    ) -> plt.axes:
         colors: list[str] = ['r', 'b', 'k', 'g']
         styles: list[str] = [':', '--', '-', ':', '-', '--', '-.', ':', '-']
-        markers: list[str] = ['o', 's', 'D', '^', 'o', 's', 'D', '^', 'o']
-        selected_oda: list[int] = [0, 10, 15, 20]
-        for i, col in enumerate(selected_oda):
+        for i, col in enumerate(self.selected_oda):
             ax_i.plot(df_i[str(col)][1:],
                       ls=styles[i],
                       c=colors[i],
