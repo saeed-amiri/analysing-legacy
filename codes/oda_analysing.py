@@ -82,7 +82,8 @@ class OdaAnalysis(WrapData):
                  log: logger.logging.Logger
                  ) -> None:
         super().__init__()
-        self.oda_data: np.ndarray = self.split_arr_dict['AMINO_ODN'][:-2]
+        self.amino_arr: np.ndarray = self.split_arr_dict['AMINO_ODN'][:-2]
+        self.np_arr: np.ndarray = self.split_arr_dict['APT_COR']
         self.initiate(log)
 
     def initiate(self,
@@ -91,16 +92,38 @@ class OdaAnalysis(WrapData):
         """
         initiate analysing of ODA behavior
         """
+        self.prepare_data(log)
 
         # Shift data toward the average COM of the NP
-        adjusted_oda: np.ndarray = \
-            self.shift_residues_from_np(self.oda_data,
-                                        self.nanoparticle_disp_from_avg_com)
-        self.filtter_oda_non_interface(adjusted_oda,
-                                       self.interface_locz)
-        radii, molecule_counts, _ = \
-            self.distribution_around_avg_np(
-                adjusted_oda, self.mean_nanop_com, 1, orginated=True)
+        # adjusted_oda: np.ndarray = \
+            # self.shift_residues_from_np(self.amino_arr,
+                                        # self.nanoparticle_disp_from_avg_com)
+        # radii, molecule_counts, _, g_r = \
+            # self.distribution_around_avg_np(
+                # adjusted_oda, self.mean_nanop_com, 1, orginated=True)
+
+    def prepare_data(self,
+                     log: logger.logging.Logger
+                     ) -> None:
+        """
+        1- Set NP center of mass at origin at each time frame
+        2- Shift AMINO group accordingly
+        3- Apply PBC to the AMINO group
+        """
+        amino_c: np.ndarray = self.amino_arr
+        np_c: np.ndarray = self.np_arr
+        shifted_amino: np.ndarray = self.com_to_zero(amino_c, np_c)
+
+    def com_to_zero(self,
+                    amino: np.ndarray,
+                    np_arr: np.ndarray
+                    ) -> np.ndarray:
+        """subtract the np com from all the AMINO groups"""
+        shifted_aminos: np.ndarray = np.empty_like(amino)
+        for i in range(amino.shape[0]):
+            for j in range(3):
+                shifted_aminos[i, j::3] = amino[i, j::3] - np_arr[i, j]
+        return shifted_aminos
 
     @staticmethod
     def distribution_around_avg_np(com_aligned_residues: np.ndarray,
@@ -143,7 +166,7 @@ class OdaAnalysis(WrapData):
         # Determine max radius if not given
         if max_radius is None:
             max_radius = np.max(distances)
-
+        print(max_radius)
         # Create bins based on delta_r
         bins = np.arange(0, max_radius + delta_r, delta_r)
 
@@ -153,7 +176,18 @@ class OdaAnalysis(WrapData):
 
         # Return bin centers (i.e., actual radii) and counts
         bin_centers = (bins[:-1] + bins[1:]) / 2
-        return bin_centers, all_counts, counts
+
+
+        # Calculate the volume of each shell
+        shell_volumes = 4/3 * np.pi * (bins[1:]**3 - bins[:-1]**3)
+        
+        # RDF Calculation
+        # Assuming the number of particles in the system is constant over time
+        bulk_density = len(distances) / (4/3 * np.pi * max_radius**3)
+
+        g_r = counts / (shell_volumes * bulk_density)
+
+        return bin_centers, all_counts, counts, g_r
 
     @staticmethod
     def _get_adjusted_distance(com_aligned_residues: np.ndarray,
