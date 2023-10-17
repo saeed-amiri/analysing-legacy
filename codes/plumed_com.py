@@ -4,6 +4,7 @@ import re
 import sys
 import typing
 import pandas as pd
+import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pylab as plt
@@ -18,7 +19,21 @@ class GetData:
                  filename: str
                  ) -> None:
         self.filename: str = filename
-        self.com_df: pd.DataFrame = self.read_data()
+        com_df: pd.DataFrame = self.read_data()
+        self.com_df = self.get_zero_point(com_df, 10)
+
+    def get_zero_point(self,
+                       com_df: pd.DataFrame,
+                       nr_ave_point: int = 10
+                       ) -> pd.DataFrame:
+        """remove the average of the first points to brings data
+        zero"""
+        df_c: pd.DataFrame = com_df.copy()
+        
+        df_c['x_center'] = com_df['x'] - np.average(com_df['x'][:nr_ave_point])
+        df_c['y_center'] = com_df['y'] - np.average(com_df['y'][:nr_ave_point])
+        df_c['z_center'] = com_df['z'] - np.average(com_df['z'][:nr_ave_point])
+        return df_c
 
     def read_data(self) -> pd.DataFrame:
         """check and read lines and data"""
@@ -44,9 +59,10 @@ class GetData:
 
 
 class PlotCom:
-    """plot tension"""
+    """plot com"""
 
-    selected_oda: list[int] = [0, 10, 15, 200]
+    selected_oda: list[int] = [5]
+    # selected_oda: list[int] = [5, 15, 20, 200]
 
     def __init__(self,
                  filenames: list[str]
@@ -73,9 +89,9 @@ class PlotCom:
             match = re.search(r'\d+', com_f)
             column = match.group()
             df_i: pd.DataFrame = GetData(com_f).com_df
-            df_x[column] = df_i['x']
-            df_y[column] = df_i['y']
-            df_z[column] = df_i['z']
+            df_x[column] = df_i['x_center']
+            df_y[column] = df_i['y_center']
+            df_z[column] = df_i['z_center']
         return df_x, df_y, df_z
     
     @staticmethod
@@ -114,9 +130,9 @@ class PlotCom:
                                                fsize=12,
                                                add_xtwin=False)
             ax_i.set_ylabel(f'COM [nm]')
-            ax_i.plot(df_i['x'], label='x')
-            ax_i.plot(df_i['y'], label='y')
-            ax_i.plot(df_i['z'], label='z')
+            ax_i.plot(df_i['x_center'], label='x')
+            ax_i.plot(df_i['y_center'], label='y')
+            ax_i.plot(df_i['z_center'], label='z')
             plot_tools.save_close_fig(
                 fig=fig_i, axs=ax_i, fname=f'com{oda}.png')
 
