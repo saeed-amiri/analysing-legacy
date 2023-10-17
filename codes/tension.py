@@ -124,7 +124,8 @@ class PlotTension(GetLog):
                   label='with NP')
         ax_i.set_xlabel(r'surfactant at interface [1/nm$^2$]')
         ax_i.set_ylabel(r'$\Delta\gamma$ [mN/m$^2$]')
-        plt.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
+        plt.grid(
+            True, which='both', linestyle='--', color='gray', linewidth=0.5)
         plot_tools.save_close_fig(fig=fig_i,
                                   axs=ax_i,
                                   fname='delta_gamma.png',
