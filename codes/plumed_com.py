@@ -14,12 +14,25 @@ import plot_tools
 class GetData:
     """read file contains tesnsion"""
 
+    x_lim: float = 21.7  # Length of the box
+    y_lim: float = 21.7  # Length of the box
+    z_lim: float = 24.7  # Length of the box
+
     def __init__(self,
                  filename: str
                  ) -> None:
         self.filename: str = filename
         com_df: pd.DataFrame = self.read_data()
-        self.com_df = self.get_zero_point(com_df, 10)
+        com_df['x'] = com_df['x'] % self.x_lim/2.0
+        com_df['y'] = com_df['y'] % self.y_lim/2.0
+        com_df['z'] = com_df['z'] % self.z_lim/2.0
+        self.apply_pbc(com_df)
+        self.com_df = self.get_zero_point(com_df, 2)
+
+    def apply_pbc(self,
+                  com_df: pd.DataFrame
+                  ) -> pd.DataFrame:
+        """remove the break on the data"""
 
     def read_data(self) -> pd.DataFrame:
         """check and read lines and data"""
@@ -59,8 +72,8 @@ class GetData:
 class PlotCom:
     """plot com"""
 
-    selected_oda: list[int] = [5]
-    # selected_oda: list[int] = [5, 15, 20, 200]
+    # selected_oda: list[int] = [5]
+    selected_oda: list[int] = [5, 15, 20, 200]
 
     def __init__(self,
                  filenames: list[str]
@@ -87,9 +100,9 @@ class PlotCom:
             match = re.search(r'\d+', com_f)
             column = match.group()
             df_i: pd.DataFrame = GetData(com_f).com_df
-            df_x[column] = df_i['x_center']
-            df_y[column] = df_i['y_center']
-            df_z[column] = df_i['z_center']
+            df_x[column] = df_i['x']
+            df_y[column] = df_i['y']
+            df_z[column] = df_i['z']
         return df_x, df_y, df_z
 
     @staticmethod
@@ -128,9 +141,9 @@ class PlotCom:
                                                fsize=12,
                                                add_xtwin=False)
             ax_i.set_ylabel('COM [nm]')
-            ax_i.plot(df_i['x_center'], label='x')
-            ax_i.plot(df_i['y_center'], label='y')
-            ax_i.plot(df_i['z_center'], label='z')
+            ax_i.plot(df_i['x'], label='x')
+            ax_i.plot(df_i['y'], label='y')
+            ax_i.plot(df_i['z'], label='z')
             plot_tools.save_close_fig(
                 fig=fig_i, axs=ax_i, fname=f'com{oda}.png')
 
