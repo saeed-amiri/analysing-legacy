@@ -14,7 +14,7 @@ import matplotlib.pylab as plt
 from scipy.interpolate import interp1d 
 
 import logger
-import plot_tools as ptools
+import plot_tools
 import static_info as stinfo
 from colors_text import TextColor as bcolors
 
@@ -52,6 +52,7 @@ class GetBulkDensity:
     the locations where all of them have a value of zero.
     """
 
+    # residues: list[str] = ['ODN']  # Name of all the residues
     residues: list[str] = ['APT', 'COR', 'ODN']  # Name of all the residues
     water_res: str = 'SOL'  # Water residue
     oil_res: str = 'D10'  # Oil residue
@@ -121,13 +122,16 @@ class GetBulkDensity:
                 residues_data[xvg_f]['data'] = self.__read_data(data['data'])
             except FileNotFoundError:
                 self.info_msg += f'\tCannot read file: `{fname}`!!\n'
-        if 'COR_APT' not in residues_data.keys():
-            residues_data['COR_APT'] = residues_data['COR']
-            residues_data['COR_APT']['data'][:, 1] = \
-                residues_data['COR']['data'][:, 1] + \
-                residues_data['APT']['data'][:, 1]
-            residues_data['fname'] = 'COR_APT.xvg'
-            self.info_msg += '\tDensity for COR_APT is calculated!\n'
+        try:
+            if 'COR_APT' not in residues_data.keys():
+                residues_data['COR_APT'] = residues_data['COR']
+                residues_data['COR_APT']['data'][:, 1] = \
+                    residues_data['COR']['data'][:, 1] + \
+                    residues_data['APT']['data'][:, 1]
+                residues_data['fname'] = 'COR_APT.xvg'
+                self.info_msg += '\tDensity for COR_APT is calculated!\n'
+        except KeyError:
+            pass
         return residues_data
 
     @staticmethod
@@ -213,7 +217,7 @@ class PlotDensity:
     """plot the density"""
 
     fontsize: int = 14  # Fontsize for all in plots
-    transparent: bool = True  # Save fig background
+    transparent: bool = False  # Save fig background
 
     def __init__(self,
                  res_data: GetBulkDensity  # All the densities data
@@ -229,12 +233,28 @@ class PlotDensity:
         fig_i, ax_i = self.__mk_canvas(many_plot)
 
         average: bool = True  # If write average on the legend
-
+        intersection_line = 11.39
         for f_i in xvg_files:
             xvg = res_data.residues_data[f_i]
-            label = f'{f_i}'
             bulk_value = np.float64(1.0)
+            label = f'{f_i}'
+            if f_i == 'D10':
+                label='Decane'
+            elif f_i == "ODN":
+                label='ODA'
+            elif f_i == 'CLA':
+                label = 'Cl'
+            elif f_i == 'COR_APT':
+                label = 'NP'
+            elif f_i == 'APT':
+                label = 'APTES'
+            elif f_i == 'COR':
+                label = "silica core"
+            elif f_i == 'SOL':
+                label = 'Water'
             if many_plot:
+                xdata = xvg['data'][:, 0] * 10
+                vline = intersection_line * 10
                 if f_i == 'SOL':
                     bulk_value = res_data.water_bulk
                     if average:
@@ -243,9 +263,15 @@ class PlotDensity:
                     bulk_value = res_data.oil_bulk
                     if average:
                         label += f', bulk={bulk_value:.2f}'
-            ax_i.plot(xvg['data'][:, 0],
+            else:
+                xdata = xvg['data'][:, 0] * 10
+                vline = intersection_line * 10
+
+            ax_i.plot(xdata,
                       xvg['data'][:, 1]/bulk_value,
                       label=label)
+        # ax_i.vlines(x=vline, ymin=-0.2, ymax=1050, ls='--', lw=0.75, color='g',
+                    # label=f'Interface={vline}')
         ax_i = self.__set_y2ticks(ax_i)
         ax_i = self.__set_ax_font_label(ax_i, xvg, many_plot)
         ax_i.grid(which='major', linestyle='--', color='gray', alpha=0.4)
@@ -259,14 +285,14 @@ class PlotDensity:
                     ) -> tuple[plt.figure, plt.axes]:
         """make the pallete for the figure"""
         width = stinfo.plot['width']
-        fig_main, ax_main = plt.subplots(1, figsize=ptools.set_sizes(width))
+        fig_main, ax_main = plt.subplots(1, figsize=plot_tools.set_sizes(width))
         # Set font for all elements in the plot
         x_hi: float  # Bounds of the self.x_range
         x_lo: float  # Bounds of the self.x_range
         y_hi: float  # For the main plot
         y_lo: float  # For the main plot
         if many_plot:
-            x_hi, x_lo, y_hi, y_lo = 24, -1, 1.055, -.052
+            x_hi, x_lo, y_hi, y_lo = 240, -1, 1.055, -.052
             ax_main.set_xlim(x_lo, x_hi)
             ax_main.set_ylim(y_lo, y_hi)
         num_xticks = 5
@@ -324,7 +350,7 @@ class PlotDensity:
         """set parameters on the plot"""
         if fsize == 0:
             fontsize = cls.fontsize
-            ax_main.set_xlabel(xvg['xaxis'], fontsize=fontsize-2)
+            ax_main.set_xlabel('Coordinate [A]', fontsize=fontsize-2)
             if many_plot:
                 ax_main.set_ylabel('Density (normalized)', fontsize=fontsize-2)
             else:
