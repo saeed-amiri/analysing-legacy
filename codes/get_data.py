@@ -85,11 +85,11 @@ class GetData:
         during initialization.
         """
         self.f_name: str = stinfo.files['com_pickle']
-        self.split_arr_dict: dict[str, np.ndarray] = self.initiate_data()
+        self.split_arr_dict: dict[str, np.ndarray] = self._initiate_data()
         self.nr_dict: dict[str, int] = self.get_numbers(self.split_arr_dict)
         self.box_dims: dict[str, float] = self.get_box_dimensions()
 
-    def initiate_data(self) -> dict[str, np.ndarray]:
+    def _initiate_data(self) -> dict[str, np.ndarray]:
         """
         Read and split the data from the pickle file.
 
